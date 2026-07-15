@@ -338,6 +338,8 @@ p, small, span, label, td, th, input, select, textarea, button {
 
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .avatar {
+  position: relative;
+  overflow: hidden;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -346,6 +348,16 @@ p, small, span, label, td, th, input, select, textarea, button {
   display: grid;
   place-items: center;
   font-weight: 800;
+}
+
+/* Photo fills the circle; initials remain as fallback if it fails to load */
+.avatar img,
+.profile-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ---- Pages ---------------------------------------------------------- */
@@ -568,6 +580,8 @@ tbody tr:hover { background: rgba(180, 146, 90, .05); }
 .profile-grid { grid-template-columns: 1fr 1fr; }
 .profile-card { display: flex; gap: 18px; align-items: center; }
 .profile-avatar {
+  position: relative;
+  overflow: hidden;
   width: 90px;
   height: 90px;
   border-radius: 50%;
