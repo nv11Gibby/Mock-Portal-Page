@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Imperial emblem">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E8CF9C"/>
+      <stop offset="0.5" stop-color="#C7AA7A"/>
+      <stop offset="1" stop-color="#8F7143"/>
+    </linearGradient>
+    <linearGradient id="goldSoft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D9BE8C"/>
+      <stop offset="1" stop-color="#A9884F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Laurel wreath -->
+  <g fill="none" stroke="url(#goldSoft)" stroke-width="3.2" stroke-linecap="round" opacity="0.95">
+    <path d="M120 214 C86 210 60 188 50 150"/>
+    <path d="M120 214 C154 210 180 188 190 150"/>
+  </g>
+  <g fill="url(#goldSoft)" opacity="0.92">
+    <path d="M58 176 c-11 -2 -18 -9 -20 -20 c11 2 18 9 20 20 Z"/>
+    <path d="M52 156 c-11 -3 -17 -11 -18 -22 c11 3 17 11 18 22 Z"/>
+    <path d="M50 134 c-11 -4 -16 -13 -15 -24 c10 5 15 13 15 24 Z"/>
+    <path d="M68 194 c-10 -4 -15 -12 -14 -23 c10 4 15 12 14 23 Z"/>
+    <path d="M182 176 c11 -2 18 -9 20 -20 c-11 2 -18 9 -20 20 Z"/>
+    <path d="M188 156 c11 -3 17 -11 18 -22 c-11 3 -17 11 -18 22 Z"/>
+    <path d="M190 134 c11 -4 16 -13 15 -24 c-10 5 -15 13 -15 24 Z"/>
+    <path d="M172 194 c10 -4 15 -12 14 -23 c-10 4 -15 12 -14 23 Z"/>
+  </g>
+
+  <!-- Interlocking rings -->
+  <g fill="none" stroke="url(#gold)" stroke-width="9">
+    <circle cx="103" cy="132" r="34"/>
+    <circle cx="140" cy="132" r="34"/>
+  </g>
+
+  <!-- Crown -->
+  <g fill="url(#gold)">
+    <path d="M78 96 L86 58 L108 82 L120 46 L132 82 L154 58 L162 96 Z"/>
+    <rect x="80" y="96" width="80" height="12" rx="3"/>
+    <circle cx="86" cy="54" r="6"/>
+    <circle cx="120" cy="40" r="7"/>
+    <circle cx="154" cy="54" r="6"/>
+  </g>
+</svg>

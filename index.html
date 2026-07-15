@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Imperial Partner Portal — Mock</title>
+
+  <link rel="icon" href="assets/ipc-logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Cormorant+SC:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+  <!-- ============================ Login ============================ -->
+  <section id="login" class="login-shell">
+    <div class="login-brand">
+      <div class="login-logo-wrap">
+        <img src="assets/ipc-logo.svg" alt="Imperial logo">
+        <div>
+          <div class="brand-title">IMPERIAL</div>
+          <div class="brand-sub">PARTNER PORTAL</div>
+        </div>
+      </div>
+
+      <div class="login-copy">
+        <div class="eyebrow">Private partner access</div>
+        <h1>Global mobility.<br>Delivered with distinction.</h1>
+        <p>A secure workspace for partners to explore citizenship, residency, company
+          formation, pipeline activity, documents and market intelligence.</p>
+      </div>
+
+      <div class="security-strip">
+        <div class="security-pill"><b>Secure Access</b><span>Mock authentication environment</span></div>
+        <div class="security-pill"><b>Partner Only</b><span>Structured services and resources</span></div>
+        <div class="security-pill"><b>Global Coverage</b><span>27 programs and services</span></div>
+      </div>
+    </div>
+
+    <div class="login-panel">
+      <form id="loginForm" class="login-card">
+        <div class="eyebrow">Imperial partner access</div>
+        <h2>Welcome back</h2>
+        <p>Enter any email and password to access this front-end demonstration.</p>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input id="email" type="email" placeholder="partner@company.com" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Enter password" required>
+        </div>
+        <div class="field">
+          <label for="twofactor">Two-factor code</label>
+          <input id="twofactor" inputmode="numeric" placeholder="Optional in mock mode">
+        </div>
+
+        <button class="primary wide" type="submit">Secure Sign In →</button>
+        <button id="demoLogin" class="secondary wide" type="button" style="margin-top:10px">
+          Fill Demo Credentials
+        </button>
+        <p class="login-note">Mock portal only — no credentials are transmitted or stored.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================ App ============================ -->
+  <div id="app" class="app hidden">
+    <aside class="sidebar">
+      <div class="side-brand">
+        <img src="assets/ipc-logo.svg" alt="Imperial logo">
+        <div><strong>IMPERIAL</strong><small>PARTNER PORTAL</small></div>
+      </div>
+      <nav class="nav">
+        <button class="active" data-page="dashboard"><span class="icon">⌂</span>Dashboard</button>
+        <button data-page="services"><span class="icon">◈</span>Programs &amp; Services</button>
+        <button data-page="pipeline"><span class="icon">⌁</span>Client Pipeline</button>
+        <button data-page="reports"><span class="icon">▥</span>Reports &amp; Analytics</button>
+        <button data-page="news"><span class="icon">◎</span>Industry News</button>
+        <button data-page="documents"><span class="icon">▤</span>Documents</button>
+        <button data-page="support"><span class="icon">◇</span>Partner Support</button>
+        <button data-page="profile"><span class="icon">○</span>Profile &amp; Settings</button>
+      </nav>
+      <div class="side-footer">
+        <strong>Premium Partner</strong>
+        <p>Access curated mobility programs, service resources and performance insights.</p>
+        <button id="logout" class="secondary wide">Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="mobileMenu" class="mobile-menu">☰</button>
+        <div class="search">
+          <span>⌕</span>
+          <input placeholder="Search programs, countries, reports...">
+        </div>
+        <div class="top-actions">
+          <button class="secondary" data-toast="No new alerts">🔔</button>
+          <div class="avatar">AR</div>
+          <div>
+            <strong>Alexander Reed</strong>
+            <small style="display:block;color:#777">Managing Partner</small>
+          </div>
+        </div>
+      </header>
+
+      <!-- ---- Dashboard ---- -->
+      <section id="dashboard" class="page active">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Imperial Mobility &amp; Privileges</div>
+            <h1>Partner Dashboard</h1>
+            <p>Global program access, client pipeline and partner performance.</p>
+          </div>
+          <button class="primary" data-toast="New client intake opened">+ New Client Intake</button>
+        </div>
+
+        <div class="grid kpis">
+          <div class="kpi"><div class="label">Active Services</div><div class="value">26</div><div class="trend">↑ 1 pending review</div></div>
+          <div class="kpi"><div class="label">Jurisdictions</div><div class="value">25</div><div class="trend">Across 6 regions</div></div>
+          <div class="kpi"><div class="label">Open Client Matters</div><div class="value">18</div><div class="trend">↑ 4 this month</div></div>
+          <div class="kpi"><div class="label">Partner Conversion</div><div class="value">68%</div><div class="trend">↑ 5.2% vs last quarter</div></div>
+        </div>
+
+        <div class="card hero" style="margin-top:18px">
+          <div class="hero-copy">
+            <div class="eyebrow">Featured service group</div>
+            <h2>Global Mobility Solutions</h2>
+            <p>Citizenship and residency programs for internationally minded families, investors
+              and entrepreneurs—supported by a structured partner workflow.</p>
+            <button class="primary" onclick="document.querySelector('[data-page=services]').click()">Explore Programs</button>
+          </div>
+          <div class="hero-art">
+            <svg viewBox="0 0 600 320" aria-hidden="true">
+              <circle cx="310" cy="160" r="100" fill="none" stroke="#d7b568" stroke-width="2"/>
+              <circle cx="310" cy="160" r="70" fill="none" stroke="#d7b568" opacity=".6"/>
+              <path d="M210 160h200M310 60c-55 55-55 145 0 200M310 60c55 55 55 145 0 200M235 105c45 25 105 25 150 0M235 215c45-25 105-25 150 0" stroke="#f0d18b" fill="none"/>
+              <path d="M90 245L175 180l48 38 72-80 85 62 110-112" stroke="#fff" opacity=".35" stroke-width="4" fill="none"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="grid dashboard-layout">
+          <div class="card">
+            <h3>Featured Programs</h3>
+            <div class="feature-list">
+              <div class="feature"><b>UAE Golden Visa</b><small>2–4 weeks · Residency</small></div>
+              <div class="feature"><b>Portugal Golden Visa</b><small>4–6 months · Residency</small></div>
+              <div class="feature"><b>St. Kitts &amp; Nevis</b><small>6–9 months · Citizenship</small></div>
+            </div>
+            <div class="chart"><canvas id="activityChart"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Client Pipeline</h3>
+            <div class="pipeline-row"><span class="name">New Enquiries</span><div class="bar"><i style="width:88%"></i></div><strong>24</strong></div>
+            <div class="pipeline-row"><span class="name">Qualification</span><div class="bar"><i style="width:68%"></i></div><strong>18</strong></div>
+            <div class="pipeline-row"><span class="name">Documents</span><div class="bar"><i style="width:48%"></i></div><strong>12</strong></div>
+            <div class="pipeline-row"><span class="name">Submission</span><div class="bar"><i style="width:32%"></i></div><strong>8</strong></div>
+            <div class="pipeline-row"><span class="name">Approved</span><div class="bar"><i style="width:20%"></i></div><strong>5</strong></div>
+            <button class="secondary wide" onclick="document.querySelector('[data-page=pipeline]').click()">View Pipeline</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- Programs & Services ---- -->
+      <section id="services" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Product catalogue</div>
+            <h1>Programs &amp; Services</h1>
+            <p>Product-sheet-driven catalogue of active and pending services.</p>
+          </div>
+          <strong id="serviceCount"></strong>
+        </div>
+        <div class="filters">
+          <input id="serviceSearch" placeholder="Search program or country">
+          <select id="categoryFilter">
+            <option>All</option>
+            <option>Citizenship by Investment</option>
+            <option>Citizenship by Exceptional Achievements</option>
+            <option>Residency by Investment</option>
+            <option>Company Formation</option>
+          </select>
+          <select id="statusFilter">
+            <option>All</option>
+            <option>Active</option>
+            <option>Pending Review</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Service</th><th>Category</th><th>Jurisdiction</th>
+                <th>Timeline</th><th>Delivering Party</th><th>Status</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="serviceRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---- Client Pipeline ---- -->
+      <section id="pipeline" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Client matters</div>
+            <h1>Client Pipeline</h1>
+            <p>Mock workflow from enquiry through approval.</p>
+          </div>
+          <button class="primary" data-toast="Client intake form opened">+ Add Client</button>
+        </div>
+        <div class="grid kpis">
+          <div class="kpi"><div class="label">New Enquiries</div><div class="value">24</div></div>
+          <div class="kpi"><div class="label">In Due Diligence</div><div class="value">12</div></div>
+          <div class="kpi"><div class="label">Submitted</div><div class="value">8</div></div>
+          <div class="kpi"><div class="label">Approved</div><div class="value">5</div></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <h3>Active Matters</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Client Ref.</th><th>Program</th><th>Stage</th><th>Owner</th><th>Next Action</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>IMP-1048</td><td>UAE Golden Visa</td><td><span class="status active">Documents</span></td><td>Mobility Team</td><td>KYC review · 18 Jul</td></tr>
+                <tr><td>IMP-1042</td><td>Greece Golden Visa</td><td><span class="status pending">Qualification</span></td><td>Partner Desk</td><td>Source of funds call</td></tr>
+                <tr><td>IMP-1039</td><td>Dominica Citizenship</td><td><span class="status active">Submitted</span></td><td>Citizenship Team</td><td>Government review</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- Reports & Analytics ---- -->
+      <section id="reports" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Performance intelligence</div>
+            <h1>Reports &amp; Analytics</h1>
+            <p>Mock reports based on the supplied product portfolio.</p>
+          </div>
+          <button class="secondary" data-toast="Report export prepared">Export Report</button>
+        </div>
+        <div class="grid report-grid">
+          <div class="card">
+            <h3>Partner Activity Trend</h3>
+            <div class="chart"><canvas id="categoryChart"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Portfolio Mix</h3>
+            <div class="donut"></div>
+            <div class="pipeline-row"><span class="name">Citizenship</span><div class="bar"><i style="width:52%"></i></div><strong>14</strong></div>
+            <div class="pipeline-row"><span class="name">Residency</span><div class="bar"><i style="width:44%"></i></div><strong>12</strong></div>
+            <div class="pipeline-row"><span class="name">Formation</span><div class="bar"><i style="width:8%"></i></div><strong>1</strong></div>
+          </div>
+        </div>
+        <div class="grid kpis" style="margin-top:18px">
+          <div class="kpi"><div class="label">Fastest Published Timeline</div><div class="value">1 mo.</div><div class="trend">Saudi Premium Residency</div></div>
+          <div class="kpi"><div class="label">Citizenship Programs</div><div class="value">14</div></div>
+          <div class="kpi"><div class="label">Residency Programs</div><div class="value">12</div></div>
+          <div class="kpi"><div class="label">Direct Services</div><div class="value">27</div></div>
+        </div>
+      </section>
+
+      <!-- ---- Industry News ---- -->
+      <section id="news" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Market intelligence</div>
+            <h1>Industry News</h1>
+            <p>Illustrative editorial content aligned with mobility and corporate services.</p>
+          </div>
+        </div>
+        <div class="grid news-grid">
+          <article class="card news-card">
+            <div class="news-image">🌐</div>
+            <div class="news-body">
+              <span class="tag">Global Mobility</span>
+              <h3>What partners should monitor when programs update</h3>
+              <p>A practical review framework covering eligibility, timelines, documentation and client communications.</p>
+            </div>
+          </article>
+          <article class="card news-card">
+            <div class="news-image">🏛</div>
+            <div class="news-body">
+              <span class="tag">Residency</span>
+              <h3>Residency planning across Europe and the Gulf</h3>
+              <p>How service timelines and family objectives can shape an appropriate program shortlist.</p>
+            </div>
+          </article>
+          <article class="card news-card">
+            <div class="news-image">🏢</div>
+            <div class="news-body">
+              <span class="tag">Company Formation</span>
+              <h3>UAE formation: a partner-ready intake checklist</h3>
+              <p>Key information to capture before selecting a jurisdiction, licence type and operating structure.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ---- Documents ---- -->
+      <section id="documents" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Resource centre</div>
+            <h1>Documents</h1>
+            <p>Mock partner resources, templates and compliance materials.</p>
+          </div>
+          <button class="primary" data-toast="Upload dialogue opened">Upload Document</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Document</th><th>Category</th><th>Updated</th><th>Access</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Partner Client Intake Form</td><td>Operations</td><td>12 Jul 2026</td><td>Partner</td><td><button class="secondary" data-toast="Mock download started">Download</button></td></tr>
+                <tr><td>KYC &amp; Source of Funds Checklist</td><td>Compliance</td><td>08 Jul 2026</td><td>Restricted</td><td><button class="secondary" data-toast="Mock download started">Download</button></td></tr>
+                <tr><td>Program Comparison Template</td><td>Sales Enablement</td><td>02 Jul 2026</td><td>Partner</td><td><button class="secondary" data-toast="Mock download started">Download</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- Partner Support ---- -->
+      <section id="support" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Partner assistance</div>
+            <h1>Partner Support</h1>
+            <p>Route enquiries to the appropriate delivery team.</p>
+          </div>
+        </div>
+        <div class="grid profile-grid">
+          <div class="card">
+            <h3>Submit a Request</h3>
+            <div class="field">
+              <label for="supportTopic">Topic</label>
+              <select id="supportTopic">
+                <option>Program eligibility</option>
+                <option>Client case update</option>
+                <option>Documents and compliance</option>
+                <option>Company formation</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="supportMessage">Message</label>
+              <textarea id="supportMessage" rows="5" placeholder="Describe the request"></textarea>
+            </div>
+            <button class="primary" data-toast="Support request submitted">Submit Request</button>
+          </div>
+          <div class="card">
+            <h3>Relationship Manager</h3>
+            <div class="profile-card">
+              <div class="profile-avatar">IL</div>
+              <div>
+                <h2 class="serif" style="margin:0">Isabella Laurent</h2>
+                <p>Senior Director, Partner Relations</p>
+                <p>partnerdesk@imperial.example<br>+971 4 000 0000</p>
+                <button class="secondary" data-toast="Meeting scheduler opened">Schedule Meeting</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- Profile & Settings ---- -->
+      <section id="profile" class="page">
+        <div class="page-title">
+          <div>
+            <div class="eyebrow">Account</div>
+            <h1>Profile &amp; Settings</h1>
+            <p>Mock partner account and notification preferences.</p>
+          </div>
+        </div>
+        <div class="grid profile-grid">
+          <div class="card">
+            <div class="profile-card">
+              <div class="profile-avatar">AR</div>
+              <div>
+                <h2 class="serif" style="margin:0">Alexander Reed</h2>
+                <p>Managing Partner · Reed Advisory Group</p>
+                <span class="status active">Premium Partner</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Notifications</h3>
+            <label><input type="checkbox" checked> Program updates</label><br><br>
+            <label><input type="checkbox" checked> Client pipeline alerts</label><br><br>
+            <label><input type="checkbox"> Weekly market digest</label><br><br>
+            <button class="primary" data-toast="Preferences saved">Save Preferences</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>
