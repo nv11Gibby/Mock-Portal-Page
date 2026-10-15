@@ -30,7 +30,7 @@ and `shared/chrome/footer.html`. When a URL is confirmed, change the JSON first,
 
 | Piece | File | Who reads it |
 |---|---|---|
-| Design tokens | `shared/tokens.css` | Every page, linked before the site stylesheet. Colours, type families, page rhythm (`--pad`, `--max`, `--sec`, `--hdrH`), motion (`--e-*`, `--t1` to `--t5`). The values are the IHG design and do not change per site. |
+| Design tokens | `shared/tokens.css` | Every page, linked before the site stylesheet. Colours, type families, page rhythm (`--pad`, `--max`, `--sec`, `--hdrH`), motion (`--e-*`, `--t1` to `--t5`). The values are the IHG design and do not change per site. One value differs from the v4 `site.css`: `--faint` was raised from .4 to .52 so the search result kind label reaches 4.5:1 (`tests/contrast.js`); the next site starts from .52. |
 | Chrome | `shared/chrome/chrome.css`, `header.html`, `footer.html` | A new site pastes the two HTML files, fills the placeholders and links the CSS. IHG renders the same chrome from `index.html` and `buildChrome()` in `assets/js/app.js`, and links `site.css` only. The CSS is a verbatim copy of the chrome rules in `site.css`, kept in sync by hand (the command in its header shows any drift). |
 | Site list | `shared/ecosystem.json` | Section 1. |
 | Lead schema | `shared/lead-schema.json` | Every form and `netlify/functions/lib/core.js`. The field names, allowed values, the four form names, the thirteen tracking fields, the score weights and the `sites` map with each site's default division. |
