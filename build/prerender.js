@@ -4,6 +4,7 @@
    jsdom lacks a few browser APIs the app touches. Each one is stubbed here rather than guarded in app.js:
    - matchMedia: answered as "no match", so motion stays on and the layout is the desktop one.
    - scrollTo, scroll, scrollBy, scrollIntoView: no-ops (jsdom logs "not implemented" otherwise).
+   - HTMLMediaElement play, pause, load: no-ops, so a hero loop with a direct src renders without throwing.
    - IntersectionObserver is deliberately left absent: app.js then marks every reveal element .in at once, which is
      what a prerendered page needs (visible content without JavaScript).
    - requestAnimationFrame comes from jsdom's pretendToBeVisual option.
@@ -22,6 +23,14 @@ function stub(window){
   }
   window.scrollTo = noop; window.scroll = noop; window.scrollBy = noop;
   if(typeof window.HTMLElement.prototype.scrollIntoView !== 'function') window.HTMLElement.prototype.scrollIntoView = noop;
+  /* Media playback: jsdom throws "not implemented" on play(), pause() and load(); the hero loop calls play() when a
+     video src is set. The build never plays anything, so these answer quietly. */
+  const media = window.HTMLMediaElement && window.HTMLMediaElement.prototype;
+  if(media){
+    media.play = function(){ return Promise.resolve(); };
+    media.pause = noop;
+    media.load = noop;
+  }
 }
 
 /* opts: {root, indexPath, siteUrl, scripts: [absolute paths in load order]} */
