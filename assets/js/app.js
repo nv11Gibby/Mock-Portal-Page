@@ -42,7 +42,9 @@ function trackFields(){ return TRK_KEYS.map(function(k){ return '<input type="hi
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function tbc(t){return '<span class="tbc" title="Placeholder: to be confirmed">'+esc(t)+'</span>';}
+/* Every placeholder carries the words "To confirm" (read by screen readers and found by the brief's search of the built
+   site, acceptance test 8) without changing how the amber chip looks. */
+function tbc(t){return '<span class="tbc" title="Placeholder: to be confirmed"><span class="vh">To confirm: </span>'+esc(t)+'</span>';}
 var AR = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var NE = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var BACK = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M14 8H3M7 4 3 8l4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
@@ -390,7 +392,7 @@ function splitTitle(t){
 function evWhen(e){ return e.date ? esc(e.date) : ''; }
 function eventCard(e,i){
   var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img(ok ? k : eventSafe(e), '')+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img(ok ? k : eventSafe(e), '')+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Gallery to follow')+AR+'</span></div></a>';
 }
 function journalRow(j,i){
   var ok = photoAllowed(j.img), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null, k = ok ? j.img : (ev ? eventSafe(ev) : 'about'), v = ok ? (j.own?'':'-c') : variantOf(k);
@@ -410,7 +412,8 @@ V.event = function(slug){
   var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
   var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01');
   var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
-  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']);
+  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)]);
+  if(ok) facts.push(['Photographs', e.n+', Imperial']);   /* counted only while the gallery is shown */
   var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
   var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
   return pageHero({img:'events/'+e.slug+'/cover', fb:eventSafe(e), crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
