@@ -188,8 +188,21 @@ assigned to the division owner.
 
 `sendConfirmation()` in `lib/email.js` sends one short plain text email through the Resend HTTPS API when
 `EMAIL_API_KEY` and `EMAIL_FROM` are set: thank you, which division will be in touch, one next step (reply with a
-good time, or call the office; both office numbers), signed by the named mailbox. Nothing is sent without the env.
-It is sent only when the lead is stored (in Pipedrive, or as a Netlify Forms submission).
+good time, or call the office; both office numbers), signed "Imperial Holdings Group" with the address part of
+`EMAIL_FROM` (the sending mailbox; the office mailbox from the routing file only when no sender is set). Nothing is
+sent without the env. It is sent only when the lead is stored (in Pipedrive, or as a Netlify Forms submission), and
+only to the submitted address.
+
+Every line is fixed text. The only values from the submission are the division name (from the routing file, chosen
+by the division key) and the greeting: "Dear <first name>," when the first word of the name is a plain word (letters,
+with apostrophes or hyphens inside, up to 40 characters), otherwise "Hello,". A name such as a URL or a token with
+digits never reaches the mail, so the named mailbox cannot be used to relay text a sender chose.
+
+Three variants: an enquiry (the default), a guide request (form `guide`, title suffix "(guide)": "Thank you for
+requesting the guide. It will follow by email from the team"; the function attaches nothing, the division owner
+sends the approved PDF by reply, and once `config.guide.file` is set in data.js its URL belongs in this variant),
+and a register interest form (form `interest`, Imperial Real Estate, which has not launched: "we will write to you
+when it opens", with "reply or call" instead of an invitation to a first conversation).
 TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 
 ## 6. Environment variables (Netlify: Site configuration > Environment variables)

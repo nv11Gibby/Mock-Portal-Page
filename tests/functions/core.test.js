@@ -327,16 +327,48 @@ test('confirmation email: sent through Resend only with the env, from the named 
   assert.ok(mail.text.indexOf('Imperial Citizenship') > -1);
   assert.ok(mail.text.indexOf(routing.office.dubai.tel) > -1 && mail.text.indexOf(routing.office.lagos.tel) > -1);
   assert.ok(mail.text.indexOf('reply to this email') > -1);
+  assert.ok(/\nImperial Holdings Group\nenquiries@example\.com$/.test(mail.text), 'signed with the sending mailbox: ' + mail.text.slice(-60));
   const call = m.find('POST', /\/emails$/)[0];
   assert.equal(call.headers.Authorization, 'Bearer re_test');
+  /* a name that is not a plain word never reaches the greeting: the mail from the named mailbox relays nothing the sender chose */
+  const phish = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'five@example.com', phone: '+971 50 123 4571', name: 'Http://evil.example/claim-your-refund Mr' }), ctx: ctx() });
+  assert.equal(phish.confirmation.sent, true);
+  const ptext = m.emails[1].text;
+  assert.ok(ptext.indexOf('Hello,') === 0, ptext.slice(0, 40));
+  assert.equal(ptext.indexOf('evil.example'), -1);
+  assert.deepEqual(m.emails[1].to, ['five@example.com'], 'only to the submitted address');
+  /* the register interest and guide variants */
+  const interest = await core.processLead({ form: 'interest', data: { name: 'Buyer', email: 'buyer@example.com', country: 'Ghana', interest: 'A family home in Dubai', consent: 'yes' }, ctx: ctx() });
+  assert.equal(interest.confirmation.sent, true);
+  const itext = m.emails[2].text;
+  assert.ok(itext.indexOf('registering your interest in Imperial Real Estate') > -1, itext);
+  assert.ok(itext.indexOf('has not launched yet') > -1);
+  assert.equal(itext.indexOf('first conversation'), -1, 'no invitation to a first conversation for a division that has not launched');
+  assert.equal(m.emails[2].subject, 'Your interest in Imperial Real Estate');
+  const guide = await core.processLead({ form: 'guide', data: { name: 'Guide Reader', email: 'reader2@example.com', consent: 'yes' }, ctx: ctx() });
+  assert.equal(guide.confirmation.sent, true);
+  assert.ok(m.emails[3].text.indexOf('It will follow by email from the team') > -1, m.emails[3].text);
+  assert.equal(m.emails[3].subject, 'Your guide request');
   const bad = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'x@yopmail.com' }), ctx: ctx() });
   assert.equal(bad.reason, 'disposable');
-  assert.equal(m.emails.length, 1, 'nothing sent to a rejected address');
+  assert.equal(m.emails.length, 4, 'nothing sent to a rejected address');
   delete process.env.PIPEDRIVE_API_TOKEN;
   const kept = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'three@example.com' }), ctx: ctx({ submissionId: 'sub-1' }) });
   assert.equal(kept.confirmation.sent, true, 'a Netlify submission is stored even without Pipedrive, so the email still goes');
   const direct = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'four@example.com' }), ctx: ctx() });
   assert.equal(direct.confirmation.sent, false, 'a direct submission that was not stored gets no email');
+});
+
+test('email greeting: a plain first name is used, anything else falls back to Hello', () => {
+  const { compose } = require('../../netlify/functions/lib/email');
+  const lead = (name) => ({ email: 'x@example.com', name, form: 'enquiry', divisionName: 'Imperial Citizenship', leadSource: 'website' });
+  [['Amina Test', 'Dear Amina,'], ["O'Brien", "Dear O'Brien,"], ['Jean-Luc Picard', 'Dear Jean-Luc,'], ['Müller', 'Dear Müller,'], ['Ælfred', 'Dear Ælfred,'],
+    ['Http://evil.example/claim-your-refund Mr', 'Hello,'], ['Zaid.', 'Hello,'], ['A1', 'Hello,'], ['', 'Hello,'], ['x'.repeat(41), 'Hello,']].forEach((c) => {
+    assert.ok(compose(lead(c[0])).text.indexOf(c[1]) === 0, c[0] + ' -> ' + c[1]);
+  });
+  assert.ok(/\nImperial Holdings Group\nenquiries@example\.com$/.test(compose(lead('Amina'), 'Imperial Holdings Group <enquiries@example.com>').text));
+  assert.ok(/\nImperial Holdings Group\nhello@example\.com$/.test(compose(lead('Amina'), 'hello@example.com').text), 'a bare address works too');
+  assert.ok(new RegExp('\\n' + routing.office.email + '$').test(compose(lead('Amina')).text), 'without a sender the office mailbox from the routing file');
 });
 
 test('markVerified sets Verified on the person and notes the newest open lead or deal', async () => {
