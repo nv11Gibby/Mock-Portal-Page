@@ -11,6 +11,7 @@
     "check": "node --check assets/js/app.js && node --check assets/js/data.js && node tests/copy-rules.js",
     "build": "node build/build.js",
     "test:seo": "node tests/seo.js",
+    "test:contrast": "node tests/contrast.js",
     "test:a11y": "node tests/a11y.js"
   },
   "license": "UNLICENSED",

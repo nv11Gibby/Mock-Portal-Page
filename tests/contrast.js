@@ -1,22 +1,25 @@
 /* Colour contrast check (brief section 8 and acceptance test 9.7: text at least 4.5:1).
-   Reads the colour tokens from assets/css/site.css (every :root block, later values win) and computes the WCAG
+   Reads the colour tokens from shared/tokens.css and assets/css/site.css (every :root block in that order, including
+   the override block inside a media query, later values win; comments are stripped first) and computes the WCAG
    contrast of each text colour against the backgrounds it is used on: the dark sections (ink, ink-2, ink-3, the
    mega menu and the search palette), the light sections (paper, paper-2) and the white cards. Translucent tokens
    are blended over each background first. Body and small text must reach 4.5:1; headline text (24px and up, or
    19px bold) and icons must reach 3:1. A failing pair prints the smallest change that would pass, so the fix is
    a one value edit. The pairs below describe where site.css uses each colour; add a pair when a new colour lands.
-   Usage: node tests/contrast.js   (exit 1 on any failure). No dependencies. */
+   Usage: node tests/contrast.js (or npm run test:contrast); exit 1 on any failure. No dependencies. */
 'use strict';
 var fs = require('fs'), path = require('path');
-var css = fs.readFileSync(path.join(__dirname, '..', 'assets/css/site.css'), 'utf8');
+var FILES = ['shared/tokens.css', 'assets/css/site.css'];
+var css = FILES.map(function(f){ return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); }).join('\n');
+css = css.replace(/\/\*[\s\S]*?\*\//g, ''); /* a comment inside a :root block would otherwise swallow the token after it */
 
-/* tokens: every :root{...} block in order, so the v4 and v5 overrides replace the v2 values */
+/* tokens: every :root{...} block in order (tokens.css first, then any override in site.css), later values win */
 var tokens = {};
 css.replace(/:root\s*\{([^}]*)\}/g, function(m, body){
   body.split(';').forEach(function(d){ var i = d.indexOf(':'); if(i < 0) return; var k = d.slice(0, i).trim(), v = d.slice(i + 1).trim(); if(/^--/.test(k)) tokens[k] = v; });
   return m;
 });
-function tok(name){ if(!(name in tokens)) throw new Error('token not found in site.css: ' + name); return tokens[name]; }
+function tok(name){ if(!(name in tokens)) throw new Error('token not found in ' + FILES.join(' or ') + ': ' + name); return tokens[name]; }
 
 /* colours */
 function parse(c){
