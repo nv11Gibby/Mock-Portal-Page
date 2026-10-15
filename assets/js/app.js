@@ -65,7 +65,7 @@ var PREVIEW = root.hasAttribute('data-preview'), VID = D.video || {};
 var PLAY = '<svg class="play" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11l9-5.5z" fill="currentColor"/></svg>';
 /* Fallback photograph per event while its guests' consent is outstanding: the three consent-free Easter Polo Cup
    photographs, the Lagos and Dubai city photographs and the colonnade, chosen to suit each evening. */
-var EVENT_SAFE = {'easter-polo-cup-2026':'events/easter-polo-cup-2026/02', 'lagos-diplomatic-soiree-2025':'lagos', 'gala-dinner-lagos':'hero-alt', 'lagos-office-event':'events/easter-polo-cup-2026/04', 'delborough-dinner':'about'};
+var EVENT_SAFE = {'easter-polo-cup-2026':'events/easter-polo-cup-2026/02', 'lagos-diplomatic-soiree-2025':'lagos', 'gala-dinner-lagos':'hero-lights', 'lagos-office-event':'events/easter-polo-cup-2026/04', 'delborough-dinner':'about'};
 function photoMeta(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i]; return null;}
 function eventBySlug(slug){for(var i=0;i<D.events.length;i++) if(D.events[i].slug===slug) return D.events[i]; return null;}
 function photoAllowed(k){
@@ -77,7 +77,7 @@ function photoAllowed(k){
 }
 function safePhoto(k, fb){ return photoAllowed(k) ? k : (fb || 'about'); }
 function variantOf(k){ return k.indexOf('events/')===0 ? '' : k.indexOf('hero')===0 ? '-m' : '-c'; }
-function eventSafe(e){ return EVENT_SAFE[e.slug] || (e.city==='Dubai' ? 'closing' : 'hero-alt'); }
+function eventSafe(e){ return EVENT_SAFE[e.slug] || (e.city==='Dubai' ? 'closing' : 'lagos'); }
 function sortByIso(list){
   return list.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){
     var p = a.x.iso || '', q = b.x.iso || '';
@@ -96,7 +96,7 @@ function heroLoop(v){
 }
 function videoBlock(v, cls){
   if(!v) return '';
-  var pk = safePhoto(v.poster, 'hero-alt'), ready = !!v.id, title = v.title || 'Video';
+  var pk = safePhoto(v.poster, 'hero-lights'), ready = !!v.id, title = v.title || 'Video';
   return '<figure class="vid'+(cls?' '+cls:'')+(ready?'':' pending')+'" data-r'+(ready?' data-video data-provider="'+esc(v.provider||'vimeo')+'" data-id="'+esc(v.id)+'"'+(v.hash?' data-hash="'+esc(v.hash)+'"':'')+' data-vtitle="'+esc(title)+'"':'')+'>'+
     '<div class="vid-stage">'+img(pk, title+' (poster)', 'vid-poster')+
     (ready ? '<button type="button" class="vid-play" aria-label="Play '+esc(title)+'">'+PLAY+'<span>Play</span></button>' : '<span class="vid-tbc">'+PLAY+tbc(v.tbc||'Footage to be supplied')+'</span>')+'</div>'+
@@ -240,7 +240,7 @@ V.home = function(){
   var held = N.photos.some(function(p){return !photoAllowed(p);});
   return ''+
   /* hero: the strongest element of the existing site, kept. Two journeys: clients explore the ecosystem, partners go to IPC. */
-  '<section class="hh" id="top"><div class="hh-pin">'+
+  '<section class="hh'+(hk===HH.fallback?' fallback':'')+'" id="top"><div class="hh-pin">'+
     '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'+
     (nk ? '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+nk+'-m.webp"><img src="'+IMG+nk+'.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>' : '')+
     '<div class="hh-c wrap">'+eyebrow('Imperial Holdings Group <i>·</i> Dubai <i>·</i> Lagos')+mask(['Two Cities.','One Horizon.'],'h1','d1',.15)+
@@ -1737,7 +1737,7 @@ function palIndex(){
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
-  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', 'hero-alt'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
+  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', 'hero-lights'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
   D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });

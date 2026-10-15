@@ -52,7 +52,8 @@ window.IHG = {
   photos: [
     {key:'hero', own:true, consent:false, event:'lagos-office-event', src:'events/lagos-office-event/cover', what:'Guests at the Lagos office on Aromire Road, Ikoyi'},
     {key:'hero-night', own:true, consent:false, event:'gala-dinner-lagos', src:'events/gala-dinner-lagos/cover', what:'A speaker at the Imperial Citizenship gala dinner, Lagos'},
-    {key:'hero-alt', own:true, consent:true, src:'events/easter-polo-cup-2026/05', what:'The Imperial Citizenship backdrop at the Easter Polo Cup after party, Lagos Polo Club'},
+    {key:'hero-lights', own:true, consent:true, src:'events/gala-dinner-lagos/01', what:'Stage lights at the Imperial Citizenship gala dinner, Lagos'},
+    {key:'events/gala-dinner-lagos/stage', own:true, consent:true, src:'events/gala-dinner-lagos/cover', what:'Stage lights at the Imperial Citizenship gala dinner, Lagos'},
     {key:'events/easter-polo-cup-2026/02', own:true, consent:true, what:'Polo at Lagos Polo Club, Ikoyi'},
     {key:'events/easter-polo-cup-2026/04', own:true, consent:true, what:'The Easter Polo Cup after party banner, Lagos Polo Club'},
     {key:'events/easter-polo-cup-2026/05', own:true, consent:true, what:'The Imperial Citizenship backdrop at the Easter Polo Cup after party'},
@@ -72,16 +73,16 @@ window.IHG = {
   ],
 
   /* Home hero (v5). photo and night show when consent is recorded for their event, or in preview builds; until then the
-     page shows fallback, an own photograph without guests. The two preload lines in index.html point at the fallback
-     files; move them to hero.webp and hero-m.webp once consent is recorded. TO CONFIRM: final hero photo (the shoot).
-     DECISION NEEDED BEFORE LAUNCH (review, October 2026): the fallback hero-alt is a 1400 by 580 crop of
-     events/easter-polo-cup-2026/05 that carries the Imperial Citizenship crest and wordmark; in production they show
-     through the headline of the Group site, and the file is shown upscaled. No own, consent-free, people-free,
-     sister-brand-free photograph exists in the repository, so the choice is the Founder's: (a) keep this backdrop as the
-     interim hero (already marked with the "Final hero photo" chip), or (b) record consent:true on
-     events/lagos-office-event/cover (the photos entry "hero") so the intended hero shows. Not re-cropped here: the
-     source is 1400 wide, so any larger export is pure upscaling. */
-  hero: {photo:'hero', night:'hero-night', fallback:'hero-alt', tbc:'Final hero photo'},
+     page shows fallback, an own photograph without guests: hero-lights, the stage lights above the speaker at the
+     Imperial Citizenship gala dinner in Lagos (a crop of events/gala-dinner-lagos/01 with nobody in frame). It was
+     chosen because it is dark, so the approved dark hero and its cream headline survive (design review, October 2026:
+     the earlier fallback, the white Imperial Citizenship press backdrop, washed the hero out and showed a sister
+     brand's crest through the Group's headline). The page adds the class "fallback" to the hero while this photograph
+     shows, which carries its own scrim. The two preload lines in index.html point at the fallback files; the build
+     rewrites them per page. TO CONFIRM (Founder), in this order: (1) consent for events/lagos-office-event/cover (the
+     photos entry "hero"), the photograph shot as the hero, which then replaces the fallback at once; (2) the final hero
+     photograph from the shoot (docs/PHOTO-SHOT-LIST.md), marked on the page by the "Final hero photo" chip. */
+  hero: {photo:'hero', night:'hero-night', fallback:'hero-lights', tbc:'Final hero photo'},
 
   /* Video (v5). One shape everywhere: {type:'video', provider:'vimeo'|'mux', id:'', poster:'<photo key>',
      captions:'assets/captions/<slug>.vtt', title:'', duration:'', tbc:'...'}. An empty id renders the poster and the

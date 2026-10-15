@@ -1274,3 +1274,6 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .does .ix-rule{display:block;width:22px;height:18px;background:linear-gradient(var(--gold-ink),var(--gold-ink)) 0 50%/100% 1px no-repeat}
 /* Search palette: a page without a thumbnail shows a short gold rule in its icon box (no dash glyph) */
 .pal-ic.pal-rule::before{content:"";width:14px;height:1px;background:var(--gold-l)}
+/* Home hero while the consent-free fallback photograph shows (.hh.fallback): its own scrim, tuned so the headline, lead
+   and marker sit on a backdrop at least as dark as the approved dusk hero (design review, October 2026) */
+.hh.fallback .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,.72) 0,rgba(14,13,11,.50) 34%,rgba(14,13,11,.80) 60%,rgba(14,13,11,.98) 100%)}
