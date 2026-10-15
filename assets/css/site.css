@@ -1278,3 +1278,8 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .consent .em{grid-column:2;display:none;font-style:normal;font-size:13px;color:#9A3B2A}
 .consent.err .em{display:block}
 .pal-body:focus-visible{outline-offset:-4px}
+/* 404 and error pages (brief 8): both offices and the email under the links; the error page's watermark reads Error. */
+.nf-kv{margin-top:38px;grid-template-columns:repeat(3,auto);justify-content:start;gap:16px 40px}
+.nf-kv .ul{font-weight:500;white-space:nowrap}
+.nf.err::after{content:"Error";font-size:28vw}
+@media (max-width:640px){ .nf-kv{grid-template-columns:1fr} .nf.err::after{font-size:44vw} }

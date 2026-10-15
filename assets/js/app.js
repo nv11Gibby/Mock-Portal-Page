@@ -566,8 +566,17 @@ function legal(kind){
 }
 V.privacy = function(){return legal('privacy');};
 V.terms = function(){return legal('terms');};
+/* 404 and error pages (brief 8): the same design, with both offices (telephone links) and the group email from D.contact. */
+function nfContacts(){
+  var C = D.contact;
+  return '<div class="kv nf-kv" data-r style="--d:.4s">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div></div>';
+}
 V.notFound = function(){
-  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
+  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
+};
+/* Shown by render() when a view throws (the error is logged), and written to error.html by the build. */
+V.error = function(){
+  return '<section class="nf err"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Error')+mask(['Something went wrong','on our side.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Please try again in a moment. If it happens again, call or email us and we will take it from there.</p><div class="nf-links" data-r style="--d:.3s"><button class="btn gold" type="button" data-reload><span>Try again</span>'+AR+'</button><a class="tlink" href="#/">Home'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
@@ -709,7 +718,25 @@ var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_camp
 var TRK_QUERY = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','ttclid'];
 function refreshTracking(scope){ [].forEach.call(scope.querySelectorAll('input[type="hidden"]'), function(i){ if(TRK_KEYS.indexOf(i.name) > -1) i.value = TRK[i.name] || ''; }); }
 function onlyTracking(q){ for(var k in q){ if(Object.prototype.hasOwnProperty.call(q, k) && TRK_QUERY.indexOf(k) < 0) return false; } return true; }
+/* v5 trust (brief 8): a view that throws shows the error page instead of a blank screen. The error is logged, the
+   chrome stays, so every other page and both offices remain one click away. The build calls showError() for error.html. */
 function render(){
+  try{ renderView(); }
+  catch(err){ showError(err); }
+}
+function showError(err){
+  if(err){ try{ console.error('Page render failed', err); }catch(e){} }
+  app.innerHTML = V.error(); fixLinks(app);
+  curView = 'error'; curQ = {};
+  document.title = 'Something went wrong \u00b7 Imperial Holdings Group';
+  setMeta({nf:true, desc:'Something went wrong on our side. Please try again in a moment, or call or email Imperial Holdings Group.', ld:[]});
+  [].forEach.call(document.querySelectorAll('[data-nav]'), function(a){ if(a.tagName==='A') a.removeAttribute('aria-current'); else a.classList.remove('cur'); });
+  body.classList.add('is-nf'); body.classList.remove('solid-hdr');
+  var b = app.querySelector('[data-reload]'); if(b) b.addEventListener('click', function(){ location.reload(); });
+  try{ enhance(); }catch(e){}
+  prerendered = false;
+}
+function renderView(){
   var r = parse(), out = resolve(r);
   /* First render of a prerendered page: the browser has already painted this same markup (built by the same code), so
      it is kept, together with its largest contentful paint, and only behaviour is bound. A query that changes the view
@@ -1700,5 +1727,5 @@ function routes(){
   out.push('/contact', '/privacy', '/terms');
   return out;
 }
-window.IHG_APP = {routes: routes, resolve: resolve, parse: parse};
+window.IHG_APP = {routes: routes, resolve: resolve, parse: parse, showError: function(){ showError(null); }};
 })();
