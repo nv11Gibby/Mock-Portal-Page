@@ -13,10 +13,14 @@
 <meta property="og:site_name" content="Imperial Holdings Group">
 <meta property="og:title" content="Imperial Holdings Group · Two Cities. One Horizon.">
 <meta property="og:description" content="Five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.">
-<meta property="og:image" content="/assets/img/og.jpg">
+<meta property="og:image" content="https://www.imperialholdingsgroup.com/assets/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<!-- Per page: setMeta() in app.js rewrites the title, description, canonical, Open Graph and Twitter tags and the
+     JSON-LD from data.js (config.siteUrl, contact, divisions, events, insights, faq). build/build.js runs it for every
+     route, so each prerendered page carries its own values. The static values here are the home page defaults. -->
+<link rel="canonical" href="https://www.imperialholdingsgroup.com/">
 <link rel="icon" type="image/svg+xml" href="assets/logos/Imperial-Crown-Gold.svg">
 <link rel="apple-touch-icon" href="assets/img/icon-180.png">
 <link rel="manifest" href="site.webmanifest">
@@ -25,7 +29,6 @@
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/cormorant-garamond-latin-500-normal.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/inter-latin-400-normal.woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/site.css?v=5">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Organization","name":"Imperial Holdings Group","description":"One house with five specialist divisions: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate.","logo":"/assets/logos/Imperial-Crown-Gold.svg","subOrganization":[{"@type":"Organization","name":"Imperial Citizenship","url":"https://imperialcitizenship.com"},{"@type":"Organization","name":"Imperial Private Office"},{"@type":"Organization","name":"Imperial Partners Club"},{"@type":"Organization","name":"Imperial Academy"},{"@type":"Organization","name":"Imperial Real Estate"}],"email":"info@imperialholdingsgroup.com","telephone":"+971 4 546 1110","address":{"@type":"PostalAddress","streetAddress":"804 Single Business Tower, Business Bay","addressLocality":"Dubai","addressCountry":"AE"},"location":[{"@type":"Place","name":"Dubai, Headquarters","telephone":"+971 4 546 1110","address":{"@type":"PostalAddress","streetAddress":"804 Single Business Tower, Business Bay","addressLocality":"Dubai","addressCountry":"AE"}},{"@type":"Place","name":"Lagos, Regional hub","telephone":"+234 902 222 2024","address":{"@type":"PostalAddress","streetAddress":"8 Aromire Road, Ikoyi","addressLocality":"Lagos","postalCode":"106104","addressCountry":"NG"}}]}</script>
 </head>
 <body>
 <a class="skip" href="#main" data-skip>Skip to content</a>
@@ -88,6 +91,7 @@
 
 <noscript><div class="nojs">This site needs JavaScript to display. Please enable it, or contact Imperial Holdings Group directly.</div></noscript>
 <script src="assets/js/data.js?v=5"></script>
+<script src="shared/analytics.js?v=5"></script>
 <script src="assets/js/app.js?v=5"></script>
 </body>
 </html>

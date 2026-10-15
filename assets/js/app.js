@@ -435,7 +435,7 @@ function buildChrome(){
 }
 
 /* ---------- router (view transitions with a shared division image) ---------- */
-var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {};
+var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered');
 if(HIST && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
 function parse(){
   var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
@@ -446,7 +446,7 @@ function parse(){
   var parts = qs[0].split('/').filter(Boolean);
   return {path:'/'+parts.join('/'), parts:parts, q:q};
 }
-function resolve(r){
+function resolve0(r){
   if(!r) return {html:V.notFound(), title:'Page not found', nav:null, nf:true};
   var p = r.parts;
   if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Two cities. One horizon. Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos: Citizenship, Partners Club, Private Office, Real Estate and Academy.'};
@@ -459,17 +459,105 @@ function resolve(r){
   if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken guidance on mobility, family planning and working with Imperial.'};
   if(p[0]==='insights' && p.length===2){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
   if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:'Contact', nav:'contact', view:'contact', desc:'Speak to Imperial Holdings Group. Three short steps, routed to the right house, with one person as your point of contact.'};
-  if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true};
-  if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true};
+  if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true, desc:'Privacy notice for the Imperial Holdings Group website: who we are, what we collect through our enquiry forms, how we use it and your rights.'};
+  if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true, desc:'Terms of use for the Imperial Holdings Group website: information only, not advice, and no guarantee of any government decision or outcome.'};
   return {html:V.notFound(), title:'Page not found', nav:null, nf:true, view:'nf'};
 }
+/* ---------- v5 search: per-route canonical, social image, Open Graph type and structured data ----------
+   pageMeta() decorates what resolve0() returns. Every fact comes from data.js (config, contact, divisions, events,
+   insights, faq); nothing is invented here. The social image is the page's own hero photograph, or assets/img/og.jpg
+   where a page has none. setMeta() writes it all into the head, so the prerender (build/build.js) and client-side
+   navigation produce the same tags. */
+var CFG = D.config || {}, SITE = String(CFG.siteUrl || '').replace(/\/+$/, '');
+var ORG_NAME = 'Imperial Holdings Group', ORG_DESC = 'One house with five specialist divisions: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate.';
+var CC = {'United Arab Emirates':'AE', 'Nigeria':'NG'};
+function abs(p){ return SITE + '/' + String(p).replace(/^\//, ''); }
+function postalLD(o){
+  var ln = o.lines || [], loc = ln[1] || '', i = loc.indexOf(','), a = {'@type':'PostalAddress', streetAddress: ln[0] || '', addressLocality: o.city};
+  if(i > -1) a.streetAddress += ', ' + loc.slice(0, i).trim();
+  else { var pc = /(\d{4,})/.exec(loc); if(pc) a.postalCode = pc[1]; }
+  if(ln[2]) a.addressCountry = CC[ln[2]] || ln[2];
+  return a;
+}
+function placeLD(o){ return {'@type':'Place', name: o.city + ', ' + o.role, telephone: o.tel, address: postalLD(o)}; }
+function orgRef(){ return {'@type':'Organization', '@id': SITE + '/#organization', name: ORG_NAME, url: SITE + '/', logo: {'@type':'ImageObject', url: abs('assets/logos/Imperial-Crown-Gold.svg')}}; }
+function orgLD(){
+  var C = D.contact, hq = C.offices[0], ref = orgRef();
+  return {'@context':'https://schema.org', '@type':'Organization', '@id': ref['@id'], name: ORG_NAME, url: ref.url, logo: ref.logo, description: ORG_DESC, email: C.email, telephone: hq.tel, address: postalLD(hq), location: C.offices.map(placeLD),
+    subOrganization: D.divisions.map(function(d){ var s = {'@type':'Organization', name: d.name}; if(d.cta && d.cta.real) s.url = d.cta.href; return s; })};
+}
+function officeLD(o){
+  return {'@context':'https://schema.org', '@type':'LocalBusiness', '@id': SITE + '/contact#' + o.city.toLowerCase(), name: ORG_NAME + ', ' + o.city, description: o.role, url: SITE + '/contact', image: abs('assets/img/og.jpg'), telephone: o.tel, email: D.contact.email, address: postalLD(o), parentOrganization: orgRef()};
+}
+function crumbLD(list){
+  var items = [['Home', '/']].concat(list);
+  return {'@context':'https://schema.org', '@type':'BreadcrumbList', itemListElement: items.map(function(c, i){ return {'@type':'ListItem', position: i + 1, name: c[0], item: c[1] === '/' ? SITE + '/' : SITE + c[1]}; })};
+}
+function fullDate(iso){ return /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? iso : null; }
+function countryOf(city){ var cc = null; D.contact.offices.forEach(function(o){ if(o.city === city && o.lines && o.lines[2]) cc = CC[o.lines[2]] || o.lines[2]; }); return cc; }
+function heroImage(html){
+  var m = /<section class="(?:ph|hh|nf)[^"]*">(?:(?!class="(?:ph-c|hh-c|wrap))[\s\S])*?<img src="(assets\/img\/[^"]+)"/.exec(html || '');
+  return m ? abs(m[1]) : abs('assets/img/og.jpg');
+}
+function pageMeta(out, r){
+  var p = r ? r.parts : [], path = r ? r.path : null, ld = [orgLD()], crumbs = null, x = null;
+  out.path = path;
+  out.canonical = (!out.nf && path) ? (path === '/' ? SITE + '/' : SITE + path) : null;
+  out.image = heroImage(out.html);
+  out.type = (out.view === 'article' || out.view === 'event') ? 'article' : 'website';
+  if(out.view === 'about') crumbs = [['About', '/about']];
+  else if(out.view === 'divisions') crumbs = [['Divisions', '/divisions']];
+  else if(out.view === 'division'){ x = div(p[1]); crumbs = [['Divisions', '/divisions'], [x.short, path]]; }
+  else if(out.view === 'journal') crumbs = [['Journal', '/journal']];
+  else if(out.view === 'event'){
+    D.events.forEach(function(e){ if(e.slug === p[2]) x = e; });
+    crumbs = [['Journal', '/journal'], [x.short, path]];
+    /* only what data.js records: a start date needs a full date, a venue is named only when known */
+    var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
+    if(x.venue) ev.location.name = x.venue;
+    var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
+    if(fullDate(x.iso)) ev.startDate = x.iso;
+    ld.push(ev);
+  }
+  else if(out.view === 'insights') crumbs = [['Insights', '/insights']];
+  else if(out.view === 'article'){
+    D.insights.forEach(function(a){ if(a.slug === p[1]) x = a; });
+    crumbs = [['Insights', '/insights'], [x.title, path]];
+    var art = {'@context':'https://schema.org', '@type':'Article', headline: x.title, description: x.dek, articleSection: x.cat, url: out.canonical, mainEntityOfPage: out.canonical, image: out.image, author: orgRef(), publisher: orgRef()};
+    if(fullDate(x.iso)) art.datePublished = x.iso;
+    ld.push(art);
+  }
+  else if(out.view === 'contact'){
+    crumbs = [['Contact', '/contact']];
+    D.contact.offices.forEach(function(o){ ld.push(officeLD(o)); });
+    ld.push({'@context':'https://schema.org', '@type':'FAQPage', mainEntity: D.faq.map(function(f){ return {'@type':'Question', name: f.q, acceptedAnswer: {'@type':'Answer', text: f.a}}; })});
+  }
+  else if(out.view === 'legal') crumbs = [[p[0] === 'privacy' ? 'Privacy' : 'Terms', path]];
+  if(crumbs && out.canonical) ld.push(crumbLD(crumbs));
+  out.ld = ld;
+  return out;
+}
+function resolve(r){ return pageMeta(resolve0(r), r); }
+/* The first-touch values in a prerendered page's hidden form fields belong to the build, not the visitor: refresh them
+   from TRK when the server markup is kept. The names mirror trackFields(). */
+var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'];
+var TRK_QUERY = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','ttclid'];
+function refreshTracking(scope){ [].forEach.call(scope.querySelectorAll('input[type="hidden"]'), function(i){ if(TRK_KEYS.indexOf(i.name) > -1) i.value = TRK[i.name] || ''; }); }
+function onlyTracking(q){ for(var k in q){ if(Object.prototype.hasOwnProperty.call(q, k) && TRK_QUERY.indexOf(k) < 0) return false; } return true; }
 function render(){
   var r = parse(), out = resolve(r);
-  app.innerHTML = out.html;
+  /* First render of a prerendered page: the browser has already painted this same markup (built by the same code), so
+     it is kept, together with its largest contentful paint, and only behaviour is bound. A query that changes the view
+     (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from what was
+     served (404.html on a path the app knows), gets a full render. */
+  if(prerendered && r && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
+  else app.innerHTML = out.html;
   fixLinks(app);
   curView = out.view; curQ = r ? r.q : {};
   document.title = out.title ? out.title+' · Imperial Holdings Group' : 'Imperial Holdings Group · Two Cities. One Horizon.';
   setMeta(out);
+  /* analytics (shared/analytics.js): one page view per route change, none for a same-path re-render */
+  if(window.ihgPageView && (r ? r.path : null) !== lastPath){ try{ window.ihgPageView(out.path || location.pathname, document.title); }catch(e){} }
   [].forEach.call(document.querySelectorAll('[data-nav]'), function(a){
     var on = a.getAttribute('data-nav')===out.nav;
     if(a.tagName==='A'){ if(on) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }
@@ -479,6 +567,7 @@ function render(){
   body.classList.toggle('solid-hdr', !!out.solid);
   lastPath = r ? r.path : null;
   enhance();
+  prerendered = false;
 }
 function landY(y){ return typeof y==='number' ? y : 0; }
 function afterLand(){ if(pendingScroll){ var el=document.getElementById(pendingScroll); pendingScroll=null; if(el) window.scrollTo({top: el.getBoundingClientRect().top + window.pageYOffset - 90, behavior: reduced?'auto':'smooth'}); } }
@@ -516,12 +605,23 @@ function go(url, scrollTo){
   history.pushState({y:0}, '', url); route(0);
 }
 function setMeta(out){
-  var d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
-  [['name','description',d],['property','og:description',d],['property','og:title',document.title],['property','og:url',location.href]].forEach(function(m){
-    var el = document.head.querySelector('meta['+m[0]+'="'+m[1]+'"]'); if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); document.head.appendChild(el); } el.setAttribute('content', m[2]);
+  var H = document.head, d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
+  var t = document.title, url = out.canonical || location.href.split('#')[0], im = out.image || abs('assets/img/og.jpg'), isOg = /\/og\.jpg$/.test(im);
+  /* a null value removes the tag: the width and height are known for og.jpg only */
+  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['property','og:image',im],['property','og:image:width',isOg?'1200':null],['property','og:image:height',isOg?'630':null],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
+    var el = H.querySelector('meta['+m[0]+'="'+m[1]+'"]');
+    if(m[2]==null){ if(el) el.parentNode.removeChild(el); return; }
+    if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); H.appendChild(el); } el.setAttribute('content', m[2]);
   });
-  var ld = document.getElementById('ld-faq'); if(ld) ld.parentNode.removeChild(ld);
-  if(out.view==='contact'){ ld=document.createElement('script'); ld.type='application/ld+json'; ld.id='ld-faq'; ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'FAQPage',mainEntity:D.faq.map(function(f){return {'@type':'Question',name:f.q,acceptedAnswer:{'@type':'Answer',text:f.a}};})}); document.head.appendChild(ld); }
+  var can = H.querySelector('link[rel="canonical"]');
+  if(out.canonical){ if(!can){ can=document.createElement('link'); can.setAttribute('rel','canonical'); H.appendChild(can); } can.setAttribute('href', out.canonical); }
+  else if(can) can.parentNode.removeChild(can);
+  /* a page that does not exist is never indexed; the pre-launch noindex tag in index.html is left alone */
+  var rb = H.querySelector('meta[name="robots"][data-nf]');
+  if(out.nf && !H.querySelector('meta[name="robots"]')){ rb=document.createElement('meta'); rb.setAttribute('name','robots'); rb.setAttribute('data-nf',''); rb.setAttribute('content','noindex, follow'); H.appendChild(rb); }
+  else if(!out.nf && rb) rb.parentNode.removeChild(rb);
+  [].forEach.call(H.querySelectorAll('script[data-ld]'), function(s){ s.parentNode.removeChild(s); });
+  (out.ld||[]).forEach(function(o){ var s=document.createElement('script'); s.type='application/ld+json'; s.setAttribute('data-ld',''); s.textContent=JSON.stringify(o).replace(/</g,'\\u003c'); H.appendChild(s); });
 }
 function focusMain(){ var m=document.getElementById('main'); if(document.activeElement===body || !document.activeElement || !document.contains(document.activeElement)) m.focus({preventScroll:true}); }
 
@@ -530,7 +630,8 @@ var io = null, fx = {};
 function enhance(){
   if(io) io.disconnect();
   var els = app.querySelectorAll('[data-r], .steps, .wmap, .clipr');
-  if(reduced || !('IntersectionObserver' in window)){
+  /* prerendered: the markup already on screen carries .in, so the first client render keeps everything visible */
+  if(reduced || prerendered || !('IntersectionObserver' in window)){
     [].forEach.call(els, function(e){ e.classList.add('in'); });
     [].forEach.call(app.querySelectorAll('[data-count]'), function(el){ el._done=true; el.textContent=(+el.getAttribute('data-count')).toLocaleString('en-GB'); });
   } else {
@@ -1151,8 +1252,9 @@ document.addEventListener('keydown', function(e){
 document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduced?'auto':'smooth'}); var m=document.getElementById('main'); m.focus({preventScroll:true}); });
 (function(){
   var v = document.getElementById('veil'), seen = false;
+  if(!v){ body.classList.remove('veiled'); return; }
   try{ seen = sessionStorage.getItem('ihg-intro')==='1'; sessionStorage.setItem('ihg-intro','1'); }catch(e){ seen = true; }
-  if(reduced || seen || location.pathname.length>1 && HIST){ v.parentNode.removeChild(v); return; }
+  if(reduced || seen || location.pathname.length>1 && HIST){ v.parentNode.removeChild(v); body.classList.remove('veiled'); return; }
   body.classList.add('veiled');
   var done = function(){ body.classList.add('unveil'); body.classList.remove('veiled'); setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); body.classList.remove('unveil'); }, 1100); };
   var t = setTimeout(done, 1500);
@@ -1168,4 +1270,19 @@ else window.addEventListener('hashchange', function(){ route(); });
 fixLinks(document);
 route(history.state && typeof history.state.y==='number' ? history.state.y : undefined);
 window.addEventListener('pageshow', tick);
+
+/* ---------- v5: export for the build and the tests ----------
+   routes() lists every path that gets its own HTML file (docs/BUILD-CONTRACT.md section 5). Query-string routes are
+   not listed. build/build.js renders each one through resolve() inside jsdom and tests/seo.js checks the output. */
+function routes(){
+  var out = ['/', '/about', '/divisions'];
+  D.divisions.forEach(function(d){ out.push('/divisions/'+d.key); });
+  out.push('/journal');
+  D.events.forEach(function(e){ out.push('/journal/events/'+e.slug); });
+  out.push('/insights');
+  D.insights.forEach(function(a){ out.push('/insights/'+a.slug); });
+  out.push('/contact', '/privacy', '/terms');
+  return out;
+}
+window.IHG_APP = {routes: routes, resolve: resolve, parse: parse};
 })();
