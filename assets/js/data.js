@@ -5,6 +5,22 @@
    Anything not sourced is wrapped in a TBC placeholder: tbc('...').
    v5 (media): photo registry with consent flags, the home hero selection, and the video slots. */
 (function(){
+/* The six Imperial sites (brief section 7). shared/ecosystem.json is the source; these values are copied from it by
+   hand, because data.js is a plain script and cannot fetch. key is the site key in shared/lead-schema.json. real:true
+   only where the URL is live. home:true is this site: it links to its own home page, since the production domain is
+   TO CONFIRM. soon:true is a division that has not launched. Division pages reuse these entries for their website
+   call to action (siteCta). The ecosystem menu and the footer list all six. */
+var SITES = [
+  {key:'ihg', name:'Imperial Holdings Group', short:'Holdings Group', home:true, href:'#/', url:'https://www.imperialholdingsgroup.com', real:false, tbc:'Final production domain (imperialholdingsgroup.com) to confirm', label:'imperialholdingsgroup.com', role:'The parent of five specialist divisions, led from Dubai and Lagos', tagline:'Two cities. One horizon.', journalFeed:'/journal/feed.xml'},
+  {key:'citizenship', name:'Imperial Citizenship', short:'Citizenship', href:'https://imperialcitizenship.com', url:'https://imperialcitizenship.com', real:true, label:'imperialcitizenship.com', role:'The flagship: second residency and citizenship by investment, from first conversation to completed application', tagline:'Global mobility. Greater possibilities.'},
+  {key:'partners-club', name:'Imperial Partners Club', short:'Partners Club', href:'#', url:'', real:false, tbc:'Imperial Partners Club website link', label:'Website to confirm', role:'For professionals: the network of lawyers, bankers, wealth advisers and family offices who introduce families to us', tagline:'A global network for growth. Together further.'},
+  {key:'private-office', name:'Imperial Private Office', short:'Private Office', href:'#', url:'', real:false, tbc:'Imperial Private Office website link', label:'Website to confirm', role:'For existing Clients: one lasting relationship for families with multi-country lives', tagline:'Personalised solutions for exceptional clients.'},
+  {key:'real-estate', name:'Imperial Real Estate', short:'Real Estate', href:'#', url:'', real:false, soon:true, tbc:'Imperial Real Estate website link (at launch)', label:'Website to confirm', role:'Coming soon: licensed property advisory, starting with Dubai', tagline:'Curated properties. Enduring value.'},
+  {key:'academy', name:'Imperial Academy', short:'Academy', href:'#', url:'', real:false, tbc:'Imperial Academy website link', label:'Website to confirm', role:'Learning and standards: training and certification for the people who do this work', tagline:'Education. Talent. Leadership. A stronger tomorrow.'}
+];
+function siteOf(key){ for(var i = 0; i < SITES.length; i++){ if(SITES[i].key === key) return SITES[i]; } return null; }
+/* A division page's "visit the website" call to action, taken from the site entry so the link lives in one place. */
+function siteCta(key, label){ var s = siteOf(key); return {label:label, href:s.href, real:!!s.real, tbc:s.tbc}; }
 window.IHG = {
   /* Site configuration (v5). Empty strings switch a feature off. Every TO CONFIRM here is listed in the launch report. */
   config: {
@@ -142,12 +158,8 @@ window.IHG = {
       {k:'cb', x:470, y:256, name:'The Caribbean and beyond'}
     ]},
 
-  sites: [
-    {name:'Imperial Citizenship', href:'https://imperialcitizenship.com', real:true, label:'imperialcitizenship.com'},
-    {name:'Imperial Private Office', href:'#', real:false, tbc:'Imperial Private Office website link', label:'Website to confirm'},
-    {name:'Imperial Partners Club', href:'#', real:false, tbc:'Imperial Partners Club website link', label:'Website to confirm'},
-    {name:'Imperial Academy', href:'#', real:false, tbc:'Imperial Academy website link', label:'Website to confirm'}
-  ],
+  /* The six sites, from SITES above (copied from shared/ecosystem.json). */
+  sites: SITES,
 
   figures: [
     {n:10, s:'+', l:'years of combined experience'},
@@ -213,7 +225,7 @@ window.IHG = {
       how:[['Listen','A first conversation about your family and your plans. No forms, no pressure.'],['Compare','Your options side by side: what each requires, costs and usually takes, in writing.'],['Plan','One route, one timeline, one named person responsible for it.'],['Apply','A complete, accurate application, with every specialist coordinated for you.'],['Stay','Renewals, property, the next family member. The relationship carries on.']],
       includes:['Eligibility review','Options in writing','Full cost schedule','Honest timeline','Document checklist','Application quality check','Specialists coordinated','Aftercare'],
       note:'Final approval always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.',
-      cta:{label:'Visit imperialcitizenship.com', href:'https://imperialcitizenship.com', real:true}
+      cta:siteCta('citizenship', 'Visit imperialcitizenship.com')
     },
     {
       key:'partners-club', name:'Imperial Partners Club', tag:'A global network for growth. Together further.', short:'Partners Club', logo:'IPC', img:'partners', status:'For professionals', statusTone:'ink',
@@ -234,7 +246,7 @@ window.IHG = {
       how:[['Introduce','Share your Client\u2019s details, with their permission, through one simple form.'],['We advise','A Relationship Manager meets your Client and explains their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Outcome','Terms are honoured exactly as set out in your written agreement.']],
       standards:['Partners do not act or sign on the Group\u2019s behalf.','We never guarantee citizenship, visa, residency, investment or tax outcomes.','We claim no influence with, or shortcuts through, any government.','Client information is shared only with consent, and only where a service needs it.','Every Client-facing document is checked against an approved claims list.','Regulated advice is given only by qualified specialists.'],
       note:'Your reputation travels with ours. Every Partner agrees to these standards, and so do we.',
-      cta:{label:'Visit the Partners Club website', href:'#', real:false, tbc:'Imperial Partners Club website link'}
+      cta:siteCta('partners-club', 'Visit the Partners Club website')
     },
     {
       key:'private-office', name:'Imperial Private Office', tag:'Personalised solutions for exceptional clients.', short:'Private Office', logo:'IPO', img:'private-office', status:'For existing Clients', statusTone:'ink',
@@ -254,7 +266,7 @@ window.IHG = {
       howTitle:'One point of contact. Many specialists.',
       how:[['Your contact','One named person who knows your family and your history with Imperial.'],['Your request','Tell us what you need. We record it properly and find the right specialist.'],['Delivered through Partners','Trusted Partners and qualified specialists carry out the work.'],['Followed through','We stay with it until it is done, and note what comes next.']],
       note:'Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.',
-      cta:{label:'Visit the Private Office website', href:'#', real:false, tbc:'Imperial Private Office website link'}
+      cta:siteCta('private-office', 'Visit the Private Office website')
     },
     {
       key:'real-estate', name:'Imperial Real Estate', tag:'Curated properties. Enduring value.', short:'Real Estate', logo:'IR', img:'real-estate', status:'Coming soon', statusTone:'soon', soon:true,
@@ -289,7 +301,7 @@ window.IHG = {
       howTitle:'Learn the house. Then specialise.',
       how:[['Learn','The common Imperial core: standards, discretion and how the houses work together.'],['Practise','Realistic cases, not only multiple-choice tests.'],['Certify','Readiness is demonstrated before responsibility is given.'],['Grow','Development continues as people take on more.']],
       note:'Academy certification is internal to Imperial. It is not a replacement for professional licensing.',
-      cta:{label:'Visit the Academy website', href:'#', real:false, tbc:'Imperial Academy website link'}
+      cta:siteCta('academy', 'Visit the Academy website')
     }
   ],
 
