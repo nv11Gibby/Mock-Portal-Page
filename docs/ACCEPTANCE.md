@@ -154,18 +154,16 @@ Still open, for the owners of the files named:
 
 ## 6. Decisions needed before launch (page and media)
 
-1. **Home page hero.** Production shows the fallback `assets/img/hero-alt.webp`, a 1400 by 580 crop of
-   `events/easter-polo-cup-2026/05` that carries the Imperial Citizenship crest and wordmark (they show through the
-   headline of the Group site, and the file is upscaled 1.55 times at 1440 wide), because the photographs meant for the
-   hero have no recorded consent. No own, consent-free, people-free, sister-brand-free photograph exists in the
-   repository, so the choice is the Founder's: (a) keep this backdrop as the interim hero (already marked "Final hero
+1. **Home page hero.** Production shows the fallback `assets/img/hero-lights.webp` (1600 by 977, 22 KB, with a
+   720 by 960 mobile crop), a crop of the gala dinner stage lights in Lagos with nobody in frame and no sister-brand
+   crest, behind its own scrim so the headline and lead read as in v4 (the earlier `hero-alt` crop, which showed the
+   Imperial Citizenship crest through the headline, is gone). The photographs meant for the hero still have no
+   recorded consent, so the choice is the Founder's: (a) keep this backdrop as the interim hero (marked "Final hero
    photo" with the amber chip), or (b) record `consent: true` on `events/lagos-office-event/cover` (the photos entry
-   `hero`) in `assets/js/data.js` so the intended hero shows in production. Not re-cropped here: the source is 1400
-   wide, so any larger export is pure upscaling. If the crest must go now regardless of softness, the only in-repo
-   option is a 1400 by 360 top strip of `05.webp` at source resolution for `hero-alt.webp` and an 800 by 1000
-   left-of-crest crop for `hero-alt-m.webp`, both under 200 KB. The comment above `hero` in `assets/js/data.js`
-   records the same choice; `docs/PHOTO-SHOT-LIST.md` describes the photograph the hero is waiting for.
-2. **Hero export sizes.** The same 1400 pixel file fills a 1920 by 1080 viewport at 1.9 times. When the final hero is
+   `hero`) in `assets/js/data.js` so the intended hero shows in production, or (c) wait for the shoot. The comment
+   above `hero` in `assets/js/data.js` records the same choice; `docs/PHOTO-SHOT-LIST.md` describes the photograph
+   the hero is waiting for.
+2. **Hero export sizes.** The 1600 pixel fallback fills a 1920 by 1080 viewport at 1.2 times. When the final hero is
    chosen, export it at 1920 and 2560 pixels wide for desktop and 1080 for mobile, with `srcset` and `sizes`, each
    under 200 KB, and keep the preload lines on the 1920 and 1080 files. Nothing larger can be made from the 1400
    pixel source without upscaling, so this waits for decision 1.

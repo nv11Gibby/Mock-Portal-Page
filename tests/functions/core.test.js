@@ -366,7 +366,8 @@ test('confirmation email: sent through Resend only with the env, from the named 
   assert.equal(m.emails[2].subject, 'Your interest in Imperial Real Estate');
   const guide = await core.processLead({ form: 'guide', data: { name: 'Guide Reader', email: 'reader2@example.com', consent: 'yes' }, ctx: ctx() });
   assert.equal(guide.confirmation.sent, true);
-  assert.ok(m.emails[3].text.indexOf('It will follow by email from the team') > -1, m.emails[3].text);
+  assert.ok(m.emails[3].text.indexOf('It is being finalised') > -1, m.emails[3].text);
+  assert.equal(m.emails[3].text.indexOf('follow by email'), -1, 'no promise of an email with a file');
   assert.equal(m.emails[3].subject, 'Your guide request');
   const bad = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'x@yopmail.com' }), ctx: ctx() });
   assert.equal(bad.reason, 'disposable');

@@ -203,8 +203,9 @@ with apostrophes or hyphens inside, up to 40 characters), otherwise "Hello,". A 
 digits never reaches the mail, so the named mailbox cannot be used to relay text a sender chose.
 
 Three variants: an enquiry (the default), a guide request (form `guide`, title suffix "(guide)": "Thank you for
-requesting the guide. It will follow by email from the team"; the function attaches nothing, the division owner
-sends the approved PDF by reply, and once `config.guide.file` is set in data.js its URL belongs in this variant),
+requesting the guide. It is being finalised; one person ... will let you know when it is ready"; the function
+attaches nothing and promises no file, the division owner sends the approved PDF by reply, and once
+`config.guide.file` is set in data.js its URL belongs in this variant),
 and a register interest form (form `interest`, Imperial Real Estate, which has not launched: "we will write to you
 when it opens", with "reply or call" instead of an invitation to a first conversation).
 TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).

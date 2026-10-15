@@ -84,7 +84,7 @@ const render = createRenderer({
   preview: PREVIEW
 });
 
-/* Hero preloads. index.html carries the home page's two lines (the desktop and mobile hero-alt); every other page
+/* Hero preloads. index.html carries the home page's two lines (the desktop and mobile hero-lights); every other page
    renders its own hero, so the lines are replaced per page with the first hero image as the app drew it: the home
    picture element with its mobile source, the pageHero image (with a mobile source when the page gives one), or the
    not-found backdrop; pages without a hero image (privacy, terms) get none. A hero over HERO_LIMIT is not preloaded

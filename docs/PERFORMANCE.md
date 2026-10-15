@@ -76,7 +76,7 @@ mobile menu starts its thumbnails from is a `data:` image, which `img-src 'self'
 
 ## 5. Hero images and fonts
 
-Home: `hero-alt.webp` 28 KB (1400 by 580) and `hero-alt-m.webp` 26 KB (900 by 1125), preloaded with matching media
+Home: `hero-lights.webp` 22 KB (1600 by 977) and `hero-lights-m.webp` 10 KB (720 by 960), preloaded with matching media
 queries; `hero.webp` 157 KB and `hero-night.webp` 59 KB with their mobile files are used on preview builds only.
 
 The first image of each inner page hero (`section.ph`), which is that page's LCP element, all under 200 KB and all
@@ -94,7 +94,7 @@ with a mobile crop (`-m.webp`, 810 by 1080) that the phone viewport gets:
 | `citizenship.webp` | 101 KB | 71 KB | `/divisions/citizenship`, `/insights/before-a-first-conversation` |
 | `about.webp` | 99 KB | 81 KB | `/about`, `/contact`, `/journal/events/delborough-dinner` |
 | `closing.webp` | 78 KB | 67 KB | `/journal/events/grenada-51-dubai`, `404.html`, `error.html` |
-| `hero-alt.webp` | 28 KB | 26 KB | `/journal/events/gala-dinner-lagos` |
+| `hero-lights.webp` | 22 KB | 10 KB | `/journal/events/gala-dinner-lagos` |
 
 The event cover `02.webp` at 186 KB is the largest file still served to a phone (on `/journal` and its event page,
 neither in the measured set); a mobile crop for the event covers would be the next saving there.

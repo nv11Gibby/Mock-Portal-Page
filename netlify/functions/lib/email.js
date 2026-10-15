@@ -34,7 +34,7 @@ function compose(lead, from) {
   const interest = lead.form === 'interest';
   const subject = guide ? 'Your guide request' : interest ? 'Your interest in ' + lead.divisionName : 'Your enquiry with Imperial Holdings Group';
   const opening = guide
-    ? 'Thank you for requesting the guide. It will follow by email from the team, and one person at ' + lead.divisionName + ' will be your point of contact if you have questions.'
+    ? 'Thank you for requesting the guide. It is being finalised; one person at ' + lead.divisionName + ' will let you know when it is ready and will be your point of contact if you have questions.'
     : interest
       ? 'Thank you for registering your interest in ' + lead.divisionName + '. It has not launched yet; we will write to you when it opens.'
       : 'Thank you for your enquiry. It has reached ' + lead.divisionName + ', and one person will be your point of contact.';

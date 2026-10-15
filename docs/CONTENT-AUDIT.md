@@ -508,8 +508,9 @@ list (findings) and the third-round list (t3). Every change was checked with `np
 ### Not changed, and why
 
 * The confirmation email for a guide request (`netlify/functions/lib/email.js`, with its unit test and
-  `docs/LEADS.md` section on it) still says "It will follow by email from the team". That is backend copy with
-  its own test; left for the leads owner, see TO CONFIRM below.
+  `docs/LEADS.md` section on it) said "It will follow by email from the team". Changed after the merge to "It is
+  being finalised; one person at <division> will let you know when it is ready", with the unit test and the LEADS
+  note updated, so the email promises no file either.
 * The "It concerns" select in the two-column enquiry card shows "Citizenship or residen" when the division is
   preselected on a division page: a long option label, not a placeholder, and not in the findings. Noted.
 * `build/build.js` line 72 and the PERFORMANCE and ACCEPTANCE documents still mention `hero-alt` as history.
@@ -521,5 +522,5 @@ list (findings) and the third-round list (t3). Every change was checked with `np
   photograph from the shoot.
 * The budget bands and currency (t3 7).
 * The Twilio Verify code length, when the service is created.
-* Who tells guide requesters when the guide is ready, and the wording of the confirmation email (above).
+* Who tells guide requesters when the guide is ready (the division owner, by reply, until `config.guide.file` is set).
 * Real captions for the five `.vtt` files once the footage exists.
