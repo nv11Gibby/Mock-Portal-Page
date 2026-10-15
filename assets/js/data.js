@@ -51,8 +51,10 @@ window.IHG = {
      TO CONFIRM: the seven entries marked placeholder:true were supplied as own photographs but look like generated
      scenes rather than photographs of our offices or cities; the professional shoot (docs/PHOTO-SHOT-LIST.md) replaces them. */
   photos: [
-    {key:'hero', own:true, consent:false, event:'lagos-office-event', src:'events/lagos-office-event/cover', what:'Guests at the Lagos office on Aromire Road, Ikoyi'},
-    {key:'hero-night', own:true, consent:false, event:'gala-dinner-lagos', src:'events/gala-dinner-lagos/cover', what:'A speaker at the Imperial Citizenship gala dinner, Lagos'},
+    /* v6 (docs/PHOTOGRAPHY-PLAN.md 2.1, candidate 1): the home hero is the credited Dubai skyline at dusk, graded cool and
+       exported from dubai.webp (hero.webp 1920 x 1080, hero-m.webp 900 x 1125; the recipe is in the plan). No person is in
+       frame, so no consent is needed; the Unsplash credit line in the footer covers it. Interim until the city shoot. */
+    {key:'hero', own:false, consent:true, id:'7Zt3XXXp3II', by:'Anoof C', src:'Unsplash', what:'Dubai at dusk'},
     {key:'hero-lights', own:true, consent:true, src:'events/gala-dinner-lagos/01', what:'Stage lights at the Imperial Citizenship gala dinner, Lagos'},
     {key:'events/gala-dinner-lagos/stage', own:true, consent:true, src:'events/gala-dinner-lagos/cover', what:'Stage lights at the Imperial Citizenship gala dinner, Lagos'},
     {key:'events/easter-polo-cup-2026/02', own:true, consent:true, what:'Polo at Lagos Polo Club, Ikoyi'},
@@ -105,17 +107,22 @@ window.IHG = {
     {key:'people/hekma', own:true, consent:true, what:'Hekma Iskandarani, Group Chief Operating Officer'}
   ],
 
-  /* Home hero (v5). photo and night show when consent is recorded for their event, or in preview builds; until then the
-     page shows fallback, an own photograph without guests: hero-lights, the stage lights above the speaker at the
-     Imperial Citizenship gala dinner in Lagos (a crop of events/gala-dinner-lagos/01 with nobody in frame). It was
-     chosen because it is dark, so the approved dark hero and its cream headline survive (design review, October 2026:
-     the earlier fallback, the white Imperial Citizenship press backdrop, washed the hero out and showed a sister
-     brand's crest through the Group's headline). The page adds the class "fallback" to the hero while this photograph
-     shows, which carries its own scrim. The two preload lines in index.html point at the fallback files; the build
-     rewrites them per page. TO CONFIRM (Founder), in this order: (1) consent for events/lagos-office-event/cover (the
-     photos entry "hero"), the photograph shot as the hero, which then replaces the fallback at once; (2) the final hero
-     photograph from the shoot (docs/PHOTO-SHOT-LIST.md), marked on the page by the "Final hero photo" chip. */
-  hero: {photo:'hero', night:'hero-night', fallback:'hero-lights', tbc:'Final hero photo'},
+  /* Home hero (v6, docs/BRAND-BRIEF.md section 3, docs/PHOTOGRAPHY-PLAN.md 2.1). style is 'photo' (the default: the
+     graded Dubai skyline, photos entry "hero", with its 3:4 mobile crop) or 'map' (no photograph: the ink field with the
+     dotted world from map.path drawn inline by app.js, the two cities and one arc). There is no night layer and no
+     crossfade any more. The copy is the approved option A (scratchpad v6/hero/hero-final.json): eyebrow, the two-line
+     headline, the supporting paragraph and the two buttons (docs/relationship-journey.json, entries 1 and 2). The
+     "Final hero photo" chip (tbc) stays on the page until the city shoot delivers the permanent frame.
+     TO CONFIRM (Founder): candidate 1 or the map alternative, and a credited licensed photograph on the home page. */
+  hero: {
+    style:'photo',
+    photo:'hero', tbc:'Final hero photo',
+    eyebrow:'Imperial Holdings Group · Dubai · Lagos',
+    title:['A world of opportunity.','Built around relationships.'],
+    lead:'An international group bringing together mobility, private client services, real estate and professional partnerships. One connected ecosystem, serving ambitions that extend beyond borders. One named person looks after each relationship for the long term, with the judgement to say plainly what is possible, and what is not.',
+    primary:{label:'Start a relationship', href:'#/contact?via=hero'},
+    secondary:{label:'Our divisions', href:'#/divisions'}
+  },
 
   /* Video (v5). One shape everywhere: {type:'video', provider:'vimeo'|'mux', id:'', poster:'<photo key>',
      captions:'assets/captions/<slug>.vtt', title:'', duration:'', tbc:'...'}. An empty id renders the poster and the

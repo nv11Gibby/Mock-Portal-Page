@@ -188,6 +188,25 @@ function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',
    screens, as on the home hero. Every site photograph has a -m file (a 3:4 centre crop of the same frame, so nothing
    changes visually); event photographs and portraits have none. Brief section 4: responsive sizes, LCP on mobile. */
 function heroVariant(k){ return k.indexOf('events/')===0 || k.indexOf('people/')===0 ? '' : '-m'; }
+/* v6: the ink field (docs/PHOTOGRAPHY-PLAN.md 2.1 alternative, section 5). The dotted world already in D.map.path is
+   drawn inline as SVG, cropped to a view in map units (the map is 1440 by 544), with the two offices and one arc where
+   asked: no image file, nothing to credit, nobody to clear. The dots keep their size on screen whatever the crop
+   (vector-effect in site.css), so a tight crop reads as a sparser field, not a coarser one. */
+var INK = {world:[0,0,1440,544], cities:[560,40,640,320], dubai:[761,119,360,200], lagos:[553,194,360,200], europe:[590,0,540,250], gulf:[741,99,400,240], atlantic:[300,30,960,440]};
+var MAP_PTS = null;
+function mapPts(){ if(MAP_PTS) return MAP_PTS; var out = [], re = /M(\d+) (\d+)h0/g, m; while((m = re.exec(D.map.path))) out.push([+m[1], +m[2]]); return (MAP_PTS = out); }
+function inkMap(view, o){
+  o = o || {};
+  var pts = mapPts(), d = '', i, p, x0 = view[0], y0 = view[1], x1 = view[0]+view[2], y1 = view[1]+view[3];
+  for(i=0;i<pts.length;i++){ p = pts[i]; if(p[0]>=x0-8 && p[0]<=x1+8 && p[1]>=y0-8 && p[1]<=y1+8) d += 'M'+p[0]+' '+p[1]+'h0'; }
+  var P = D.map.places, marks = '';
+  if(o.points) P.forEach(function(c){ if(c.x>=x0 && c.x<=x1 && c.y>=y0 && c.y<=y1) marks += '<circle class="ring" cx="'+c.x+'" cy="'+c.y+'" r="11"/><circle class="city" cx="'+c.x+'" cy="'+c.y+'" r="3.5"/>'; });
+  if(o.arc && P.length>1){ var a = P[0], b = P[1], mx = (a.x+b.x)/2, my = Math.min(a.y,b.y)-Math.abs(b.x-a.x)*0.22; marks += '<path class="link" d="M'+a.x+' '+a.y+'Q'+mx.toFixed(0)+' '+my.toFixed(0)+' '+b.x+' '+b.y+'"/>'; }
+  return '<svg class="ink-map'+(o.cls?' '+o.cls:'')+'" viewBox="'+view.join(' ')+'" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false"><path class="land" d="'+d+'"/>'+marks+'</svg>';
+}
+/* The field itself: the dark ground with a soft lift top right, the map crop when a view is given, and a large outlined
+   numeral when a division asks for one. Decorative, so hidden from assistive technology. */
+function inkField(o){ o = o || {}; return '<div class="ph-ink'+(o.cls?' '+o.cls:'')+'" aria-hidden="true">'+(o.view ? inkMap(o.view, o) : '')+(o.n ? '<span class="ink-n">'+esc(o.n)+'</span>' : '')+'</div>'; }
 function pageHero(o){
   var k = o.img ? safePhoto(o.img, o.fb) : '', v = k ? heroVariant(k) : '';
   var bg = k ? '<div class="ph-bg"><div class="px">'+(v ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+v+'.webp" sizes="100vw">' : '')+img(k, null, '', '', true)+(v ? '</picture>' : '')+'</div></div>' : '';
@@ -253,7 +272,7 @@ function story(){
 /* ---------- views ---------- */
 var V = {};
 V.home = function(){
-  var N = D.network, HH = D.hero, hk = safePhoto(HH.photo, HH.fallback), nk = photoAllowed(HH.night) ? HH.night : null, hv = homeVideo();
+  var N = D.network, HH = D.hero, hk = HH.style==='map' ? '' : (HH.photo && photoAllowed(HH.photo) ? HH.photo : ''), hv = homeVideo();
   var ev = sortByIso(D.events).filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
   var rows = sortByIso(D.journal).slice(0,3), AUD_SAFE = ['about','academy','closing'];
   /* Our Network grid: own photographs of Imperial gatherings with nobody awaiting consent, chosen so that nothing on
@@ -268,16 +287,17 @@ V.home = function(){
   });
   var held = N.photos.some(function(p){return !photoAllowed(p);});
   return ''+
-  /* hero: the strongest element of the existing site, kept. Two journeys: clients explore the ecosystem, partners go to IPC. */
-  '<section class="hh'+(hk===HH.fallback?' fallback':'')+'" id="top"><div class="hh-pin">'+
-    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'+
-    (nk ? '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+nk+'-m.webp"><img src="'+IMG+nk+'.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>' : '')+
-    '<div class="hh-c wrap">'+eyebrow('Imperial Holdings Group <i>·</i> Dubai <i>·</i> Lagos')+mask(['Two Cities.','One Horizon.'],'h1','d1',.15)+
-    '<p class="lead" data-r style="--d:.55s">Five specialist divisions, one standard, and one person who knows your family.</p>'+
-    '<div class="hh-row" data-r style="--d:.7s"><div class="journeys">'+
-      '<div class="jny"><a class="btn gold mag" href="#/" data-scroll="ecosystem"><span>Explore our ecosystem</span>'+AR+'</a><small>For private clients</small></div>'+
-      '<div class="jny"><a class="btn line" href="#/divisions/partners-club" data-dv="partners-club"><span>Partner with us</span>'+AR+'</a><small>For professional partners</small></div></div>'+
-    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred" data-r style="--d:.8s">'+tbc(HH.tbc)+'</p></div></div>'+
+  /* v6 hero (docs/PHOTOGRAPHY-PLAN.md 2.1): one architectural photograph (the graded Dubai skyline, with its 3:4 mobile
+     crop and the optional silent loop) or, when D.hero.style is 'map', the ink field with the dotted world drawn inline.
+     No night layer, no crossfade, no scroll-linked motion: only the entrance reveals. The copy comes from D.hero (the
+     approved option A); the two buttons carry the Start a Relationship entries for the home hero. */
+  '<section class="hh'+(hk?'':' ink')+'" id="top"><div class="hh-pin">'+
+    (hk ? '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'
+        : '<div class="hh-ink" aria-hidden="true">'+inkMap(INK.world, {points:true, arc:true, cls:'wide'})+inkMap(INK.cities, {points:true, arc:true, cls:'tall'})+'</div>')+
+    '<div class="hh-c wrap">'+eyebrow(esc(HH.eyebrow).replace(/ · /g,' <i>·</i> '))+mask(HH.title.map(esc),'h1','d1',.15)+
+    '<p class="lead" data-r style="--d:.55s">'+esc(HH.lead)+'</p>'+
+    '<div class="btns hh-btns" data-r style="--d:.7s"><a class="btn gold mag" href="'+esc(HH.primary.href)+'"><span>'+esc(HH.primary.label)+'</span>'+AR+'</a><a class="btn line" href="'+esc(HH.secondary.href)+'"><span>'+esc(HH.secondary.label)+'</span>'+AR+'</a></div>'+
+    '<div class="hh-row" data-r style="--d:.8s"><p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred">'+tbc(HH.tbc)+'</p></div></div>'+
     '<span class="cue" aria-hidden="true">Scroll</span></div></section>'+
 
   '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow('The Group')+mask(['A house for a life','across borders.'],'h2','d2')+'</div>'+
@@ -920,13 +940,11 @@ function enhance(){
   }
   // cache scroll-linked elements for this view
   fx = {
-    hh: app.querySelector('.hh'), dusk: app.querySelector('.hh .dusk img'), night: app.querySelector('.hh .night'), nightImg: app.querySelector('.hh .night img'), hc: app.querySelector('.hh-c'),
     pxs: app.querySelectorAll('.ph .px, .closing .px, .nf .px'),
     story: app.querySelector('.story'), chapters: app.querySelectorAll('.chapter'), media: app.querySelectorAll('.story-media figure'), dots: app.querySelectorAll('.story-dots i'), num: document.getElementById('storyNum'), cur: 0,
     words: app.querySelectorAll('#words>span'), wordsEl: document.getElementById('words'),
     reading: document.getElementById('reading'), article: document.getElementById('article')
   };
-  if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
   tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare(); bindMedia();
   body.classList.toggle('on-contact', curView==='contact');
 }
@@ -954,14 +972,7 @@ function onScroll(){
   var ft = ftr.getBoundingClientRect().top;
   body.classList.toggle('show-mcta', y > H*0.8 && ft > H - 40);
   if(reduced) return;
-  if(fx.hh){
-    var r = fx.hh.getBoundingClientRect(), p = clamp(-r.top/Math.max(1,r.height-H),0,1), e = p*p*(3-2*p);
-    if(r.bottom > 0){
-      fx.dusk.style.transform = 'scale('+(1.08-0.06*p).toFixed(4)+') translate3d(0,'+(p*3).toFixed(2)+'%,0)';
-      if(fx.night){ fx.night.style.opacity = e.toFixed(3); fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')'; }
-      fx.hc.style.transform = 'translate3d(0,'+(-p*48).toFixed(1)+'px,0)';
-    }
-  }
+  /* v6: the home hero no longer moves on scroll (no dusk-to-night crossfade, no parallax on the headline) */
   [].forEach.call(fx.pxs, function(px){ var s=px.parentNode.parentNode, rr=s.getBoundingClientRect(); if(rr.bottom<0||rr.top>H) return; px.style.transform='translate3d(0,'+((rr.top)*-0.16).toFixed(1)+'px,0)'; });
   if(fx.story && fx.chapters.length){
     var sr = fx.story.getBoundingClientRect(), n = fx.chapters.length, q = clamp(-sr.top/Math.max(1,sr.height-H),0,0.9999);

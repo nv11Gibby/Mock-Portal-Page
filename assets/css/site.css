@@ -186,7 +186,6 @@ li{max-width:46em}
 .hh-pin{position:sticky;top:0;height:100vh;height:100svh;min-height:600px;overflow:hidden}
 .hh-pin figure{position:absolute;inset:0;margin:0}
 .hh-pin img{width:100%;height:100%;object-fit:cover;will-change:transform,opacity}
-.hh .night{opacity:0}
 .hh-pin::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,.62) 0,rgba(14,13,11,.12) 34%,rgba(14,13,11,.25) 60%,rgba(14,13,11,.94) 100%)}
 .hh-c{position:absolute;z-index:2;left:0;right:0;bottom:clamp(36px,9vh,104px)}
 .hh-c .d1{margin:0 0 28px;max-width:11.5em}
@@ -727,7 +726,6 @@ li{max-width:46em}
   [data-r],.mask>span,.clipr,.clipr img{opacity:1!important;transform:none!important;clip-path:none!important}
   .hh{height:auto}
   .hh-pin{position:relative}
-  .hh .night{display:none}
   .story{height:auto}
   .story-pin{position:relative;height:auto;display:block}
   .story-media{display:none}
@@ -1277,9 +1275,6 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .does .ix-rule{display:block;width:22px;height:18px;background:linear-gradient(var(--gold-ink),var(--gold-ink)) 0 50%/100% 1px no-repeat}
 /* Search palette: a page without a thumbnail shows a short gold rule in its icon box (no dash glyph) */
 .pal-ic.pal-rule::before{content:"";width:14px;height:1px;background:var(--gold-l)}
-/* Home hero while the consent-free fallback photograph shows (.hh.fallback): its own scrim, tuned so the headline, lead
-   and marker sit on a backdrop at least as dark as the approved dusk hero (design review, October 2026) */
-.hh.fallback .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,.72) 0,rgba(14,13,11,.50) 34%,rgba(14,13,11,.80) 60%,rgba(14,13,11,.98) 100%)}
 /* Event page: the facts still to confirm, as a row of placeholder chips rather than a note */
 .ev-tbc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 /* A placeholder chip inside a key-value list (the booking line on Contact) keeps the chip's sentence-case style
@@ -1290,3 +1285,37 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
    width on a phone and the dashed chip stays whole when its text wraps */
 .vid-tbc{left:0;right:0;width:max-content;max-width:calc(100% - 32px);margin:0 auto;transform:translateY(-50%)}
 .vid-tbc .tbc{white-space:normal;line-height:1.5}
+
+/* === v6 home === */
+/* The refined home page (docs/BRAND-BRIEF.md v6, docs/PHOTOGRAPHY-PLAN.md section 2) and the ink field used wherever a
+   photograph no longer belongs. Tokens only: ink and paper, gold for emphasis, Cormorant Garamond and Inter. */
+/* Hero: one architectural photograph, the entrance reveals and nothing else. No night layer, no crossfade and no
+   scroll-linked transforms, so the section is as tall as the viewport (taller when its copy needs it) and no longer
+   pinned behind a 175vh scroll zone. */
+.hh{height:auto}
+.hh-pin{position:relative;height:auto;min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;padding-top:calc(var(--hdrH) + 48px)}
+.hh-pin img{will-change:auto}
+.hh-c{position:relative;bottom:auto;width:100%;padding-bottom:clamp(36px,8vh,96px)}
+.hh-c .d1{max-width:12.5em}
+.hh-btns{margin-bottom:30px}
+.hh-row{align-items:center;gap:16px 40px}
+.hh-cred{margin:0}
+/* The ink field: the dark ground with a soft lift top right and, where a view is given, the dotted world as inline SVG
+   (D.map.path through inkMap in app.js), the two offices in gold and one thin arc. The dots keep their size on screen
+   whatever the crop, so a close crop is a sparser field rather than a coarser one. */
+.hh-ink,.ph-ink{position:absolute;inset:0;overflow:hidden;background:var(--ink)}
+.hh-ink::before,.ph-ink::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 88% 6%,rgba(241,236,227,.075),transparent 68%)}
+.ink-map{position:absolute;display:block;overflow:visible}
+.ink-map .land{fill:none;stroke:rgba(241,236,227,.2);stroke-width:2.4px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.ink-map .city{fill:var(--gold)}
+.ink-map .ring{fill:none;stroke:var(--gold);stroke-width:1px;opacity:.5;vector-effect:non-scaling-stroke}
+.ink-map .link{fill:none;stroke:var(--gold);stroke-width:1px;opacity:.6;vector-effect:non-scaling-stroke}
+.hh-ink .ink-map{right:-2%;top:7%;width:min(96vw,1500px);height:auto}
+.hh-ink .ink-map.tall{display:none}
+.hh.ink .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,0) 0,rgba(14,13,11,0) 46%,rgba(14,13,11,.74) 100%)}
+@media (max-width:640px){
+  .hh-pin{padding-top:calc(var(--hdrH) + 32px)}
+  .hh-c .d1{max-width:none}
+  .hh-ink .ink-map.wide{display:none}
+  .hh-ink .ink-map.tall{display:block;width:150vw;right:-40vw;top:10%}
+}
