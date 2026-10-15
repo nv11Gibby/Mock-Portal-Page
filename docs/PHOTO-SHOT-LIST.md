@@ -19,7 +19,7 @@ has, the item says TO CONFIRM and the shoot adapts on the day.
 
 Only the two Group leaders already on the site, photographed in each city or in one sitting:
 
-* Zaid Al Hindi, Founder and Group Chief Executive Officer (spelt "Zaid Al Hindi" on the site; TO CONFIRM: the brief writes "Alhindi").
+* Zaid Al Hindi, Founder and Group Chief Executive Officer (TO CONFIRM: the spelling of the surname, Al Hindi or Alhindi, with the Founder).
 * Hekma Iskandarani, Group Chief Operating Officer.
 
 Other team members appear only in the "team at work" frames and only with their written consent (a short release signed on
@@ -40,7 +40,7 @@ and for the mobile hero; portraits of people 900 x 1125 in black and white to ma
 
 | Page or place | Key in data.js (file name in assets/img/) | Subject | Orientation and size | City |
 | --- | --- | --- | --- | --- |
-| Home hero | `hero` (hero.webp 1920 x 1080, hero-m.webp 900 x 1125) | The strongest single frame of the shoot: the team in the office or the city at dusk from our window. Replaces the Lagos office evening photograph that stands in today. | Landscape and portrait pair, same subject | Either (TO CONFIRM: which city opens the site) |
+| Home hero | `hero` (hero.webp 1920 x 1080, hero-m.webp 900 x 1125) | The strongest single frame of the shoot: the team in the office or the city at dusk from our window. Replaces the stand-in: the Easter Polo Cup backdrop in production, or the Lagos office evening photograph once its guests have given consent. | Landscape and portrait pair, same subject | Either (TO CONFIRM: which city opens the site) |
 | Home hero, night layer | `hero-night` (hero-night.webp 1920 x 1080, hero-night-m.webp 900 x 1125) | The same frame at dusk or after dark, for the scroll crossfade. | Landscape and portrait pair | Same city as the hero |
 | Home hero loop (video, 5.2) | `assets/video/hero-loop.mp4` (TO CONFIRM: hosting) | 10 to 15 seconds, silent, static camera or a very slow move: the city at dusk from our side, or the office as the lights come on. | Landscape 1920 x 1080 | Either |
 | About hero | `about` (about.webp 1728 x 1080, about-c.webp 900 x 1125) | Reception or the main meeting space, empty, in natural light. | Landscape plus card crop | Dubai |

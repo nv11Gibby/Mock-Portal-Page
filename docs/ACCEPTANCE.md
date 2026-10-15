@@ -140,7 +140,8 @@ change (two POSTs per lead); a rerun of the harness refreshes them.
 4. **Low. Stale comment in `netlify.toml`** (lines 16 to 18): it lists `PIPEDRIVE_OWNER_CLIENTS`,
    `PIPEDRIVE_OWNER_PARTNERS`, `PIPEDRIVE_OWNER_INSTITUTIONS`, `PIPEDRIVE_PIPELINE_*` and `PIPEDRIVE_STAGE_*` as
    optional environment variables; nothing reads them. Owners, pipelines and stages live in `shared/lead-routing.json`
-   and the real variables are in `docs/LEADS.md` section 6.
+   and the real variables are in `docs/LEADS.md` section 6. Fixed in the fix round: the comment now lists the
+   variables from section 6 and points at the routing file for owners, pipelines and stages.
 5. **Low. No `test:a11y` script.** The build contract and the task brief mention it among the local tools; `package.json`
    has `check`, `smoke`, `test:functions`, `test:seo`, `build` and now `test:e2e`. Nothing to run for accessibility.
 6. **Info.** `lead.js` answers `{ok, ref, kind}` without the record id, by design (the page shows the reference only).

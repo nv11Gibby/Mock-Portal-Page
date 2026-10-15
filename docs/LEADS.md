@@ -238,8 +238,12 @@ every tracking field), the owner from the config file, disposable email, honeypo
 email and by phone with note and activity, reuse of an open record, rate limit, lead labels read from the account (and
 none when nothing matches), nationality and
 country matching, guide and interest defaults, programme fit and partner details, no token, Pipedrive failure, the
-confirmation email, `markVerified`, the direct endpoint (origin, methods, bodies, references), the Netlify event, the
-score table, and the verify function (start without env, start with env, rate limit, right code, wrong code).
+confirmation email (the greeting rule and the three variants), a returning person whose full record cannot be
+fetched, prototype keys, `markVerified` (retries, phone first, mismatch), the direct endpoint (origin, methods,
+bodies, references), the Netlify event, the score table (including a search engine referrer), phone normalisation
+(`validate.test.js`), and the verify function (start without env, start with env, the per address and per phone
+limits, the shared bucket without an address, the email or reference requirement, Turnstile on start, provider
+errors kept out of the answer, right code, wrong code, a right code nobody holds).
 
 Nothing in the tests or the code calls a live service without its env; the tests clear the env they do not want.
 
@@ -249,6 +253,14 @@ Prerequisites: the site is deployed on Netlify, `PIPEDRIVE_API_TOKEN` is set, th
 `shared/lead-routing.json` (or left at 0 for the token's user) and deployed. Each step writes a real record in
 Pipedrive; agree with the team first who deletes the test records afterwards.
 
+Also before launch: switch on Netlify form notifications (Site configuration > Forms > Form notifications, an email
+notification per form: `enquiry`, `contact`, `interest`, `guide`) to the enquiries mailbox (TO CONFIRM: which mailbox).
+The Netlify Forms inbox is the safety net when the function rejects or fails a submission (`reason=turnstile`,
+`reason=rate`, `reason=sync`): the visitor still sees the thank you state and no confirmation email goes out for
+turnstile and rate, so without a notification nobody looks at those submissions. The function log line carries the
+reason and, for Turnstile, the detail (`detail=missing token` when the Turnstile script was blocked in the browser,
+or Cloudflare's error codes).
+
 1. Open the deployed site, go to Contact, choose "Citizenship or residency for my family", fill the form with a
    real mailbox you can read, a phone with country code, timeline "Within 3 months", any budget band, and a message
    that starts with `TEST`. Submit.
@@ -256,7 +268,11 @@ Pipedrive; agree with the team first who deletes the test records afterwards.
    `submission-created ok form=contact division=citizenship kind=lead id=... score=hot ref=N...`.
 3. In Pipedrive: Leads inbox has `[HOT] Website: <name> · Imperial Citizenship` with the owner, the Division field, a
    note with the message, the score line and every tracking field, and the person with Verification Status
-   Not Verified. Record the lead id.
+   Not Verified. Record the lead id. Check the note's `referrer:` line against the page that first brought you to
+   the site: Netlify adds its own `referrer` (the page that posted the form) to the submission data, and if it wins
+   over the page's first-touch field, add a field with a name Netlify does not use (for example `ref_first`) to
+   `shared/lead-schema.json`, the hidden forms and `trackFields()`, and let `noteLines()` prefer it. TO CONFIRM on
+   this step; not verifiable offline.
 4. Repeat step 1 for the other five choices (Private Office, Partners Club with a firm and profession, Academy, Real
    Estate with buy or rent and an area, Group). Expect leads for Private Office and Real Estate, deals in Introducer
    Pipeline [2026] > Introducer IN for Partners Club and Academy, and a deal in Opportunity Requests > New Request for
