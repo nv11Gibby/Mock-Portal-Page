@@ -13,6 +13,10 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
   `netlify/functions/lib/config.js` and no page fetches them, so they are never published (the routing file lists
   every Pipedrive field key and option id, and all three carry TO CONFIRM notes). `shared/tokens.css`,
   `shared/analytics.js`, `shared/ecosystem.json` and `shared/chrome/` stay public for the sister sites.
+* The five stylesheets and scripts the pages load (`assets/css/site.css`, `shared/tokens.css`, `assets/js/data.js`,
+  `shared/analytics.js`, `assets/js/app.js`) minified in place with esbuild's transform API (target `es5` for the
+  scripts, so nothing newer than the source syntax is emitted). The source tree stays readable; the paths and the
+  `?v=5` query do not change, so the inline script and its CSP hash are untouched. The build log lists the sizes.
 * One prerendered page per route, written twice so every static host serves the clean URL: `about.html` and
   `about/index.html`, `divisions/citizenship.html` and `divisions/citizenship/index.html`, and so on. The home page is
   `index.html`. Routes come from `window.IHG_APP.routes()` in app.js: the static pages, every division, every event,
@@ -108,21 +112,26 @@ node tests/serve.js dist 8776 &   # then: node tests/smoke.js http://127.0.0.1:8
 `tests/seo.js` asserts, for every route: HTTP 200, `data-prerendered`, exactly one title, one description and one
 canonical, an absolute `og:image`, the Open Graph and Twitter tags, an `h1`, no hash links or relative asset URLs left,
 the robots state matching `LAUNCH`, valid JSON-LD of the expected types, and unique titles and descriptions across
-pages, and that the page's image preloads are exactly its own hero (desktop and mobile on the home page, none on
-the legal pages, every file under 200 KB). It also checks `robots.txt`, that `sitemap.xml` lists every route and
+pages, that the page's image preloads are exactly its own hero (desktop and mobile on the home page, none on
+the legal pages), and that every hero file the page references (the home figures, the page hero or the not-found
+backdrop, each with its mobile source) exists and is under 200 KB. It also checks `robots.txt`, that `sitemap.xml` lists every route and
 nothing else, the RSS feed, `404.html` and `error.html` (noindex, no canonical, both office numbers, the email, the
 reload button, their own backdrop preload), that every logo file named in `shared/ecosystem.json` is in the build,
 the inline script hashes in `_headers`, the absence of a catch-all rewrite, that `dist/shared` holds no lead JSON
 file, and that each event gallery is in the markup on a preview build and absent on a production one.
 
-Lighthouse, mobile, against the dist server (Chromium from the Playwright install):
+Lighthouse 13, mobile, against the dist server (Chromium from the Playwright install; Lighthouse 13 expects the
+`--headless=new` flag):
 
 ```
 CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npx lighthouse@13 http://127.0.0.1:8776/ \
-  --chrome-flags="--headless --no-sandbox" --only-categories=performance,accessibility,best-practices,seo
+  --chrome-flags="--headless=new --no-sandbox" --only-categories=performance,accessibility,best-practices,seo \
+  --output=json --output-path=home.json
 ```
 
-Run it on a `LAUNCH=1` build: the pre-launch `noindex` otherwise fails the "page is blocked from indexing" audit.
+Run it on a `LAUNCH=1` build: the pre-launch `noindex` otherwise fails the "page is blocked from indexing" audit and
+the home page scores SEO 69 (every other audit is the same). Run three times per page and read the median; serve
+with compression on (Netlify does), see docs/PERFORMANCE.md for the figures and the server used.
 
 ## Known limits
 

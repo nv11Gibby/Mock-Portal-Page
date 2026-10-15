@@ -60,6 +60,21 @@ fs.cpSync(path.join(ROOT, 'assets'), path.join(DIST, 'assets'), {recursive: true
 fs.cpSync(path.join(ROOT, 'shared'), path.join(DIST, 'shared'), {recursive: true, filter: function(src){ return PRIVATE_SHARED.indexOf(path.basename(src)) < 0; }});
 ['site.webmanifest', '_redirects'].forEach(function(f){ if(fs.existsSync(path.join(ROOT, f))) fs.copyFileSync(path.join(ROOT, f), path.join(DIST, f)); });
 
+/* 1b. Minify the stylesheets and scripts in dist (brief acceptance test 6). The source tree stays readable and ES5;
+   the dist copies are what the pages load, at the same paths and with the same ?v=5 query, so index.html, its inline
+   script and the CSP hash do not change. esbuild's transform API, with target es5 for the scripts so the output uses
+   no syntax newer than the source. The prerender below runs the source files, not these. */
+const esbuild = require('esbuild');
+const MINIFY = [['assets/css/site.css', 'css'], ['shared/tokens.css', 'css'], ['assets/js/data.js', 'js'], ['shared/analytics.js', 'js'], ['assets/js/app.js', 'js']];
+const minified = [], minifyNotes = [];
+MINIFY.forEach(function(m){
+  const fp = path.join(DIST, m[0]), src = fs.readFileSync(fp, 'utf8');
+  const out = esbuild.transformSync(src, m[1] === 'js' ? {loader: 'js', minify: true, target: 'es5', legalComments: 'none'} : {loader: 'css', minify: true, legalComments: 'none'});
+  (out.warnings || []).forEach(function(w){ minifyNotes.push(m[0] + ': ' + w.text); });
+  fs.writeFileSync(fp, out.code);
+  minified.push(m[0] + ' ' + Math.round(src.length / 1024) + ' to ' + Math.round(out.code.length / 1024) + ' KB');
+});
+
 /* 2. Prerender. preview sets data-preview before the app runs, so the consent-gated photographs are in the markup. */
 const render = createRenderer({
   root: ROOT,
@@ -139,7 +154,7 @@ function finish(page, opts){
   let html = page.serialize();
   /* Root-relative asset URLs, so a page served from /about/ or 404.html served anywhere resolves them without the
      base element the inline script adds. */
-  html = html.replace(/(\s(?:src|href|srcset))="(assets|shared)\//g, '$1="/$2/').replace(/href="site\.webmanifest"/g, 'href="/site.webmanifest"');
+  html = html.replace(/(\s(?:src|href|srcset|data-src))="(assets|shared)\//g, '$1="/$2/').replace(/href="site\.webmanifest"/g, 'href="/site.webmanifest"');
   return html;
 }
 
@@ -264,6 +279,7 @@ const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
 console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
+console.log('minified: ' + minified.join(', ') + (minifyNotes.length ? ' | esbuild warnings: ' + minifyNotes.join('; ') : ''));
 console.log('hero preloads: ' + Object.keys(heroes).map(function(h){ return h + ' ' + (heroes[h] < 0 ? 'missing' : Math.round(heroes[h] / 1024) + ' KB'); }).join(', '));
 if(Object.keys(big).length) console.log('WARNING hero over 200 KB, not preloaded (re-export under 200 KB, see docs/PHOTO-SHOT-LIST.md): ' + Object.keys(big).map(function(h){ return h + ' ' + Math.round(big[h].size / 1024) + ' KB on ' + big[h].pages.join(', '); }).join('; '));
 console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
