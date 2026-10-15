@@ -242,7 +242,7 @@ V.division = function(key){
     (d.includes?'<div style="margin-top:clamp(64px,7vw,100px)"><div class="eyebrow" data-r>Every plan includes</div><div class="includes">'+d.includes.map(function(x,i){return '<div data-r style="--d:'+(i%4*0.07).toFixed(2)+'s"><span>'+pad2(i+1)+'</span>'+esc(x)+'</div>';}).join('')+'</div></div>':'')+
     (d.standards?'<div style="margin-top:clamp(64px,7vw,100px)" class="split"><div>'+eyebrow('Shared standards')+'<h3 class="d3" data-r>Your reputation travels with ours.</h3></div><ul class="plist yes" data-r>'+d.standards.map(function(t){return '<li>'+TICK+'<span>'+esc(t)+'</span></li>';}).join('')+'</ul></div>':'')+
     '<div class="callout" data-r><div><b>Please note</b>'+esc(d.note)+'</div></div></div></section>';
-  h += enquiryBlock(d.key);
+  h += (d.key==='citizenship' ? fitCheck()+guideForm() : '')+enquiryBlock(d.key);
   h += '<section class="sec deep"><div class="wrap cta-band"><div>'+(d.logo?'<img class="div-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="" data-r>':'<div data-r style="margin-bottom:30px">'+logoImg(d,'Gold','')+'</div>')+mask(ctaTitle(d),'h2','d2')+'<p class="lead" data-r style="margin-top:22px">'+(d.cta.real?'Programmes, eligibility and the team behind them, on the Imperial Citizenship website.':'The '+esc(d.name)+' website is in preparation. In the meantime, speak to us and we will connect you.')+'</p></div>'+
     '<div class="btns" data-r>'+extLink(d,'btn gold')+'<a class="btn line" href="#/contact?about='+d.key+'"><span>Speak to us</span></a></div></div></section>';
   return h + others(d);
@@ -430,8 +430,8 @@ V.contact = function(q){
    '<p class="xs" style="margin-top:16px">We use these details only to respond. Nothing is shared beyond what a service needs.</p></div>'+
    '</form></div></div>'+
    '<div data-r style="--d:.15s" class="cf-side">'+
-    D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div></div>';}).join('')+
-    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div><div><span>Booking</span>'+tbc('Booking link')+'</div></div></div>'+
+    D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div>'+waSide(o)+'</div>';}).join('')+
+    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div><div><span>Book a first conversation</span>'+bookingSide()+'</div></div></div>'+
     '<div class="side-card"><h3 class="h4">Before we speak</h3><p>You do not need any documents for the first conversation. It helps to think about who would be included, where you live and hold citizenship today, and any dates that matter.</p><p class="small muted">The first conversation is for listening. You do not have to decide anything on the first call.</p></div>'+
    '</div></div></section>'+
   '<section class="sec light alt" id="faq"><div class="wrap split"><div>'+eyebrow('Questions')+mask(['Before you','get in touch.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s;margin-top:26px">Short answers to what people ask most. Anything else, ask us directly.</p></div>'+faqList(D.faq,'c')+'</div></section>';
@@ -970,7 +970,117 @@ function verifyStep(el, info, done){
   }
   start('whatsapp').then(function(){ draw(false); }, function(){ done(false); });
 }
-function bookingHTML(info){ return ''; }
+/* Booking (brief 3.4): one button per office from config.booking, with name, email and a1 (division) appended (Calendly style;
+   the same parameters are added to any other URL). An empty url shows the tbc text in the same spot. */
+function bookingURL(url, info){
+  var q = 'name='+encodeURIComponent(info.fullName||'')+'&email='+encodeURIComponent(info.email||'')+'&a1='+encodeURIComponent(info.division||'');
+  return url+(url.indexOf('?')>-1 ? '&' : '?')+q;
+}
+function bookingHTML(info){
+  var B = D.config.booking || {};
+  var rows = D.contact.offices.map(function(o){
+    var b = B[o.city.toLowerCase()]; if(!b) return '';
+    return b.url ? '<a class="btn sm mag" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
+  }).join('');
+  return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Your name, email and enquiry are passed along, so there is nothing to type again.</p><div class="btns">'+rows+'</div></div>';
+}
+function bookingSide(){
+  var B = D.config.booking || {};
+  return D.contact.offices.map(function(o){ var b = B[o.city.toLowerCase()]; if(!b) return ''; return '<div>'+(b.url ? '<a class="ul" href="'+esc(b.url)+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="">Book a conversation, '+esc(o.city)+'</a>' : tbc(b.tbc))+'</div>'; }).join('');
+}
+/* WhatsApp (brief 3.4): https://wa.me/<digits> from config.whatsapp; a small button in the header on mobile that opens a sheet with
+   both offices, and a button under each office on the Contact page. Clicks are tracked as whatsapp_click with the office name. */
+var WA = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a7.4 7.4 0 0 0-6.4 11.1L2.6 17.4l3.8-1A7.4 7.4 0 1 0 10 2.6z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.4 7.1c.2-.4.4-.5.7-.5h.5l.6 1.5-.5.7c.4.9 1.1 1.6 2 2l.7-.5 1.5.7v.4c0 .4-.2.8-.7 1-1 .3-2.4-.2-3.7-1.5S7 8.2 7.4 7.1z" fill="currentColor"/></svg>';
+function waLink(n){ return 'https://wa.me/'+String(n||'').replace(/\D/g,''); }
+function waOffice(o){ var w = (D.config.whatsapp||{})[o.city.toLowerCase()]; return w && w.number ? w : null; }
+function waSide(o){
+  var w = waOffice(o); if(!w) return '';
+  return '<div class="wa-side"><a class="btn line sm" href="'+waLink(w.number)+'" target="_blank" rel="noopener" data-wa="'+esc(o.city)+'">'+WA+'<span>WhatsApp '+esc(o.city)+'</span></a>'+(w.tbc?'<p class="xs wa-tbc">'+tbc(w.tbc)+'</p>':'')+'</div>';
+}
+function buildWhatsApp(){
+  var btn = document.getElementById('waBtn'), pop = document.getElementById('waPop'); if(!btn || !pop) return;
+  var rows = D.contact.offices.map(function(o){ var w = waOffice(o); if(!w) return ''; return '<a class="wa-row" href="'+waLink(w.number)+'" target="_blank" rel="noopener" data-wa="'+esc(o.city)+'">'+WA+'<span><b>'+esc(o.city)+'</b><span>'+esc(w.number)+'</span></span></a>'+(w.tbc?'<div class="wa-pop-tbc">'+tbc(w.tbc)+'</div>':''); }).join('');
+  if(!rows){ btn.hidden = true; return; }
+  pop.innerHTML = '<div class="wa-pop-h">WhatsApp us</div>'+rows;
+  function set(open){ pop.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); if(open){ var f = pop.querySelector('a'); if(f) f.focus({preventScroll:true}); } }
+  btn.addEventListener('click', function(){ set(pop.hidden); });
+  document.addEventListener('click', function(e){ if(pop.hidden) return; var t = e.target.closest ? e.target : e.target.parentNode; if(!t.closest('#waBtn') && !t.closest('#waPop')) set(false); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !pop.hidden){ set(false); btn.focus(); } });
+  pop.addEventListener('click', function(e){ if(e.target.closest('a')) set(false); });
+}
+buildWhatsApp();
+/* conversions on plain links: WhatsApp, booking and the guide download */
+document.addEventListener('click', function(e){
+  var t = e.target.closest ? e.target : e.target.parentNode, a = t.closest('a[data-wa], a[data-book], a[data-guide]'); if(!a) return;
+  if(a.hasAttribute('data-wa')) track('whatsapp_click', {office: a.getAttribute('data-wa')});
+  else if(a.hasAttribute('data-book')) track('booking_click', {office: a.getAttribute('data-book'), division: a.getAttribute('data-division')||''});
+  else track('guide_download', {division:'citizenship'});
+});
+/* Programme fit check (brief 3.4, citizenship page only). Questions live in D.fit; the answers prefill the enquiry card. */
+function fitOptions(q){
+  if(q.ambitions) return q.ambitions.map(function(n){ var a = null; D.ambitions.forEach(function(x){ if(x[0]===n) a = x; }); return {v:n.toLowerCase(), l:n, s:a ? a[1] : ''}; });
+  if(q.from==='timeline') return TIMELINES.map(function(o){ return {v:o[0], l:o[1], set:{timeline:o[0]}}; });
+  if(q.from==='budget') return BUDGETS.filter(function(o){ return o[0]!=='undisclosed'; }).map(function(o){ return {v:o[0], l:o[1], set:{budget:o[0]}}; });
+  return q.opts || [];
+}
+function fitCheck(){
+  var F = D.fit, n = F.questions.length;
+  return '<section class="sec deep" id="fit-sec"><div class="wrap"><div class="sec-head"><div>'+eyebrow(F.eyebrow)+mask(F.title,'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">'+esc(F.lead)+'</p></div>'+
+    '<div class="fit" id="fit" data-r><div class="fit-prog"><span class="fit-n" aria-live="polite">Question 1 of '+n+'</span><i class="fit-bar" aria-hidden="true"></i></div>'+
+    F.questions.map(function(q,i){
+      var opts = fitOptions(q);
+      return '<div class="fit-q'+(i===0?' on':'')+'" data-q="'+i+'" data-k="'+esc(q.k)+'"><h3 class="h3" tabindex="-1">'+esc(q.q)+'</h3><div class="fd-pers fit-opts">'+opts.map(function(o){ return '<button type="button" data-opt="'+esc(o.v)+'"'+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+'><b>'+esc(o.l)+'</b>'+(o.s?'<small>'+esc(o.s)+'</small>':'')+'</button>'; }).join('')+'</div>'+
+        '<div class="fit-nav">'+(i>0?'<button class="tlink" type="button" data-fit-back>'+BACK+'<span>Back</span></button>':'')+(q.skip?'<button class="tlink" type="button" data-opt="undisclosed" data-set="'+esc(JSON.stringify({budget:'undisclosed'}))+'">'+esc(q.skip)+'</button>':'')+'</div></div>';
+    }).join('')+
+    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold mag" href="#/divisions/citizenship" data-scroll="enquire"><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start over</button></div></div>'+
+    '</div></div></section>';
+}
+function bindFit(){
+  var f = document.getElementById('fit'); if(!f) return;
+  var qs = [].slice.call(f.querySelectorAll('.fit-q')), done = f.querySelector('.fit-done'), bar = f.querySelector('.fit-bar'), num = f.querySelector('.fit-n'), n = qs.length, ans = {}, sets = {}, cur = 0;
+  function show(i, back){
+    cur = i; qs.forEach(function(q,j){ q.classList.toggle('on', j===i); q.classList.toggle('back', !!back && j===i); });
+    done.classList.remove('on'); bar.style.backgroundSize = (i/n*100).toFixed(0)+'% 100%'; num.textContent = 'Question '+(i+1)+' of '+n;
+    qs[i].querySelector('h3').focus({preventScroll:true});
+  }
+  function finish(){
+    qs.forEach(function(q){ q.classList.remove('on'); }); bar.style.backgroundSize = '100% 100%'; num.textContent = 'Done'; done.classList.add('on'); done.focus({preventScroll:true});
+    var form = document.querySelector('[data-form="enquiry"] form');
+    if(form){
+      var set = {division:'citizenship', audience: ans.who==='client' ? 'partners' : 'clients', lead_source:'programme-fit', quiz_answers: JSON.stringify(ans)};
+      Object.keys(sets).forEach(function(k){ Object.keys(sets[k]).forEach(function(x){ set[x] = sets[k][x]; }); });
+      Object.keys(set).forEach(function(k){ var el = form.elements.namedItem(k); if(!el) return; el.value = set[k]; if(el.tagName==='SELECT'){ var ev = document.createEvent('Event'); ev.initEvent('change', true, true); el.dispatchEvent(ev); } });
+      saveDraft(form, 'enquiry');
+    }
+    track('quiz_completed', ans);
+    announce('Thank you. Your enquiry has been prefilled from these answers.');
+    setTimeout(function(){ var enq = document.getElementById('enquire'); if(enq) window.scrollTo({top: enq.getBoundingClientRect().top + window.pageYOffset - 90, behavior: reduced?'auto':'smooth'}); }, reduced ? 300 : 1200);
+  }
+  f.addEventListener('click', function(e){
+    var b = e.target.closest('[data-opt]');
+    if(b){
+      var q = b.closest('.fit-q'), k = q.getAttribute('data-k'), i = +q.getAttribute('data-q'), s = b.getAttribute('data-set');
+      ans[k] = b.getAttribute('data-opt'); delete sets[k]; if(s){ try{ sets[k] = JSON.parse(s); }catch(err){} }
+      [].forEach.call(q.querySelectorAll('[data-opt]'), function(x){ x.setAttribute('aria-pressed', x===b ? 'true' : 'false'); });
+      if(i+1<n) show(i+1); else finish();
+      return;
+    }
+    if(e.target.closest('[data-fit-back]')){ show(Math.max(0, cur-1), true); return; }
+    if(e.target.closest('[data-fit-reset]')){ ans = {}; sets = {}; [].forEach.call(f.querySelectorAll('[data-opt]'), function(x){ x.removeAttribute('aria-pressed'); }); show(0, true); }
+  });
+}
+/* Guide form (brief 3.4, citizenship page): name, email and consent; form guide, lead_source guide. */
+function guideForm(){
+  var G = D.guideCopy, C = D.config.guide;
+  return '<section class="sec light" id="guide"><div class="wrap split"><div>'+eyebrow(G.eyebrow)+mask(G.title,'h2','d2')+
+    '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(G.lead)+'</p><p class="small" data-r style="--d:.2s"><b>'+esc(C.title)+'</b>'+(C.file?'':'<br>'+tbc(C.tbc))+'</p></div>'+
+    '<div data-r style="--d:.15s"><div class="form-card" data-form="guide" id="guide-card"><form novalidate name="guide" method="post"><input type="hidden" name="form-name" value="guide"><input type="hidden" name="lead_source" value="guide"><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="division" value="citizenship"><input type="hidden" name="routed_to" value=""><input type="hidden" name="audience" value="clients">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
+    '<div class="eyebrow">Request the guide</div>'+
+    '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
+    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
+    '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(G.cta)+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
+}
 /* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
    writes the token to a hidden cf-turnstile-response input inside the form. The company_url honeypot stays alongside it. */
 var TS = {loading:false, q:[]};
@@ -1040,19 +1150,24 @@ function bindForms(){
       turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
         store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
         track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
-        info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
+        if(kind==='guide'){
+          var G = D.guideCopy, GC = D.config.guide;
+          info.msg = esc(GC.file ? G.ready : G.soon);
+          info.inner = GC.file ? '<div class="btns" style="justify-content:center;margin-top:22px"><a class="btn gold" href="'+esc(GC.file)+'" download data-guide><span>Download the guide</span>'+AR+'</a></div>' : '<p>'+tbc(GC.tbc)+'</p>';
+        }
+        else info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
         showSuccess(wrap, info, anchor);
       }, function(err){
         btn.classList.remove('loading'); btn.disabled = false; btn.removeAttribute('aria-busy');
         if(errBox){ errBox.innerHTML = err && err.message==='local' ? '<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.' : fallbackHTML(); errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
       });
     }
-    if(kind==='interest' || kind==='enquiry'){
+    if(kind==='interest' || kind==='enquiry' || kind==='guide'){
       form.addEventListener('submit', function(e){
         e.preventDefault(); var bad=null;
         [].forEach.call(form.querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
         if(bad){ bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
-        var dest = null;
+        var dest = kind==='guide' ? 'Imperial Citizenship' : null;
         if(kind==='enquiry'){ var dv = form.elements.namedItem('division').value; dest = 'the Group team'; D.enquiry.forEach(function(x){ if(x.v===dv){ var d = div(x.to); dest = d ? d.name : 'the Group team'; } }); }
         finish(dest, (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
       });
@@ -1100,6 +1215,7 @@ function bindForms(){
     });
     [].forEach.call(form.querySelectorAll('[data-back]'), function(b){ b.addEventListener('click', function(){ show(Math.max(1,step-1), true); }); });
   });
+  bindFit();
 }
 
 

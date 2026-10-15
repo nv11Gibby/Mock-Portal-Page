@@ -342,6 +342,41 @@ window.IHG = {
     }
   },
 
+  /* Programme fit check (citizenship page). Five short questions about the person's own situation. It decides nothing and
+     promises nothing: the answers prefill the enquiry card (for_whom, timeline, budget, country) and travel to Pipedrive as
+     quiz_answers with lead_source programme-fit. Options with "from" use the fixed timeline and budget lists in app.js. */
+  fit: {
+    eyebrow:'Programme fit check', title:['Five questions.','A clearer first conversation.'],
+    lead:'Nothing here decides anything. Your answers simply prefill your enquiry, so the first conversation starts in the right place.',
+    questions:[
+      {k:'who', q:'Who would be included?', opts:[
+        {v:'myself', l:'Just me', set:{for_whom:'myself'}},
+        {v:'partner', l:'My partner and me', set:{for_whom:'family'}},
+        {v:'family', l:'My family, including children', set:{for_whom:'family'}},
+        {v:'client', l:'A client I am introducing', set:{for_whom:'client'}}
+      ]},
+      {k:'where', q:'Where do you live today?', opts:[
+        {v:'uae', l:'In the United Arab Emirates', set:{country:'United Arab Emirates'}},
+        {v:'nigeria', l:'In Nigeria', set:{country:'Nigeria'}},
+        {v:'africa', l:'Elsewhere in Africa'},
+        {v:'world', l:'Elsewhere in the world'}
+      ]},
+      {k:'matters', q:'What matters most right now?', ambitions:['Live','Build','Invest','Protect']},
+      {k:'timeline', q:'When would you like to begin?', from:'timeline'},
+      {k:'budget', q:'Is there a budget in mind?', from:'budget', skip:'I would rather not say yet'}
+    ],
+    done:{title:'Thank you.', text:'Your enquiry below has been prefilled from these answers. Add your name, your email and a few lines, and the right person will reply.', cta:'Go to your enquiry'}
+  },
+
+  /* Downloadable guide (citizenship page). The file itself is config.guide.file; while it is empty the page shows config.guide.tbc. */
+  guideCopy: {
+    eyebrow:'The guide', title:['A short guide,','before you decide.'],
+    lead:'Leave your name and email and we will send you the guide, written in the same plain language as this site.',
+    cta:'Send me the guide', note:'We use these details only to send the guide, and to reply if you ask us to.',
+    ready:'Your copy of the guide is ready below. One person will be in touch only if you would like a conversation.',
+    soon:'The guide is being finalised. The team will send it to you by email as soon as it is ready.'
+  },
+
   /* Questions every house hears. Every answer restates something already said on this site. */
   faq: [
     {q:'Do I need any documents for a first conversation?', a:'No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared.', to:'/insights/before-a-first-conversation', tl:'Six things worth thinking about'},
