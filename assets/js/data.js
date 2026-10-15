@@ -73,7 +73,14 @@ window.IHG = {
 
   /* Home hero (v5). photo and night show when consent is recorded for their event, or in preview builds; until then the
      page shows fallback, an own photograph without guests. The two preload lines in index.html point at the fallback
-     files; move them to hero.webp and hero-m.webp once consent is recorded. TO CONFIRM: final hero photo (the shoot). */
+     files; move them to hero.webp and hero-m.webp once consent is recorded. TO CONFIRM: final hero photo (the shoot).
+     DECISION NEEDED BEFORE LAUNCH (review, October 2026): the fallback hero-alt is a 1400 by 580 crop of
+     events/easter-polo-cup-2026/05 that carries the Imperial Citizenship crest and wordmark; in production they show
+     through the headline of the Group site, and the file is shown upscaled. No own, consent-free, people-free,
+     sister-brand-free photograph exists in the repository, so the choice is the Founder's: (a) keep this backdrop as the
+     interim hero (already marked with the "Final hero photo" chip), or (b) record consent:true on
+     events/lagos-office-event/cover (the photos entry "hero") so the intended hero shows. Not re-cropped here: the
+     source is 1400 wide, so any larger export is pure upscaling. */
   hero: {photo:'hero', night:'hero-night', fallback:'hero-alt', tbc:'Final hero photo'},
 
   /* Video (v5). One shape everywhere: {type:'video', provider:'vimeo'|'mux', id:'', poster:'<photo key>',
@@ -409,7 +416,8 @@ window.IHG = {
   /* Downloadable guide (citizenship page). The file itself is config.guide.file; while it is empty the page shows config.guide.tbc. */
   guideCopy: {
     eyebrow:'The guide', title:['A short guide,','before you decide.'],
-    lead:'Leave your name and email and we will send you the guide, written in the same plain language as this site.',
+    /* TO CONFIRM: once the PDF is approved, say what it is like (for example "written in the same plain language as this site") */
+    lead:'Leave your name and email and we will send you the guide as soon as it is ready.',
     cta:'Send me the guide', note:'We use these details only to send the guide, and to reply if you ask us to.',
     ready:'Your copy of the guide is ready below. One person will be in touch only if you would like a conversation.',
     soon:'The guide is being finalised. The team will send it to you by email as soon as it is ready.'
@@ -445,7 +453,7 @@ window.IHG = {
             'if you came to the form from the house finder, the ambitions you chose there;',
             'your message, and your agreement to this notice.'
           ]},
-          'Each form also records, without asking you, where the enquiry came from: the page you sent it from, the page you first arrived on, the site that referred you, and any campaign tags in the address you arrived by (utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid and ttclid), together with which of our forms and sites the enquiry came through. We use these to see which of our channels brought you to us. They describe a channel, not you, and we do not join them to any advertising profile.',
+          'Each form also records, without asking you, where the enquiry came from: the page you sent it from, the page you first arrived on, the site that referred you, and any campaign tags in the address you arrived by (utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid and fbclid), together with which of our forms and sites the enquiry came through. We use these to see which of our channels brought you to us. They describe a channel, not you, and we do not join them to any advertising profile.',
           'The programme fit check on the Imperial Citizenship page keeps your five answers with your enquiry, so that the first conversation starts in the right place. Nothing is kept unless you then send the form.',
           'If you ask us to verify your telephone number after sending a form, we send a one time code by WhatsApp or SMS and record whether it was entered. This step is optional. Your enquiry reaches us either way.',
           'Our forms include a hidden field that only automated software fills in. We use it to reject spam, and for nothing else.',
@@ -455,7 +463,7 @@ window.IHG = {
         {h:'Where it goes', body:[
           'Your enquiry goes first to Netlify, the company that hosts this website, which keeps a copy in its form inbox, and from there to Pipedrive, the customer relationship system we use, where it is stored. It is assigned to one named person in the relevant Imperial team: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy, Imperial Real Estate or the Group team. If you have written to us before, the new enquiry is added to your existing record rather than creating a second one.',
           'Two further providers are used only when those features are switched on: an email provider, to send you a short confirmation of your enquiry, and a telephone verification provider, to send the one time code. Each receives only what its task needs: your name and email address for the confirmation, your telephone number for the code. [[Email provider (Resend in the current build) and telephone verification provider (Twilio Verify in the current build), and whether each is switched on at launch]]',
-          'We do not sell your information, and we do not share it with anyone for their own marketing. Within the Group it is seen only by the people who need it to answer you. Where a service is delivered by one of our trusted Partners, we share what that service needs, and only with your agreement.',
+          'We do not sell your information, and we do not share it with anyone for their own marketing. Within the Group it is visible to our team in the customer relationship system and used only by the person answering you. Where a service is delivered by one of our trusted Partners, we share what that service needs, and only with your agreement.',
           'Our offices are in the United Arab Emirates and Nigeria. The providers named above may store information outside the country you live in. [[Where each provider stores data, and the safeguards that apply, to be confirmed by counsel]]'
         ]},
         {h:'How long we keep it', body:[
@@ -471,7 +479,7 @@ window.IHG = {
           'This site sets no advertising cookies and no cookie that follows you to other sites, so there is no cookie banner.',
           'When our analytics are switched on, they run in a cookie-free configuration: nothing is stored on your device, the service is asked not to keep your network address, and we see counts of visits and of which pages and buttons were used, not who you are. [[Analytics provider (Google Analytics 4, cookie-free, in the current build) and whether it is switched on at launch]]',
           'The only things this site stores on your device are the form drafts and the two visit values described above. They exist for your convenience and reach us only as part of a form you choose to send.',
-          'Where a video appears on this site, the player loads only when you press play, in its do-not-track mode. The video host then receives your network address, as any website you visit does. Links to WhatsApp and to our booking pages take you to those services, which have their own privacy terms.'
+          'Where a video appears on this site, the player loads only when you press play, in its do-not-track mode, except the short silent loop on the home page, which plays without sound and sends nothing you typed. The video host then receives your network address, as any website you visit does. Links to WhatsApp and to our booking pages take you to those services, which have their own privacy terms.'
         ]},
         {h:'Security', body:[
           'We keep your information on systems that only authorised people can reach, and we limit it to the people who need it. No system is perfectly secure. If we learn of a breach that affects your information, we will tell you.'

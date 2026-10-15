@@ -1,9 +1,13 @@
 /* SEO build check (brief acceptance test 5, docs/BUILD-CONTRACT.md 4.6). Starts the test server on dist/, fetches
-   every route and asserts: 200, prerendered, exactly one title, description and canonical, an absolute og:image,
-   unique titles and descriptions across pages, valid JSON-LD of the expected types; robots.txt and sitemap.xml
-   answer 200 and the sitemap lists every route; the RSS feed exists; 404.html and error.html are noindex, without a
-   canonical, and carry the office contacts (error.html also the reload button); every logo file named in shared/ecosystem.json is in the build; _headers holds the inline script hashes;
-   the hero preloads are under 200 KB.
+   every route and asserts: 200, prerendered (data-prerendered naming the route), exactly one title, description and
+   canonical, titles within 60 and descriptions within 160 characters, the JPEG card as the first og:image with its
+   size, unique titles and descriptions across pages, valid JSON-LD of the expected types (an Event block only where
+   the event has a full date, and then with startDate and location.address), every page hero file under 200 KB with a
+   mobile source on the division pages; robots.txt and sitemap.xml answer 200 and the sitemap lists every route; the
+   RSS feed exists; 404.html and error.html are noindex, without a canonical, and carry the office contacts (error.html
+   also the reload button); every logo file named in shared/ecosystem.json is in the build; _headers holds the inline
+   script hashes; the page's image preloads are its own hero and under 200 KB; dist/shared holds no lead JSON file;
+   event galleries are in the markup on a preview build only.
    Usage: node tests/seo.js [dist dir] [port]   (defaults: dist, 8776). Run `npm run build` first.
    The route list is built here from data.js on purpose, independently of app.js, so a page missing from the build is
    caught rather than copied. */
@@ -117,7 +121,26 @@ function startServer(){
       if(route !== '/' && ty.indexOf('BreadcrumbList') < 0) problems.push('no BreadcrumbList');
       if(route === '/contact' && (ty.indexOf('FAQPage') < 0 || ty.filter(function(t){ return t === 'LocalBusiness'; }).length !== D.contact.offices.length)) problems.push('contact: FAQPage + one LocalBusiness per office expected, got ' + ty.join(','));
       if(/^\/insights\/./.test(route) && ty.indexOf('Article') < 0) problems.push('no Article');
-      if(/^\/journal\/events\/./.test(route) && ty.indexOf('Event') < 0) problems.push('no Event');
+      /* Event markup only where it can be valid: Google requires name, startDate and location, and no date is invented */
+      if(/^\/journal\/events\/./.test(route)){
+        const ev = D.events.find(function(e){ return '/journal/events/' + e.slug === route; }), dated = /^\d{4}-\d{2}-\d{2}$/.test((ev && ev.iso) || '');
+        if(dated && ty.indexOf('Event') < 0) problems.push('no Event (the event has a full date)');
+        if(!dated && ty.indexOf('Event') > -1) problems.push('Event block on an event without a known date');
+      }
+      blocks.filter(function(b){ return b['@type'] === 'Event'; }).forEach(function(b){ if(!b.name || !/^\d{4}-\d{2}-\d{2}/.test(b.startDate || '') || !b.location || !b.location.address) problems.push('Event block lacks name, startDate or location.address'); });
+      /* sized for a search result */
+      if((title || '').length > 60) problems.push('title over 60 characters (' + title.length + ')');
+      if((desc || '').length > 160) problems.push('description over 160 characters (' + desc.length + ')');
+      /* social image: the JPEG card first (WhatsApp and LinkedIn), with its size */
+      if(!/\/assets\/img\/og\.jpg$/.test(ogImg || '')) problems.push('first og:image is not the JPEG card: ' + ogImg);
+      if(!/<meta property="og:image:width" content="1200">/.test(h) || !/<meta property="og:image:height" content="630">/.test(h)) problems.push('og:image:width or og:image:height missing');
+      /* the served file names its route, so the app can tell when an old #/ link lands it on the wrong page */
+      if(!new RegExp('<html[^>]*\\sdata-prerendered="' + route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(h)) problems.push('data-prerendered does not name the route');
+      /* page hero: every file it references under 200 KB, and a mobile source on the division pages */
+      const heroSeg = (/<div class="ph-bg">([\s\S]*?)<\/div><\/div>/.exec(h) || [])[1] || '';
+      const heroFiles = []; heroSeg.replace(/\s(?:src|srcset)="([^"\s]+)[^"]*"/g, function(m, f){ heroFiles.push(f); return m; });
+      heroFiles.forEach(function(f){ let s = -1; try{ s = fs.statSync(path.join(DIR, f.replace(/^\//, '').split('?')[0])).size; }catch(e){} if(s < 0) problems.push('hero file missing: ' + f); else if(s > 200 * 1024) problems.push('hero file over 200 KB: ' + f + ' ' + Math.round(s / 1024) + ' KB'); });
+      if(/^\/divisions/.test(route) && !/<source media="\(max-width:640px\)" srcset="[^"]+-m\.webp"/.test(heroSeg)) problems.push('no mobile hero source');
       if(titles[title]) problems.push('title also on ' + titles[title]); titles[title] = route;
       if(descs[desc]) problems.push('description also on ' + descs[desc]); descs[desc] = route;
       preloadProblems(h, route).forEach(function(p){ problems.push(p); });

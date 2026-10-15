@@ -174,7 +174,10 @@ Nothing is sent without them.
 * Each page has a unique `<title>`, description, `<link rel="canonical">` (no trailing slash, built from
   `config.siteUrl`), Open Graph and Twitter card tags with a real image (the page's own photo where it has one,
   otherwise `assets/img/og.jpg`), and structured data: Organization (both offices) on every page, LocalBusiness per
-  office on Contact, Article for journal entries, Event for events, FAQPage on Contact, BreadcrumbList on inner pages.
+  office on Contact, Article for journal entries, Event for events with a confirmed full date (Google requires
+  `startDate`, and no date is invented), FAQPage on Contact, BreadcrumbList on inner pages. Every page lists
+  `assets/img/og.jpg` as its first `og:image` (WhatsApp and LinkedIn do not reliably show a WebP preview) and its own
+  photograph second.
 * `robots.txt`, `sitemap.xml` and `journal/feed.xml` (RSS of journal entries and insights) are generated at build.
   While the site is pre-launch, robots stay `noindex` through `_headers` and the meta tag; the build has a
   `LAUNCH=1` switch that drops both. Document it.
@@ -184,7 +187,9 @@ Nothing is sent without them.
 * `_redirects`: keep `/netlify/*` and the old `#/` links are handled on the client (a server never sees a hash).
   Remove the catch-all rewrite so unknown paths return `404.html` with a real 404 status.
 * The client app still runs on every prerendered page and takes over navigation. Add a `data-prerendered` attribute
-  on `<html>` so `app.js` can skip the intro veil and reveal animations on first paint if needed.
+  on `<html>`, carrying the route the file was built for, so `app.js` keeps the server markup only when the address
+  names that route (an old `#/contact` link lands on the prerendered home page and is rewritten to `/contact` before
+  the app runs: it gets a full render) and can skip the intro veil and reveal animations on first paint.
 * Preview builds: `BUILD_PREVIEW=1 npm run build` sets `data-preview` on `<html>`; the app then shows photographs
   that still lack consent (see 4.8). Production builds hide them.
 * `shared/analytics.js`: reads `IHG.config.ga4`; when set, loads gtag with a cookie-free configuration

@@ -32,7 +32,8 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
 
 Each page carries its own title, description, canonical, Open Graph and Twitter card (absolute image URL: the page's
 hero photograph, or `assets/img/og.jpg`) and JSON-LD: Organization with both offices on every page, BreadcrumbList on
-inner pages, LocalBusiness per office and FAQPage on Contact, Article on insights articles, Event on event pages. All
+inner pages, LocalBusiness per office and FAQPage on Contact, Article on insights articles, Event on event pages that
+have a full date (Google requires `startDate`, and no date is invented, so the other events carry no Event block). All
 of it is written by `setMeta()` in app.js from data.js, so client-side navigation updates the same tags.
 
 ## How the prerender works
@@ -47,7 +48,8 @@ visible at once. Nothing is fetched over the network and no browser is needed, s
 Before serialising, the build removes what belongs to a browser session: the `base` element the inline head script
 adds, the GA4 script element, the clock values, the first-touch tracking values in hidden form fields (the browser
 fills them from the real visit). It puts the intro veil markup back where the app removed it, rewrites relative asset
-URLs to root-relative ones, sets `data-prerendered` on `html` and, with `BUILD_PREVIEW=1`, `data-preview`.
+URLs to root-relative ones, sets `data-prerendered` on `html` (its value is the route the file was built for, `/404`
+and `/error` for the two error pages) and, with `BUILD_PREVIEW=1`, `data-preview`.
 
 The two hero `<link rel="preload" as="image">` lines in `index.html` belong to the home page. The build replaces them
 on every page with that page's own hero as the app rendered it: the home picture with its desktop and mobile files
@@ -56,13 +58,15 @@ the backdrop on `404.html` and `error.html`, and no preload on pages without a h
 over 200 KB is not preloaded: the build prints a `WARNING` naming the file and the pages, so it can be re-exported
 under the limit (docs/PHOTO-SHOT-LIST.md), and `tests/seo.js` prints the same warning.
 
-In the browser the app runs again on the prerendered page. Because the page carries `data-prerendered`, the first
-render keeps the markup the browser has already painted (it was built by the same code), refreshes the first-touch
-tracking values in the hidden form fields from the real visit, binds behaviour and marks every reveal element visible
-straight away. Nothing fades out and back in, and the largest contentful paint is the prerendered one. A query string
-that changes the view (`about`, `audience`, `goals`, `faq`, `cat`) still gets a full render; campaign parameters
-(`utm_*`, `gclid`, `fbclid`) do not. Later navigations animate as before. On deep links the app removes the intro veil
-as it always did; on the home page the veil shows from first paint on a first visit.
+In the browser the app runs again on the prerendered page. Because the page carries `data-prerendered` naming the
+route in the address, the first render keeps the markup the browser has already painted (it was built by the same
+code), refreshes the first-touch tracking values in the hidden form fields from the real visit, binds behaviour and
+marks every reveal element visible straight away. Nothing fades out and back in, and the largest contentful paint is
+the prerendered one. An old `#/about` link is different: the server sends the home page (a hash never reaches it), the
+head script rewrites the address to `/about`, and because the attribute says `/`, the app renders the About page in
+full. A query string that changes the view (`about`, `audience`, `goals`, `faq`, `cat`) also gets a full render;
+campaign parameters (`utm_*`, `gclid`, `fbclid`) do not. Later navigations animate as before. On deep links the app
+removes the intro veil as it always did; on the home page the veil shows from first paint on a first visit.
 
 ## Switches
 
@@ -122,8 +126,11 @@ Run it on a `LAUNCH=1` build: the pre-launch `noindex` otherwise fails the "page
 
 ## Known limits
 
-* Social cards use the page's own WebP photograph. WhatsApp and some older crawlers only render JPEG or PNG previews;
-  `assets/img/og.jpg` (1200 by 630) is used where a page has no hero. TO CONFIRM: whether per-page JPEG cards are wanted.
+* Social cards: every page lists `assets/img/og.jpg` (1200 by 630, JPEG) as its first `og:image`, with its width and
+  height, because WhatsApp, LinkedIn and some older crawlers only render JPEG or PNG previews; the page's own WebP
+  photograph follows as a second `og:image` (and as `twitter:image`) for the services that render it. So a shared
+  division or journal page previews with the Group card, not its own photograph. TO CONFIRM: whether per-page JPEG
+  cards are wanted (they would be generated at build from each hero).
 * When the source tree (not `dist/`) is served through the single-page fallback, nested routes such as
   `/divisions/citizenship` trigger a speculative fetch of the relative asset URLs before the inline script adds the
   `base` element; the browser then fetches the right URL and the page is fine, but the test server logs 404s. The
