@@ -69,7 +69,7 @@ pages (not yet configured) leave the site.
    Resend API: name, email address, the division that will reply, the office numbers. Off today.
 4. When the person chooses to verify the phone, the number goes to Twilio Verify (WhatsApp or SMS). Off today.
 5. Fallback: if the Netlify Forms post fails, the page posts the same data as JSON to
-   `/.netlify/functions/lead.js`, which runs the same core. Then there is no Netlify Forms inbox copy. If both fail,
+   `/.netlify/functions/lead` (`netlify/functions/lead.js`), which runs the same core. Then there is no Netlify Forms inbox copy. If both fail,
    the page shows the office numbers and the email and keeps the draft on the device.
 6. People: the lead is seen by the named owner in the relevant Imperial team (Citizenship, Private Office, Partners
    Club, Academy, Real Estate, or the Group team) and whoever else has access to that Pipedrive pipeline.
