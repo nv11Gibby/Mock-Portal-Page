@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "node tests/serve.js . 8765",
     "smoke": "node tests/smoke.js",
+    "test:functions": "node --test tests/functions/*.test.js",
     "check": "node --check assets/js/app.js && node --check assets/js/data.js && node tests/copy-rules.js"
   },
   "license": "UNLICENSED"
