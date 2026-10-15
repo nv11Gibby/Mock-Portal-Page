@@ -18,11 +18,12 @@ function client(token, fetchImpl) {
   const base = routing.pipedrive.base;
   const doFetch = fetchImpl || fetch;
 
+  /* The token travels in the x-api-token header, never in the URL, so it stays out of proxy and request logs and
+     out of any error that prints the path. */
   async function call(method, path, body) {
-    const url = base + path + (path.indexOf('?') > -1 ? '&' : '?') + 'api_token=' + encodeURIComponent(token);
-    const res = await doFetch(url, {
+    const res = await doFetch(base + path, {
       method,
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'x-api-token': token },
       body: body ? JSON.stringify(body) : undefined
     });
     const json = await res.json().catch(() => ({}));
@@ -43,11 +44,21 @@ function client(token, fetchImpl) {
     return items.find((p) => (p.emails || []).some((e) => String(e).toLowerCase() === lower)) || items[0] || null;
   }
 
+  /* Pipedrive's search is word based, so the full digit string is tried first (the way an E.164 number is usually
+     stored) and the last nine digits second (a number stored with spaces or without the country code); the
+     samePhone filter decides on the results either way. TO CONFIRM on the first live returning lead (docs/LEADS.md
+     section 8, step 5) that one of the two terms finds a number stored with spaces. */
   async function findPersonByPhone(phone) {
     const d = digits(phone);
     if (d.length < 8) return null;
-    const items = searchItems(await call('GET', '/persons/search?fields=phone&limit=10&term=' + encodeURIComponent(d.slice(-9))));
-    return items.find((p) => (p.phones || []).some((ph) => samePhone(ph, phone))) || null;
+    const terms = [d];
+    if (d.length > 9) terms.push(d.slice(-9));
+    for (let i = 0; i < terms.length; i++) {
+      const items = searchItems(await call('GET', '/persons/search?fields=phone&limit=10&term=' + encodeURIComponent(terms[i])));
+      const hit = items.find((p) => (p.phones || []).some((ph) => samePhone(ph, phone)));
+      if (hit) return hit;
+    }
+    return null;
   }
 
   function getPerson(id) { return call('GET', '/persons/' + id); }

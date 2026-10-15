@@ -71,7 +71,9 @@ function createMock() {
 
 function pipedrive(m, c) {
   if (m.failPipedrive) return jsonRes(500, { success: false, error: 'mock failure' });
-  if (c.query.api_token !== m.token) return jsonRes(401, { success: false, error: 'unauthorized' });
+  /* the token is accepted in the x-api-token header only; a token in the query string is refused like a missing one */
+  if (c.query.api_token !== undefined) return jsonRes(401, { success: false, error: 'unauthorized: token in the query string' });
+  if (c.headers['x-api-token'] !== m.token) return jsonRes(401, { success: false, error: 'unauthorized' });
   const p = c.path.replace(/^\/v1/, '');
   let mt;
   if (c.method === 'GET' && p === '/persons/search') {

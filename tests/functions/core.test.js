@@ -121,6 +121,20 @@ test('honeypot is rejected before any API call', async () => {
   assert.equal(m.calls.length, 0);
 });
 
+test('prototype keys never pass as a form, site or division', async () => {
+  for (const form of ['constructor', 'toString', 'hasOwnProperty', '__proto__']) {
+    const r = await core.processLead({ form, data: data({ division: 'citizenship' }), ctx: ctx() });
+    assert.equal(r.reason, 'form', form);
+  }
+  assert.equal(m.calls.length, 0);
+  assert.equal(core.resolveSite({ site: 'constructor' }, { site: '__proto__' }), 'ihg');
+  assert.equal(core.resolveDivision('enquiry', { division: 'constructor', about: '__proto__' }, 'ihg'), schema.sites.ihg.defaultDivision, 'falls through to the site default');
+  assert.equal(core.resolveDivision('constructor', {}, 'citizenship'), schema.sites.citizenship.defaultDivision, 'a prototype form name has no form defaults');
+  const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', site: 'constructor' }), ctx: ctx({ site: 'toString' }) });
+  assert.equal(r.ok, true);
+  assert.equal(r.site, 'ihg');
+});
+
 test('Turnstile: a rejected token fails, a good one passes, a missing one fails when the secret is set', async () => {
   process.env.TURNSTILE_SECRET_KEY = 'secret';
   m.turnstileOk = false;
@@ -135,6 +149,8 @@ test('Turnstile: a rejected token fails, a good one passes, a missing one fails 
   assert.equal(m.find('POST', /siteverify/)[1].body.response, 'tok');
   const missing = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship' }), ctx: ctx() });
   assert.equal(missing.reason, 'turnstile');
+  assert.ok(core.summary('submission-created', missing).indexOf('reason=turnstile detail=missing token') > -1, 'the log line says why: ' + core.summary('x', missing));
+  assert.ok(core.summary('submission-created', bad).indexOf('detail=invalid-input-response') > -1, 'Cloudflare error codes in the log line');
 });
 
 test('dedupe by email: person reused, note and activity added, open lead of the same division reused', async () => {
@@ -168,6 +184,9 @@ test('dedupe by phone: a different email on a known number reuses the person and
   assert.equal(r.ok, true);
   assert.equal(r.personId, p.id);
   assert.equal(m.find('POST', /\/persons$/).length, 0);
+  const search = m.find('GET', /\/persons\/search/).filter((c) => c.query.fields === 'phone');
+  assert.equal(search[0].query.term, '2348020000000', 'the full digit string is searched first');
+  m.calls.forEach((c) => { if (c.host === 'api.pipedrive.com') { assert.equal(c.headers['x-api-token'], 'test-token', 'token in the header'); assert.equal(c.query.api_token, undefined, 'never in the query string'); } });
   const put = m.find('PUT', /\/persons\/\d+$/)[0];
   assert.ok(put, 'person updated');
   assert.deepEqual(put.body.email.map((e) => e.value), ['amina.work@example.com', 'amina.home@example.com']);
@@ -391,17 +410,18 @@ test('markVerified looks the person up four times, 1.5 s apart by default, so a 
   let searches = 0;
   const orig = global.fetch;
   global.fetch = async (url, init) => {
-    if (/\/persons\/search/.test(String(url))) { searches++; if (searches === 5) m.seedPerson({ name: 'Late Person', email: 'late@example.com', phone: '+2348020000777' }); }
+    /* each attempt searches by phone (full digits, then the nine digit tail) and by email: three searches when nothing matches */
+    if (/\/persons\/search/.test(String(url))) { searches++; if (searches === 7) m.seedPerson({ name: 'Late Person', email: 'late@example.com', phone: '+2348020000777' }); }
     return orig(url, init);
   };
   const r = await core.markVerified({ email: 'late@example.com', phone: '+2348020000777', channel: 'sms', retryDelayMs: 0 });
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(m.find('PUT', /\/persons\/\d+$/)[0].body[F.person.verificationStatus], O.verificationStatus.verified);
-  assert.ok(searches >= 5 && searches <= 6, 'the person appeared on the third attempt: ' + searches + ' searches');
+  assert.equal(searches, 7, 'the person appeared on the third attempt and was found by phone at once');
   m.calls.length = 0; searches = 0;
   const gone = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0 });
   assert.equal(gone.reason, 'person');
-  assert.equal(searches, 8, 'four attempts, each by phone then by email');
+  assert.equal(searches, 12, 'four attempts, each by phone (two terms) then by email');
   const one = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0, attempts: 1 });
   assert.equal(one.reason, 'person');
 });

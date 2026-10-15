@@ -82,7 +82,7 @@ Current routing (15 October 2026 snapshot):
 To find the user ids once the token exists (read-only call, safe to run):
 
 ```
-curl -s "https://api.pipedrive.com/v1/users?api_token=$PIPEDRIVE_API_TOKEN" | python3 -c "import json,sys; [print(u['id'], u['name'], u['email']) for u in json.load(sys.stdin)['data']]"
+curl -s -H "x-api-token: $PIPEDRIVE_API_TOKEN" https://api.pipedrive.com/v1/users | python3 -c "import json,sys; [print(u['id'], u['name'], u['email']) for u in json.load(sys.stdin)['data']]"
 ```
 
 Put each id in `owner`, commit, deploy. The audience from the form still sets the Contact Type (Client 230,

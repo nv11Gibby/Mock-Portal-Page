@@ -29,17 +29,19 @@ function esc(s) { return String(s === undefined || s === null ? '' : s).replace(
 function label(field, value) { const f = schema.fields[field]; return (f && f.labels && f.labels[value]) || value || ''; }
 function dateOnly(ms) { return new Date(ms).toISOString().slice(0, 10); }
 function addDays(ms, days) { return dateOnly(ms + days * 86400000); }
+/* Own keys only: a form, site or division named "constructor" or "__proto__" must not pass through the prototype. */
+function has(obj, key) { return !!key && Object.prototype.hasOwnProperty.call(obj, key); }
 
 function resolveSite(data, ctx) {
-  if (data.site && schema.sites[data.site]) return data.site;
-  if (ctx.site && schema.sites[ctx.site]) return ctx.site;
+  if (has(schema.sites, data.site)) return data.site;
+  if (has(schema.sites, ctx.site)) return ctx.site;
   return 'ihg';
 }
 
 function resolveDivision(form, data, site) {
-  const formCfg = schema.forms[form] || {};
+  const formCfg = has(schema.forms, form) ? schema.forms[form] : {};
   const candidates = [data.division, data.about, formCfg.defaultDivision, schema.sites[site].defaultDivision, 'group'];
-  for (let i = 0; i < candidates.length; i++) if (candidates[i] && routing.divisions[candidates[i]]) return candidates[i];
+  for (let i = 0; i < candidates.length; i++) if (has(routing.divisions, candidates[i])) return candidates[i];
   return 'group';
 }
 
@@ -235,7 +237,7 @@ async function processLead(input) {
   const result = { ok: false, form, ref: ctx.ref || newRef(now) };
 
   if (honeypotTripped(raw)) return Object.assign(result, { reason: 'honeypot' });
-  if (!schema.forms[form]) return Object.assign(result, { reason: 'form' });
+  if (!has(schema.forms, form)) return Object.assign(result, { reason: 'form' });
   const data = pick(raw);
 
   if (ctx.ip) {
