@@ -1,0 +1,47 @@
+<!-- Imperial ecosystem: the shared footer (brief section 7, shared/chrome/README.md).
+     The footer that buildChrome() in assets/js/app.js renders on IHG, written out for the other Imperial sites. Kept in
+     sync by hand with buildChrome(), data.js (contact, divisions) and shared/ecosystem.json. Needs shared/tokens.css,
+     the site stylesheet (base rules) and shared/chrome/chrome.css.
+
+     Placeholders:
+       {{SITE_NAME}}       the site's name, for the logo alt text and the copyright line
+       {{LOGO_STACKED}}    the site's stacked gold wordmark, for example assets/logos/IHG-Stacked-Gold.svg
+       {{IHG_URL}}         the Group site, https://www.imperialholdingsgroup.com (TO CONFIRM: final domain)
+       {{CONTACT_URL}}     the site's own contact page
+       {{PRIVACY_URL}}     the site's privacy notice; {{TERMS_URL}} its terms of use
+       {{YEAR}}            the current year
+     Every division site keeps the links back to the Group site and to the Journal feed (docs/ECOSYSTEM.md section 4).
+     The six site links come from shared/ecosystem.json: a link with data-tbc is a site that is not online yet. The
+     legal line keeps the TO CONFIRM placeholder until the entity details are supplied. -->
+<footer class="ftr" id="ftr"><div class="wrap"><div class="ftr-top">
+  <div class="ftr-brand"><img src="{{LOGO_STACKED}}" alt="{{SITE_NAME}}"><p>Two cities. One horizon. Five specialist divisions, one standard, and one person who knows your family.</p></div>
+  <div><h2 class="fh">Divisions</h2><ul>
+    <li><a href="{{IHG_URL}}/divisions/citizenship">Imperial Citizenship</a></li>
+    <li><a href="{{IHG_URL}}/divisions/partners-club">Imperial Partners Club</a></li>
+    <li><a href="{{IHG_URL}}/divisions/private-office">Imperial Private Office</a></li>
+    <li><a href="{{IHG_URL}}/divisions/real-estate">Imperial Real Estate <small>Soon</small></a></li>
+    <li><a href="{{IHG_URL}}/divisions/academy">Imperial Academy</a></li>
+  </ul></div>
+  <div><h2 class="fh">The Group</h2><ul>
+    <li><a href="{{IHG_URL}}/">Imperial Holdings Group</a></li>
+    <li><a href="{{IHG_URL}}/about">About</a></li>
+    <li><a href="{{IHG_URL}}/divisions">Our ecosystem</a></li>
+    <li><a href="{{IHG_URL}}/journal">Events and Journal</a></li>
+    <li><a href="{{IHG_URL}}/journal/feed.xml" type="application/rss+xml">Journal feed</a></li>
+    <li><a href="{{CONTACT_URL}}">Contact</a></li>
+  </ul></div>
+  <div><h2 class="fh">Offices</h2>
+    <div class="off"><b>Dubai</b>Headquarters<br>804 Single Business Tower<br>Business Bay, Dubai<br>United Arab Emirates<br><a href="tel:+97145461110">+971 4 546 1110</a></div>
+    <div class="off"><b>Lagos</b>Regional hub<br>8 Aromire Road, Ikoyi<br>Lagos 106104<br>Nigeria<br><a href="tel:+2349022222024">+234 902 222 2024</a></div>
+    <div class="off"><a href="mailto:info@imperialholdingsgroup.com">info@imperialholdingsgroup.com</a></div>
+  </div>
+  <div><h2 class="fh">Websites</h2><ul>
+    <li><a href="{{IHG_URL}}/">Imperial Holdings Group</a></li>
+    <li><a href="https://imperialcitizenship.com" target="_blank" rel="noopener">imperialcitizenship.com</a></li>
+    <li><a href="#" data-tbc="Imperial Partners Club website link">Partners Club <small>TBC</small></a></li>
+    <li><a href="#" data-tbc="Imperial Private Office website link">Private Office <small>TBC</small></a></li>
+    <li><a href="#" data-tbc="Imperial Real Estate website link (at launch)">Real Estate <small>TBC</small></a></li>
+    <li><a href="#" data-tbc="Imperial Academy website link">Academy <small>TBC</small></a></li>
+  </ul></div>
+</div><div class="ftr-mid"><p>This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists. Imperial does not guarantee government decisions or outcomes. <span class="tbc" title="Placeholder: to be confirmed">Legal entity, licence number and registered address</span></p></div>
+<div class="ftr-bot"><span>&copy; {{YEAR}} {{SITE_NAME}}.</span><span><a href="{{PRIVACY_URL}}">Privacy</a> &nbsp;&middot;&nbsp; <a href="{{TERMS_URL}}">Terms</a></span></div></div></footer>
