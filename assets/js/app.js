@@ -125,7 +125,8 @@ function bindMedia(){
   });
 }
 function relatedRow(kind, cur){
-  var list = kind==='event' ? sortByIso(D.events) : D.insights.slice(), same = [], other = [];
+  /* drafts (insights awaiting approval) are never offered as related reading */
+  var list = kind==='event' ? sortByIso(D.events) : D.insights.filter(function(a){return !a.draft;}), same = [], other = [];
   list.forEach(function(x){ if(x===cur) return; (x.cat===cur.cat ? same : other).push(x); });
   var pick = same.concat(other).slice(0,3);
   if(!pick.length) return '';
@@ -189,7 +190,7 @@ function steps(list){
   return '<div class="steps" style="--n:'+list.length+'">'+list.map(function(s,i){return '<div class="step" style="--i:'+i+'" data-r><span class="ix">STEP '+pad2(i+1)+'</span><h3 class="h3">'+esc(s[0])+'</h3><p>'+esc(s[1])+'</p></div>';}).join('')+'</div>';
 }
 function insightCard(a,i){
-  return '<a class="icard" href="#/insights/'+a.slug+'" data-cat="'+esc(a.cat)+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><div class="ic-img">'+img(a.img,null,'','-c')+'<span class="sample">Sample</span></div><div class="meta">'+esc(a.cat)+' <i aria-hidden="true">\u00b7</i> '+readMins(a)+' min read</div><h3>'+esc(a.title)+'</h3><p>'+esc(a.dek)+'</p><span class="tlink">Read the sample'+AR+'</span></a>';
+  return '<a class="icard" href="#/insights/'+a.slug+'" data-cat="'+esc(a.cat)+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><div class="ic-img">'+img(a.img,null,'','-c')+(a.draft?'<span class="sample">Draft, awaiting approval</span>':'')+'</div><div class="meta">'+esc(a.cat)+' <i aria-hidden="true">\u00b7</i> '+readMins(a)+' min read</div><h3>'+esc(a.title)+'</h3><p>'+esc(a.dek)+'</p><span class="tlink">'+(a.draft?'Read the draft':'Read the article')+AR+'</span></a>';
 }
 function figures(){
   return '<div class="figs">'+D.figures.map(function(f,i){return '<div class="fig" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><span class="num"><span data-count="'+f.n+'">'+(reduced?f.n.toLocaleString('en-GB'):'0')+'</span><sup>'+f.s+'</sup></span><span>'+esc(f.l)+'</span></div>';}).join('')+'</div>'+
@@ -370,7 +371,7 @@ V.insights = function(q){
   var pre = (q && q.cat) || 'All';
   var cats = ['All'].concat(D.insights.map(function(a){return a.cat;}).filter(function(v,i,s){return s.indexOf(v)===i;}));
   return pageHero({img:'academy', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
-  '<section class="sec light"><div class="wrap"><div class="notice" data-r><span class="sample">Sample</span><div><b>These are sample articles.</b> They show the layout and tone of the Insights section. Titles and copy draw on the Imperial Holdings brochure; final articles are to be written and approved before launch.</div></div>'+
+  '<section class="sec light"><div class="wrap">'+(D.insights.some(function(a){return a.draft;})?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> These articles are drafts and will be published once the copy has been approved.</div></div>':'')+
    '<div class="filters" role="group" aria-label="Filter insights" data-r>'+cats.map(function(c){var n=c==='All'?D.insights.length:D.insights.filter(function(a){return a.cat===c;}).length, on=c===pre;return '<button class="'+(on?'on':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+on+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('')+'</div>'+
    '<h2 class="vh">Articles</h2><div class="icards four" id="icards">'+D.insights.map(function(a,i){var h=insightCard(a,i);return pre!=='All'&&a.cat!==pre?h.replace('class="icard"','class="icard hide"'):h;}).join('')+'</div><p class="vh" id="filterMsg" aria-live="polite"></p></div></section>'+closing();
 };
@@ -378,8 +379,8 @@ V.article = function(slug){
   var a=null; D.insights.forEach(function(x){if(x.slug===slug) a=x;}); if(!a) return null;
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
-  return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:'<div data-r style="margin-bottom:18px"><span class="sample">Sample article</span></div>', eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
-  '<section class="sec light"><div class="wrap"><article class="article" id="article"><div class="notice" data-r><span class="sample">Sample</span><div><b>Sample article for layout.</b> Final copy to be written and approved. Author and publication date: '+tbc('to confirm')+'</div></div><p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
+  return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
+  '<section class="sec light"><div class="wrap"><article class="article" id="article">'+(a.draft?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> Final copy to be approved before publication. Author and publication date: '+tbc('to confirm')+'</div></div>':'')+'<p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
   relatedRow('article', a);
@@ -724,6 +725,7 @@ function pageMeta(out, r){
   else if(out.view === 'article'){
     D.insights.forEach(function(a){ if(a.slug === p[1]) x = a; });
     crumbs = [['Insights', '/insights'], [x.title, path]];
+    if(x.draft) out.noindex = true;   /* a draft awaiting approval: reachable, never indexed (setMeta writes the tag) */
     var art = {'@context':'https://schema.org', '@type':'Article', headline: x.title, description: x.dek, articleSection: x.cat, url: out.canonical, mainEntityOfPage: out.canonical, image: out.image, author: orgRef(), publisher: orgRef()};
     if(fullDate(x.iso)) art.datePublished = x.iso;
     ld.push(art);
@@ -853,6 +855,10 @@ function setMeta(out){
   var rb = H.querySelector('meta[name="robots"][data-nf]');
   if(out.nf && !H.querySelector('meta[name="robots"]')){ rb=document.createElement('meta'); rb.setAttribute('name','robots'); rb.setAttribute('data-nf',''); rb.setAttribute('content','noindex, follow'); H.appendChild(rb); }
   else if(!out.nf && rb) rb.parentNode.removeChild(rb);
+  /* a draft page carries its own noindex tag, kept by the build even when LAUNCH=1 drops the pre-launch one */
+  var rd = H.querySelector('meta[name="robots"][data-draft]');
+  if(out.noindex && !rd){ rd=document.createElement('meta'); rd.setAttribute('name','robots'); rd.setAttribute('data-draft',''); rd.setAttribute('content','noindex, follow'); H.appendChild(rd); }
+  else if(!out.noindex && rd) rd.parentNode.removeChild(rd);
   [].forEach.call(H.querySelectorAll('script[data-ld]'), function(s){ s.parentNode.removeChild(s); });
   (out.ld||[]).forEach(function(o){ var s=document.createElement('script'); s.type='application/ld+json'; s.setAttribute('data-ld',''); s.textContent=JSON.stringify(o).replace(/</g,'\\u003c'); H.appendChild(s); });
 }
@@ -1042,7 +1048,7 @@ function bindFilters(){
       c.classList.toggle('hide', !show); c.classList.remove('pop');
       if(show && !reduced){ void c.offsetWidth; c.classList.add('pop'); }
     });
-    document.getElementById('filterMsg').textContent = n+' sample article'+(n===1?'':'s')+' shown';
+    document.getElementById('filterMsg').textContent = n+' article'+(n===1?'':'s')+' shown';
     if(HIST){ try{ history.replaceState(history.state, '', '/insights'+(f==='All'?'':'?cat='+encodeURIComponent(f))); }catch(e){} }
   }); });
 }
@@ -1725,7 +1731,7 @@ function palIndex(){
   add({k:'Page', t:'Our ecosystem', s:'Five divisions, side by side', u:'/divisions', kw:'houses compare divisions ecosystem all'});
   add({k:'Page', t:'Our Network', s:'Private clients, professional partners, institutions and strategic relationships', u:'/', go:'network', kw:'network audiences clients partners institutions strategic journey'});
   add({k:'Page', t:'Events and Journal', s:'Developments, insights, partnerships and selected events', u:'/journal', kw:'journal events gallery photos news articles insights'});
-  add({k:'Page', t:'Insights', s:'Sample articles', u:'/insights', kw:'articles blog guidance'});
+  add({k:'Page', t:'Insights', s:'Notes from the house', u:'/insights', kw:'articles blog guidance insights'});
   add({k:'Page', t:'Speak to us', s:'Start a conversation in three short steps', u:'/contact', kw:'contact enquiry call email phone get in touch book'});
   add({k:'Enquire', t:'Enquire now', s:'Begin with one conversation', u:'/', go:'enquire', kw:'enquiry form contact send message'});
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
@@ -1735,7 +1741,7 @@ function palIndex(){
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
   D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
-  D.insights.forEach(function(a){ add({k:'Insight', t:a.title, s:a.dek, u:'/insights/'+a.slug, img:a.img, kw:a.cat}); });
+  D.insights.forEach(function(a){ if(a.draft) return; add({k:'Insight', t:a.title, s:a.dek, u:'/insights/'+a.slug, img:a.img, kw:a.cat}); });
   D.faq.forEach(function(f,i){ add({k:'Question', t:f.q, s:f.a, u:'/contact?faq='+i}); });
   D.enquiry.forEach(function(e){ add({k:'Enquire', t:e.l, s:'Start an enquiry, routed to the right house', u:'/contact?about='+e.v, kw:'enquire enquiry contact'}); });
   return (PIDX = I);
@@ -1830,14 +1836,16 @@ window.addEventListener('pageshow', tick);
 
 /* ---------- v5: export for the build and the tests ----------
    routes() lists every path that gets its own HTML file (docs/BUILD-CONTRACT.md section 5). Query-string routes are
-   not listed. build/build.js renders each one through resolve() inside jsdom and tests/seo.js checks the output. */
-function routes(){
-  var out = ['/', '/about', '/divisions'];
+   not listed. build/build.js renders each one through resolve() inside jsdom and tests/seo.js checks the output.
+   routes({published:true}) leaves out the drafts (insights with draft:true): they are prerendered and reachable by
+   their address, carry a noindex tag, and stay out of sitemap.xml and journal/feed.xml until approved. */
+function routes(opts){
+  var published = !!(opts && opts.published), out = ['/', '/about', '/divisions'];
   D.divisions.forEach(function(d){ out.push('/divisions/'+d.key); });
   out.push('/journal');
   D.events.forEach(function(e){ out.push('/journal/events/'+e.slug); });
   out.push('/insights');
-  D.insights.forEach(function(a){ out.push('/insights/'+a.slug); });
+  D.insights.forEach(function(a){ if(published && a.draft) return; out.push('/insights/'+a.slug); });
   out.push('/contact', '/privacy', '/terms');
   return out;
 }

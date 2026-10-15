@@ -31,6 +31,10 @@ vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'assets/js/data.js'), 'utf8')
 const D = sandbox.window.IHG, SITE = String(D.config.siteUrl).replace(/\/+$/, '');
 const routes = ['/', '/about', '/divisions'].concat(D.divisions.map(function(d){ return '/divisions/' + d.key; }), ['/journal'],
   D.events.map(function(e){ return '/journal/events/' + e.slug; }), ['/insights'], D.insights.map(function(a){ return '/insights/' + a.slug; }), ['/contact', '/privacy', '/terms']);
+/* Drafts (insights with draft:true): prerendered and reachable, but noindex on every build (LAUNCH included) and
+   absent from the sitemap and the feed until the copy is approved. */
+const drafts = D.insights.filter(function(a){ return a.draft; }).map(function(a){ return '/insights/' + a.slug; });
+const listed = routes.filter(function(r){ return drafts.indexOf(r) < 0; });
 
 let fails = 0;
 function ok(cond, label, detail){ if(cond) console.log('ok   ' + label); else { fails++; console.log('FAIL ' + label + (detail ? ' | ' + detail : '')); } }
@@ -115,7 +119,10 @@ function startServer(){
       if(!/<h1[\s>]/.test(h)) problems.push('no h1');
       if(/href="#\//.test(h)) problems.push('hash links remain');
       if(/\s(?:src|href)="assets\//.test(h)) problems.push('relative asset urls remain');
-      if(LAUNCH ? /<meta name="robots"/.test(h) : !/<meta name="robots" content="noindex/.test(h)) problems.push(LAUNCH ? 'noindex present after launch' : 'pre-launch noindex missing');
+      if(drafts.indexOf(route) > -1){ const dm = /<meta name="robots"[^>]*\sdata-draft[^>]*>/.exec(h); if(!dm || !/content="noindex/.test(dm[0])) problems.push('draft page without its noindex tag'); }
+      else if(LAUNCH ? /<meta name="robots"/.test(h) : !/<meta name="robots" content="noindex/.test(h)) problems.push(LAUNCH ? 'noindex present after launch' : 'pre-launch noindex missing');
+      if(drafts.indexOf(route) > -1 && !/Draft, awaiting approval/.test(h)) problems.push('draft page not labelled');
+      if(/\bSample\b/.test(h.replace(/<script[\s\S]*?<\/script>/g, ''))) problems.push('"Sample" wording remains');
       if(ty.indexOf('INVALID') > -1) problems.push('invalid JSON-LD');
       if(ty.indexOf('Organization') < 0) problems.push('no Organization');
       if(route !== '/' && ty.indexOf('BreadcrumbList') < 0) problems.push('no BreadcrumbList');
@@ -160,12 +167,13 @@ function startServer(){
     ok(robots.status === 200 && robots.body.indexOf('Sitemap: ' + SITE + '/sitemap.xml') > -1 && /Disallow: \/\.netlify\//.test(robots.body), 'robots.txt', 'status ' + robots.status);
     const sm = await get(BASE + '/sitemap.xml');
     const locs = []; sm.body.replace(/<loc>([^<]+)<\/loc>/g, function(m, l){ locs.push(l); return m; });
-    const want = routes.map(function(r){ return r === '/' ? SITE + '/' : SITE + r; });
+    const want = listed.map(function(r){ return r === '/' ? SITE + '/' : SITE + r; });
     const missing = want.filter(function(u){ return locs.indexOf(u) < 0; }), extra = locs.filter(function(u){ return want.indexOf(u) < 0; });
-    ok(sm.status === 200 && !missing.length && !extra.length, 'sitemap.xml lists every route (' + locs.length + ')', (missing.length ? 'missing ' + missing.join(',') : '') + (extra.length ? ' extra ' + extra.join(',') : ''));
+    ok(sm.status === 200 && !missing.length && !extra.length, 'sitemap.xml lists every published route (' + locs.length + ', ' + drafts.length + ' drafts left out)', (missing.length ? 'missing ' + missing.join(',') : '') + (extra.length ? ' extra ' + extra.join(',') : ''));
     const feed = await get(BASE + '/journal/feed.xml');
     const links = []; feed.body.replace(/<item>[\s\S]*?<link>([^<]+)<\/link>/g, function(m, l){ links.push(l); return m; });
-    ok(feed.status === 200 && /<rss version="2.0"/.test(feed.body) && links.length > 0 && links.every(function(l){ return l.indexOf(SITE + '/') === 0; }), 'journal/feed.xml (' + links.length + ' items, absolute links)', 'status ' + feed.status);
+    const draftItems = links.filter(function(l){ return drafts.indexOf(l.replace(SITE, '')) > -1; });
+    ok(feed.status === 200 && /<rss version="2.0"/.test(feed.body) && links.length > 0 && links.every(function(l){ return l.indexOf(SITE + '/') === 0; }) && !draftItems.length, 'journal/feed.xml (' + links.length + ' items, absolute links, no drafts)', 'status ' + feed.status + (draftItems.length ? ' drafts in feed: ' + draftItems.join(',') : ''));
     const nf = await get(BASE + '/404.html');
     const tels = D.contact.offices.map(function(o){ return o.tel; });
     ok(nf.status === 200 && /<meta name="robots" content="noindex/.test(nf.body) && !/rel="canonical"/.test(nf.body) && /data-prerendered/.test(nf.body) && tels.every(function(t){ return nf.body.indexOf(t) > -1; }) && nf.body.indexOf(D.contact.email) > -1, '404.html: noindex, no canonical, office contacts present', 'status ' + nf.status);

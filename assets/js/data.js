@@ -312,8 +312,12 @@ window.IHG = {
     }
   ],
 
+  /* Insights: four draft articles awaiting the Founder's approval (brief section 6). draft:true keeps a page reachable
+     by its address but marks it noindex, leaves it out of sitemap.xml, journal/feed.xml, the search palette and the
+     related rows, and labels it "Draft, awaiting approval" on the page. Remove the flag once the copy is approved.
+     TO CONFIRM: approval of the four articles, their authors and publication dates. */
   insights: [
-    {slug:'before-a-first-conversation', cat:'Mobility', img:'citizenship', title:'Six things worth thinking about before a first conversation',
+    {slug:'before-a-first-conversation', draft:true, cat:'Mobility', img:'citizenship', title:'Six things worth thinking about before a first conversation',
      dek:'You do not need any documents to begin. A little thought about six questions helps us give you useful options straight away.',
      body:[
       ['p','Nobody arrives wanting a visa for its own sake. They arrive wanting a different next chapter. A little thought about the questions below helps a first conversation move quickly to options that fit.'],
@@ -325,7 +329,7 @@ window.IHG = {
       ['h','Your history'],['p','Any past applications or refusals. Being open helps us help you.'],
       ['q','Not sure about some of them? That is what the first conversation is for.']
      ]},
-    {slug:'explain-your-family-once', cat:'Private Office', img:'private-office', title:'Why a multi-country family needs one point of contact',
+    {slug:'explain-your-family-once', draft:true, cat:'Private Office', img:'private-office', title:'Why a multi-country family needs one point of contact',
      dek:'When the residency, the home, the company and the school are handled by different people, the family becomes the coordinator. It should be the other way round.',
      body:[
       ['p','A family that lives across borders rarely has one question. The residency touches the home; the home touches the school; the company touches the tax position. Handled separately, each adviser sees a slice and the family carries the whole.'],
@@ -333,7 +337,7 @@ window.IHG = {
       ['h','One person'],['p','One Relationship Manager brings each house in when it is needed, and qualified specialists for regulated matters such as tax, legal and investment.'],
       ['q','You never have to explain your family twice.']
      ]},
-    {slug:'your-client-stays-your-client', cat:'Partners', img:'partners', title:'Your Client stays your Client: how introductions work',
+    {slug:'your-client-stays-your-client', draft:true, cat:'Partners', img:'partners', title:'Your Client stays your Client: how introductions work',
      dek:'For lawyers, bankers, wealth advisers and family offices, an introduction should protect the relationship, not put it at risk.',
      body:[
       ['p','Professional advisers are often the first people a Client asks about living or investing abroad. The question is who to hand that conversation to without worrying about it.'],
@@ -341,7 +345,7 @@ window.IHG = {
       ['h','Shared standards'],['p','We never guarantee citizenship, visa, residency, investment or tax outcomes, and we claim no influence with any government. Every Client-facing document is checked against an approved claims list.'],
       ['q','Your reputation travels with ours.']
      ]},
-    {slug:'everything-in-writing', cat:'Our standard', img:'academy', title:'What \u201ceverything in writing\u201d means in practice',
+    {slug:'everything-in-writing', draft:true, cat:'Our standard', img:'academy', title:'What \u201ceverything in writing\u201d means in practice',
      dek:'Before you decide anything, you should be able to see every option, its costs and its timeline side by side.',
      body:[
       ['p','Programmes, costs and timelines are set by governments and change over time. That is why every plan we prepare is confirmed in writing for your family before you decide.'],
@@ -510,7 +514,7 @@ window.IHG = {
 
   /* Questions every house hears. Every answer restates something already said on this site. */
   faq: [
-    {q:'Do I need any documents for a first conversation?', a:'No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared.', to:'/insights/before-a-first-conversation', tl:'Six things worth thinking about'},
+    {q:'Do I need any documents for a first conversation?', a:'No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared.'},
     {q:'Will I have to deal with several people across the houses?', a:'No. One Relationship Manager is your point of contact across every house, and brings each one in when it is needed. You never have to explain your family twice.'},
     {q:'Can you guarantee that an application will be approved?', a:'No one honestly can. Final approval of any citizenship or residency application always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.'},
     {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you.'},

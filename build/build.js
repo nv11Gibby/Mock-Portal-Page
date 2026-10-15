@@ -128,7 +128,7 @@ function finish(page, opts){
     const m = doc.createElement('meta'); m.setAttribute('name', 'google-site-verification'); m.setAttribute('content', CFG.searchConsole);
     const desc = doc.querySelector('meta[name="description"]'); desc.parentNode.insertBefore(m, desc.nextSibling);
   }
-  if(LAUNCH) Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"]'), function(el){ el.parentNode.removeChild(el); });
+  if(LAUNCH) Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"]:not([data-draft])'), function(el){ el.parentNode.removeChild(el); });   /* a draft page keeps its own noindex */
   if(opts.notFound){
     Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"], link[rel="canonical"]'), function(el){ el.parentNode.removeChild(el); });
     const m = doc.createElement('meta'); m.setAttribute('name', 'robots'); m.setAttribute('content', 'noindex, follow'); doc.head.appendChild(m);
@@ -146,6 +146,7 @@ function finish(page, opts){
 const home = render('/');
 if(home.errors.length) throw new Error('home render failed:\n' + home.errors.join('\n'));
 const routes = home.window.IHG_APP.routes();
+const indexable = home.window.IHG_APP.routes({published: true});   /* without the drafts: the sitemap lists these */
 home.close();
 
 const pages = [], problems = [];
@@ -185,7 +186,7 @@ write('robots.txt', [
   ''
 ].join('\n'));
 write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schema/sitemap/0.9">\n' +
-  routes.map(function(r){ return '  <url><loc>' + esc(r === '/' ? SITE + '/' : SITE + r) + '</loc></url>'; }).join('\n') + '\n</urlset>\n');
+  indexable.map(function(r){ return '  <url><loc>' + esc(r === '/' ? SITE + '/' : SITE + r) + '</loc></url>'; }).join('\n') + '\n</urlset>\n');
 
 /* 4. RSS 2.0: journal entries first, then insights not already linked from the journal. Dates appear only where
    data.js records a full date; nothing is invented. */
@@ -195,6 +196,7 @@ const seen = {}, items = [];
   items.push({title: j.title, link: link, desc: j.dek, cat: j.kind, date: fullDate(j.iso)});
 });
 (D.insights || []).forEach(function(a){
+  if(a.draft) return;   /* drafts awaiting approval are not syndicated */
   const link = abs('insights/' + a.slug); if(seen[link]) return; seen[link] = true;
   items.push({title: a.title, link: link, desc: a.dek, cat: a.cat, date: fullDate(a.iso)});
 });
@@ -266,6 +268,6 @@ console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + 
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
 console.log('hero preloads: ' + Object.keys(heroes).map(function(h){ return h + ' ' + (heroes[h] < 0 ? 'missing' : Math.round(heroes[h] / 1024) + ' KB'); }).join(', '));
 if(Object.keys(big).length) console.log('WARNING hero over 200 KB, not preloaded (re-export under 200 KB, see docs/PHOTO-SHOT-LIST.md): ' + Object.keys(big).map(function(h){ return h + ' ' + Math.round(big[h].size / 1024) + ' KB on ' + big[h].pages.join(', '); }).join('; '));
-console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
+console.log('feed: ' + items.length + ' items | sitemap: ' + indexable.length + ' urls' + (routes.length > indexable.length ? ' (' + (routes.length - indexable.length) + ' draft pages prerendered, noindex, not listed)' : ''));
 pages.forEach(function(p){ console.log('  ' + p.route + '  ' + p.title + '  (' + Math.round(p.bytes / 1024) + ' KB)'); });
 if(problems.length){ console.error('BUILD PROBLEMS:\n  ' + problems.join('\n  ')); process.exit(1); }
