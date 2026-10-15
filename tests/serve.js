@@ -1,7 +1,10 @@
 /* Local static server for tests. Serves a directory with single-page fallback, answers POSTs with 200
-   (Netlify Forms stand-in) and answers /.netlify/functions/* with a small JSON body. */
+   (Netlify Forms stand-in) and answers /.netlify/functions/* with a small JSON body.
+   --no-fallback (for dist/, which holds a file per route) answers an unknown path with 404 and 404.html, as the host
+   does; without it an unknown path without an extension gets index.html with 200, which the source tree needs. */
 var http = require('http'), fs = require('fs'), path = require('path');
-var ROOT = path.resolve(process.argv[2] || '.'), PORT = parseInt(process.argv[3] || '8765', 10);
+var ARGS = process.argv.slice(2).filter(function(a){ return a.indexOf('--') !== 0; }), NOFALLBACK = process.argv.indexOf('--no-fallback') > -1;
+var ROOT = path.resolve(ARGS[0] || '.'), PORT = parseInt(ARGS[1] || '8765', 10);
 var TYPES = {'.html':'text/html; charset=utf-8', '.js':'text/javascript', '.css':'text/css', '.webp':'image/webp', '.jpg':'image/jpeg', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.json':'application/json', '.webmanifest':'application/manifest+json', '.xml':'application/xml', '.txt':'text/plain', '.vtt':'text/vtt', '.mp4':'video/mp4', '.ico':'image/x-icon'};
 http.createServer(function(req, res){
   var url = req.url.split('?')[0];
@@ -21,9 +24,11 @@ http.createServer(function(req, res){
   var isFallback = fp === path.join(ROOT, 'index.html') && url !== '/' && url !== '/index.html';
   var ext = path.extname(fp).toLowerCase();
   if(isFallback && /\.[a-z0-9]+$/i.test(url)){ res.writeHead(404); res.end('not found'); return; }
+  var status = 200;
+  if(isFallback && NOFALLBACK){ status = 404; fp = path.join(ROOT, '404.html'); ext = '.html'; }
   fs.readFile(fp, function(err, data){
     if(err){ res.writeHead(404); res.end('not found'); return; }
-    res.writeHead(200, {'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-store'});
+    res.writeHead(status, {'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-store'});
     res.end(data);
   });
 }).on('error', function(err){
