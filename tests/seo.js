@@ -35,6 +35,8 @@ const routes = ['/', '/about', '/divisions'].concat(D.divisions.map(function(d){
 /* Drafts (insights with draft:true): prerendered and reachable, but noindex on every build (LAUNCH included) and
    absent from the sitemap and the feed until the copy is approved. */
 const drafts = D.insights.filter(function(a){ return a.draft; }).map(function(a){ return '/insights/' + a.slug; });
+/* while every article is a draft the listing follows them (noindex, out of the sitemap) */
+if(D.insights.length && D.insights.every(function(a){ return a.draft; })) drafts.push('/insights');
 const listed = routes.filter(function(r){ return drafts.indexOf(r) < 0; });
 
 let fails = 0;

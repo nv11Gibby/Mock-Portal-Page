@@ -17,8 +17,8 @@ Causes a to d of the previous round's issue 1, plus its issues 2 to 4, 6 and 7, 
 
 | Commit | Change |
 |---|---|
-| `82a5f6d` | The mobile menu's five division thumbnails (404 KB at high priority) no longer download at boot: they start as a transparent pixel with the file in `data-src`, and `setMM()` swaps the real source in the first time the menu opens, on every page. Checked in Chromium on the four pages at both widths: no `-c.webp` request at boot, five on open, none broken. |
-| `1c6ec77` | `build/build.js` minifies `site.css`, `tokens.css`, `data.js`, `analytics.js` and `app.js` in place in `dist/` (esbuild transform API, `es5` target for the scripts). The source tree stays readable and ES5; paths and the `?v=5` query are unchanged, and the inline head script and its CSP hash are untouched (`sha256-0qa15l+/XCbbmHzMZ6ncUI4vLwQMxlgYBCtL6sjsXZ4=` before and after). Raw sizes 92 to 85 KB (site.css), 3 to 1 KB (tokens.css), 79 to 68 KB (data.js), 3 to 1 KB (analytics.js) and 179 to 139 KB (app.js); compressed, the three scripts drop from 76 to 62 KB and the two stylesheets from 20 to 18 KB. |
+| `82a5f6d` | The mobile menu's five division thumbnails (404 KB at high priority) no longer download at boot: they start as a transparent pixel with the file in `data-src`, and `setMM()` swaps the real source in the first time the menu opens, on every page. Checked in Chromium on the four pages at both widths: no mobile-menu thumbnail request at boot (the home and Insights pages still fetch the division crops their own cards use), five on open, none broken. |
+| `1c6ec77` | `build/build.js` minifies `site.css`, `tokens.css`, `data.js`, `analytics.js` and `app.js` in place in `dist/` (esbuild transform API, `es5` target for the scripts). The source tree stays readable and ES5; paths and the `?v=5` query are unchanged, and the inline head script and its CSP hash are untouched (`sha256-0qa15l+/XCbbmHzMZ6ncUI4vLwQMxlgYBCtL6sjsXZ4=` before and after). Raw sizes on the merged branch: 94 to 86 KB (site.css), 3 to 1 KB (tokens.css), 85 to 73 KB (data.js), 3 to 1 KB (analytics.js) and 183 to 142 KB (app.js); compressed, the three scripts are 65 KB (were 76 KB before minification) and the two stylesheets 18 KB (were 20 KB). |
 | `8621cb5` | `partners.webp` and `real-estate.webp` re-exported from the original files at quality 75: 1600 by 1000 at 187 KB and 1920 by 1200 at 151 KB (they were 265 KB and 204 KB two rounds ago, 194 KB and 191 KB at the start of this one); their mobile crops `partners-m.webp` and `real-estate-m.webp` (810 by 1080) at 102 KB and 68 KB, down from 164 KB and 152 KB. `tests/seo.js` now fails on any hero file a page references that is missing or over 200 KB: the home figures (dusk, and night on a preview build), the page hero or the not-found backdrop, each with its mobile source. |
 | `482a89d` | `tests/serve.js --no-fallback` answers an unknown path with status 404 and `dist/404.html`, as the host does (checked with curl: `/no-such-page` 404 with the not-found title, `/about` 200; without the switch the fallback still answers 200 for the source tree). `build/headers.template` says that the `/*.html` rule matches direct `.html` requests only and that the clean urls get the host's default for HTML, the same value. |
 | `d76ba08` | The three script tags at the end of the body carry `defer`, so the prerendered page paints before the scripts are fetched and evaluated; they still run in the same order once the document is parsed. The footer's stacked logo (17 KB) loads lazily. The crown image (320 by 175) in the division wordmark, the intro veil and the closing and not-found sections has its box reserved with `aspect-ratio`, so the text beside it does not shift when the file arrives after the first paint (the earlier paint had exposed a 0.03 shift on the division pages in one run). |
@@ -41,13 +41,13 @@ moment. The remaining render-blocking cost is one round trip plus 18 KB (see sec
 | Command | Result |
 |---|---|
 | `npm run check` | ok (syntax, no em dashes in 61 files) |
-| `npm run build` | ok: 23 pages plus `404.html` and `error.html`, 1 inline script hash, sitemap 23 urls, feed 8 items, five files minified, 20 hero preloads all under 200 KB, no warning |
+| `npm run build` | ok: 23 pages plus `404.html` and `error.html`, 1 inline script hash, sitemap 18 urls (the four draft articles and their listing prerendered with noindex, not listed), feed 4 items, five files minified, 19 hero preloads all under 200 KB, no warning |
 | `LAUNCH=1 npm run build` | ok: the `robots` meta tag is dropped from every page, `X-Robots-Tag` is dropped from `_headers`; nothing else differs |
 | `BUILD_PREVIEW=1 npm run build` | ok: `data-preview` set before the app runs; the home page's markup carries `hero.webp` and `hero-night.webp`, the event galleries are in the markup with the preview note |
 | `node tests/seo.js dist 8886` (default build) | SEO OK: 23 routes and the search assets, including the new hero file check |
 | `LAUNCH=1 node tests/seo.js dist 8886` (launch build) | SEO OK: 23 routes and the search assets |
 | `node tests/smoke.js http://127.0.0.1:8887` (dist) | SMOKE OK: 38 page loads clean (desktop and mobile; no console error, no failed request, no broken image, no overflow, alt text everywhere) |
-| `node tests/a11y.js http://127.0.0.1:8888` (source tree) | A11Y OK: 14 checks, no serious or critical axe violation, every focused control shows focus; the mobile menu state opens the menu and finds its thumbnails loaded |
+| `node tests/a11y.js http://127.0.0.1:8888` (source tree) | A11Y OK: 14 checks, no serious or critical axe violation, every focused control shows focus; axe runs with the mobile menu open as one of the states |
 
 `dist/` is ignored by git and is rebuilt by Netlify on every deploy.
 
@@ -76,7 +76,7 @@ mobile menu starts its thumbnails from is a `data:` image, which `img-src 'self'
 
 ## 5. Hero images and fonts
 
-Home: `hero-lights.webp` 22 KB (1600 by 977) and `hero-lights-m.webp` 10 KB (720 by 960), preloaded with matching media
+Home: `hero-lights.webp` 21 KB (1600 by 977) and `hero-lights-m.webp` 10 KB (720 by 960), preloaded with matching media
 queries; `hero.webp` 157 KB and `hero-night.webp` 59 KB with their mobile files are used on preview builds only.
 
 The first image of each inner page hero (`section.ph`), which is that page's LCP element, all under 200 KB and all
@@ -94,7 +94,7 @@ with a mobile crop (`-m.webp`, 810 by 1080) that the phone viewport gets:
 | `citizenship.webp` | 101 KB | 71 KB | `/divisions/citizenship`, `/insights/before-a-first-conversation` |
 | `about.webp` | 99 KB | 81 KB | `/about`, `/contact`, `/journal/events/delborough-dinner` |
 | `closing.webp` | 78 KB | 67 KB | `/journal/events/grenada-51-dubai`, `404.html`, `error.html` |
-| `hero-lights.webp` | 22 KB | 10 KB | `/journal/events/gala-dinner-lagos` |
+| `hero-lights.webp` | 21 KB | 10 KB | `/journal/events/gala-dinner-lagos` |
 
 The event cover `02.webp` at 186 KB is the largest file still served to a phone (on `/journal` and its event page,
 neither in the measured set); a mobile crop for the event covers would be the next saving there.
@@ -109,8 +109,8 @@ Lighthouse 13.5.0, Chrome 141, default mobile configuration (412 by 823 at 1.75,
 1.6 Mbps, 4x CPU slowdown), `--chrome-flags="--headless=new --no-sandbox"`,
 `--only-categories=performance,accessibility,best-practices,seo`, against the `LAUNCH=1` build served with gzip for
 text (a scratch server, listed in section 9; images are WebP and do not compress), three runs per page, the median by
-Performance score reported with its metrics. Compressed, the home page's text weight is now 98 KB (html 18 KB, the
-three scripts 62 KB, the two stylesheets 18 KB), down from 116 KB.
+Performance score reported with its metrics. Compressed, the home page's text weight on the merged branch is 101 KB (html 19 KB, the
+three scripts 65 KB, the two stylesheets 18 KB), down from 116 KB.
 
 | Page | Runs (Performance) | Performance | Accessibility | Best Practices | SEO | FCP | LCP (range) | TBT | CLS | Speed Index |
 |---|---|---|---|---|---|---|---|---|---|---|

@@ -171,7 +171,7 @@ window.IHG = {
     {slug:'lagos-office-event', title:'An Evening at the Lagos Office', short:'Lagos office evening', city:'Lagos', venue:'8 Aromire Road, Ikoyi', date:null, iso:null, cat:'Private gathering', n:7, consent:false,
      dek:'Clients, partners and friends of Imperial at the Lagos office on Aromire Road, Ikoyi.',
      body:['Imperial welcomed clients, partners and friends to an evening at the Lagos office on Aromire Road, Ikoyi.'], tbc:['Date','Occasion']},
-    {slug:'delborough-dinner', title:'A Private Dinner at DANI, The Delborough', short:'Private dinner, Lagos', city:'Lagos', venue:'DANI, The Delborough Hotel, Lagos', date:null, iso:null, cat:'Private gathering', n:6, consent:false,
+    {slug:'delborough-dinner', title:'A Private Dinner at DANI, The Delborough', short:'Private dinner, Lagos', city:'Lagos', venue:'DANI, The Delborough Hotel', date:null, iso:null, cat:'Private gathering', n:6, consent:false,
      dek:'A private dinner for clients and friends of Imperial at DANI, The Delborough Hotel, Lagos.',
      body:['Imperial hosted a private dinner for clients and friends at DANI, The Delborough Hotel, Lagos.'], tbc:['Date','Occasion']}
   ],

@@ -154,7 +154,7 @@ Still open, for the owners of the files named:
 
 ## 6. Decisions needed before launch (page and media)
 
-1. **Home page hero.** Production shows the fallback `assets/img/hero-lights.webp` (1600 by 977, 22 KB, with a
+1. **Home page hero.** Production shows the fallback `assets/img/hero-lights.webp` (1600 by 977, 21 KB, with a
    720 by 960 mobile crop), a crop of the gala dinner stage lights in Lagos with nobody in frame and no sister-brand
    crest, behind its own scrim so the headline and lead read as in v4 (the earlier `hero-alt` crop, which showed the
    Imperial Citizenship crest through the headline, is gone). The photographs meant for the hero still have no

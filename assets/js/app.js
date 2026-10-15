@@ -73,7 +73,7 @@ var EVENT_SAFE = {
   'gala-dinner-lagos': ['hero-lights', 'events/gala-dinner-lagos/stage'],
   'easter-polo-cup-2026': ['events/easter-polo-cup-2026/02', 'events/easter-polo-cup-2026/04'],
   'lagos-office-event': ['about', 'private-office'],
-  'delborough-dinner': ['private-office', 'academy']
+  'delborough-dinner': ['academy', 'about']
 };
 function photoMeta(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i]; return null;}
 function eventBySlug(slug){for(var i=0;i<D.events.length;i++) if(D.events[i].slug===slug) return D.events[i]; return null;}
@@ -456,7 +456,7 @@ V.event = function(slug){
     '<div class="ev-share" data-r>'+shareBar(e, 'event')+'</div></div>'+
    '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?about=group&audience=institutions"><span>Start a strategic conversation</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
   /* the heading says what is on the page: pictures while the gallery shows, the clip while only the video slot does */
-  '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(ok ? ['The evening,','in pictures.'] : e.video ? ['The evening,','on film.'] : ['Photographs','to follow.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
+  '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(ok ? ['The evening,','in pictures.'] : (e.video && e.video.id) ? ['The evening,','on film.'] : e.video ? ['Film and photographs','to follow.'] : ['Photographs','to follow.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
     (e.video ? videoBlock(e.video, 'gal-vid', fb2) : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
   relatedRow('event', e)+
   '<section class="sec light"><div class="wrap"><nav class="pn" aria-label="More events" data-r><a href="#/journal/events/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/journal/events/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></div></section>'+closing();
@@ -760,7 +760,7 @@ function pageMeta(out, r){
       ld.push(ev);
     }
   }
-  else if(out.view === 'insights') crumbs = [['Insights', '/insights']];
+  else if(out.view === 'insights'){ crumbs = [['Insights', '/insights']]; if(allDrafts()) out.noindex = true; }   /* a listing with only drafts behind it follows them: noindex until one is approved */
   else if(out.view === 'article'){
     D.insights.forEach(function(a){ if(a.slug === p[1]) x = a; });
     crumbs = [['Insights', '/insights'], [x.title, path]];
@@ -1477,7 +1477,7 @@ function guideForm(){
     '<div class="eyebrow">Request the guide</div>'+
     '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
     '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
-    consentBox('I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.')+
+    consentBox(C.file ? 'I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.' : 'I agree to Imperial Holdings Group contacting me about the guide, as described in the {privacy}.')+
     '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(C.file ? G.cta : (G.ctaSoon || G.cta))+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
 }
 /* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
@@ -1776,7 +1776,7 @@ function palIndex(){
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
-  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', 'hero-lights'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
+  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', eventSafe(e)), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
   D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
@@ -1878,12 +1878,13 @@ window.addEventListener('pageshow', tick);
    not listed. build/build.js renders each one through resolve() inside jsdom and tests/seo.js checks the output.
    routes({published:true}) leaves out the drafts (insights with draft:true): they are prerendered and reachable by
    their address, carry a noindex tag, and stay out of sitemap.xml and journal/feed.xml until approved. */
+function allDrafts(){ return D.insights.length > 0 && D.insights.every(function(a){ return !!a.draft; }); }
 function routes(opts){
   var published = !!(opts && opts.published), out = ['/', '/about', '/divisions'];
   D.divisions.forEach(function(d){ out.push('/divisions/'+d.key); });
   out.push('/journal');
   D.events.forEach(function(e){ out.push('/journal/events/'+e.slug); });
-  out.push('/insights');
+  if(!(published && allDrafts())) out.push('/insights');   /* the listing stays out of the sitemap while every article is a draft */
   D.insights.forEach(function(a){ if(published && a.draft) return; out.push('/insights/'+a.slug); });
   out.push('/contact', '/privacy', '/terms');
   return out;
