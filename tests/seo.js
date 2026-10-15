@@ -2,7 +2,8 @@
    every route and asserts: 200, prerendered (data-prerendered naming the route), exactly one title, description and
    canonical, titles within 60 and descriptions within 160 characters, the JPEG card as the first og:image with its
    size, unique titles and descriptions across pages, valid JSON-LD of the expected types (an Event block only where
-   the event has a full date, and then with startDate and location.address), every page hero file under 200 KB with a
+   the event has a full date, and then with startDate and location.address), every hero file the page references (the
+   home figures, the page hero or the not-found backdrop, with their mobile sources) present and under 200 KB, with a
    mobile source on the division pages; robots.txt and sitemap.xml answer 200 and the sitemap lists every route; the
    RSS feed exists; 404.html and error.html are noindex, without a canonical, and carry the office contacts (error.html
    also the reload button); every logo file named in shared/ecosystem.json is in the build; _headers holds the inline
@@ -65,6 +66,25 @@ function heroImages(html){
   const mob = out.filter(function(x){ return /max-width:\s*(\d+)px/.test(x.media); })[0];
   if(mob) out[0].media = '(min-width:' + (parseInt(/max-width:\s*(\d+)px/.exec(mob.media)[1], 10) + 1) + 'px)';
   return out.map(function(x){ x.size = fileSize(x.href); return x; });
+}
+/* Every hero file a page references, for the 200 KB rule (brief section 4, build contract 4.6): the home figures
+   (dusk, and night on a preview build), the pageHero or not-found backdrop (the first .ph-bg of the page; the closing
+   section further down is not a hero), each with its mobile source. */
+function heroFiles(html){
+  const body = html.slice(html.indexOf('<body')), segs = [], out = [];
+  body.replace(/<figure class="(?:dusk|night)">([\s\S]*?)<\/figure>/g, function(m, s){ segs.push(s); return m; });
+  const ph = /<section class="(?:ph|nf)(?:\s[^"]*)?"><div class="ph-bg">([\s\S]*?)<\/div><\/div>/.exec(body);
+  if(ph) segs.push(ph[1]);
+  segs.forEach(function(s){ s.replace(/\s(?:src|srcset)="([^"\s]+)[^"]*"/g, function(m, f){ if(out.indexOf(f) < 0) out.push(f); return m; }); });
+  return out.map(function(f){ return {href: f, size: fileSize(f)}; });
+}
+function heroFileProblems(html, label){
+  const problems = [];
+  heroFiles(html).forEach(function(x){
+    if(x.size < 0) problems.push('hero file missing: ' + x.href);
+    else if(x.size > HERO_LIMIT){ problems.push('hero file over 200 KB: ' + x.href + ' ' + Math.round(x.size / 1024) + ' KB'); (oversize[x.href] = oversize[x.href] || []).push(label); }
+  });
+  return problems;
 }
 function key(x){ return x.href + (x.media ? ' ' + x.media : ''); }
 function expectedPreloads(html){ return heroImages(html).filter(function(x){ return x.size >= 0 && x.size <= HERO_LIMIT; }).map(key); }
@@ -138,8 +158,8 @@ function startServer(){
       if(!new RegExp('<html[^>]*\\sdata-prerendered="' + route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(h)) problems.push('data-prerendered does not name the route');
       /* page hero: every file it references under 200 KB, and a mobile source on the division pages */
       const heroSeg = (/<div class="ph-bg">([\s\S]*?)<\/div><\/div>/.exec(h) || [])[1] || '';
-      const heroFiles = []; heroSeg.replace(/\s(?:src|srcset)="([^"\s]+)[^"]*"/g, function(m, f){ heroFiles.push(f); return m; });
-      heroFiles.forEach(function(f){ let s = -1; try{ s = fs.statSync(path.join(DIR, f.replace(/^\//, '').split('?')[0])).size; }catch(e){} if(s < 0) problems.push('hero file missing: ' + f); else if(s > 200 * 1024) problems.push('hero file over 200 KB: ' + f + ' ' + Math.round(s / 1024) + ' KB'); });
+      if(route !== '/' && !heroFiles(h).length && !/^\/(privacy|terms)$/.test(route)) problems.push('no hero image');
+      heroFileProblems(h, route).forEach(function(p){ problems.push(p); });
       if(/^\/divisions/.test(route) && !/<source media="\(max-width:640px\)" srcset="[^"]+-m\.webp"/.test(heroSeg)) problems.push('no mobile hero source');
       if(titles[title]) problems.push('title also on ' + titles[title]); titles[title] = route;
       if(descs[desc]) problems.push('description also on ' + descs[desc]); descs[desc] = route;
@@ -188,11 +208,12 @@ function startServer(){
     const homePre = actualPreloads(index);
     ok(homePre.length === 2 && homePre.some(function(k){ return /max-width/.test(k); }) && homePre.some(function(k){ return /min-width/.test(k); }) && !preloadProblems(index, '/').length, 'home page preloads its own desktop and mobile hero: ' + homePre.join(', '));
     ['404.html', 'error.html'].forEach(function(f){
-      const h = fs.readFileSync(path.join(DIR, f), 'utf8'), p = preloadProblems(h, f);
+      const h = fs.readFileSync(path.join(DIR, f), 'utf8'), p = preloadProblems(h, f).concat(heroFileProblems(h, f));
       ok(!p.length && actualPreloads(h).length === 1, f + ' preloads its own backdrop only', p.join('; ') || actualPreloads(h).join(', '));
     });
+    /* the 200 KB rule over every hero file any page references (home figures, page heroes, backdrops, mobile sources) */
     const big = Object.keys(oversize);
-    if(big.length) console.log('warn hero over 200 KB, not preloaded (re-export under 200 KB): ' + big.map(function(h){ return h + ' ' + Math.round(fileSize(h) / 1024) + ' KB on ' + oversize[h].join(', '); }).join('; '));
+    ok(!big.length, 'every hero file referenced by a page is under 200 KB', big.map(function(h){ return h + ' ' + Math.round(fileSize(h) / 1024) + ' KB on ' + oversize[h].join(', '); }).join('; '));
     /* the lead config never reaches the public site: dist/shared holds the public files only */
     const shared = fs.existsSync(path.join(DIR, 'shared')) ? fs.readdirSync(path.join(DIR, 'shared')) : [];
     const privateLeft = shared.filter(function(f){ return /^(lead-routing|lead-schema)\.json$/.test(f); });
