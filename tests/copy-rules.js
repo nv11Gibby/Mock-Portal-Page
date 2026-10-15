@@ -5,7 +5,7 @@
 var fs = require('fs'), path = require('path');
 var ROOT = path.resolve(__dirname, '..');
 var files = [];
-function walk(d){ fs.readdirSync(d).forEach(function(n){ if(/^(node_modules|dist|\.git|\.netlify)$/.test(n)) return; var p = path.join(d, n); var s = fs.statSync(p); if(s.isDirectory()) walk(p); else if(/\.(html|js|css|md|json|toml|txt|xml|vtt)$/.test(n)) files.push(p); }); }
+function walk(d){ fs.readdirSync(d).forEach(function(n){ if(/^(node_modules|dist|\.git|\.netlify|\.claude)$/.test(n)) return; var p = path.join(d, n); var s = fs.statSync(p); if(s.isDirectory()) walk(p); else if(/\.(html|js|css|md|json|toml|txt|xml|vtt)$/.test(n)) files.push(p); }); }
 walk(ROOT);
 var FORMS = [
   [String.fromCharCode(8212), 'em dash'],
