@@ -195,7 +195,7 @@ function startServer(){
     if(big.length) console.log('warn hero over 200 KB, not preloaded (re-export under 200 KB): ' + big.map(function(h){ return h + ' ' + Math.round(fileSize(h) / 1024) + ' KB on ' + oversize[h].join(', '); }).join('; '));
     /* the lead config never reaches the public site: dist/shared holds the public files only */
     const shared = fs.existsSync(path.join(DIR, 'shared')) ? fs.readdirSync(path.join(DIR, 'shared')) : [];
-    const privateLeft = shared.filter(function(f){ return /^(lead-routing|lead-schema|disposable-domains)\.json$/.test(f); });
+    const privateLeft = shared.filter(function(f){ return /^(lead-routing|lead-schema)\.json$/.test(f); });
     const publicMissing = ['tokens.css', 'analytics.js', 'ecosystem.json', 'chrome'].filter(function(f){ return shared.indexOf(f) < 0; });
     const routingHttp = await get(BASE + '/shared/lead-routing.json');
     ok(!privateLeft.length && !publicMissing.length && routingHttp.status === 404, 'dist/shared: no lead JSON published (' + shared.join(', ') + ')', (privateLeft.length ? 'published ' + privateLeft.join(',') : '') + (publicMissing.length ? ' missing ' + publicMissing.join(',') : '') + ' /shared/lead-routing.json status ' + routingHttp.status);

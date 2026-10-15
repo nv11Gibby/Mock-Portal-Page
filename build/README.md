@@ -9,7 +9,7 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
 `dist/` holds:
 
 * `assets/`, `site.webmanifest` and `_redirects` as they are, and `shared/` without the three lead files
-  (`lead-routing.json`, `lead-schema.json`, `disposable-domains.json`): the functions bundle those through
+  (`lead-routing.json`, `lead-schema.json`; `disposable-domains.json` stays public because the page checks addresses against it): the functions bundle those through
   `netlify/functions/lib/config.js` and no page fetches them, so they are never published (the routing file lists
   every Pipedrive field key and option id, and all three carry TO CONFIRM notes). `shared/tokens.css`,
   `shared/analytics.js`, `shared/ecosystem.json` and `shared/chrome/` stay public for the sister sites.

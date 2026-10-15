@@ -53,7 +53,7 @@ const abs = function(p){ return SITE + '/' + String(p).replace(/^\//, ''); };
    bundled by esbuild) and no page fetches them, so they never need a public URL. lead-routing.json lists every
    Pipedrive field key, option id, pipeline and owner id, and all three carry TO CONFIRM notes that would otherwise
    turn up in the built site. tokens.css, analytics.js, ecosystem.json and chrome/ stay public for the sister sites. */
-const PRIVATE_SHARED = ['lead-routing.json', 'lead-schema.json', 'disposable-domains.json'];
+const PRIVATE_SHARED = ['lead-routing.json', 'lead-schema.json'];   /* disposable-domains.json stays public: the page checks addresses against it */
 fs.rmSync(DIST, {recursive: true, force: true});
 fs.mkdirSync(DIST, {recursive: true});
 fs.cpSync(path.join(ROOT, 'assets'), path.join(DIST, 'assets'), {recursive: true});
