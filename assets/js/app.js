@@ -536,15 +536,33 @@ V.contact = function(q){
   '<section class="sec light alt" id="faq"><div class="wrap split"><div>'+eyebrow('Questions')+mask(['Before you','get in touch.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s;margin-top:26px">Short answers to what people ask most. Anything else, ask us directly.</p></div>'+faqList(D.faq,'c')+'</div></section>';
 };
 
+/* Legal pages (brief section 8). The copy lives in D.legal; this only renders it. In the copy, [[text]] becomes the amber
+   TO CONFIRM placeholder, {email} the group mailbox and {offices:true} both office addresses. The amber notice at the top
+   stays until counsel has approved the page. */
+function legalText(s){
+  return String(s).split(/(\[\[[^\]]+\]\]|\{email\})/).map(function(part){
+    if(part==='{email}') return '<a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a>';
+    var m = /^\[\[([^\]]+)\]\]$/.exec(part); return m ? tbc(m[1]) : esc(part);
+  }).join('');
+}
+function legalOffices(){
+  return '<div class="legal-offices">'+D.contact.offices.map(function(o){ return '<div><b>'+esc(o.city)+'</b>'+o.lines.map(esc).join('<br>')+'<br><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'</div>';
+}
 function legal(kind){
-  var isP = kind==='privacy';
-  return pageHero({cls:'plain', crumb:[[isP?'Privacy':'Terms',null]], eyebrow:'Legal', title:[isP?'Privacy notice':'Terms of use'], lead:null})+
-  '<section class="sec light"><div class="wrap legal"><div class="notice" data-r><span class="tbc">Placeholder</span><div><b>Awaiting legal review.</b> This page is a placeholder. The final '+(isP?'privacy notice':'terms of use')+' will be drafted and approved by counsel before launch. Legal entity, licence number and registered address: '+tbc('to confirm')+'</div></div>'+
-  (isP?
-   '<h2>Who we are</h2><p>Imperial Holdings Group and its divisions. '+tbc('Legal entity, registered address and data controller details')+'</p><h2>What we collect</h2><p>Section to be drafted: the information you share with us through enquiries, and how it is used to respond.</p><h2>How we use it</h2><p>Section to be drafted. Our standing commitment: private matters stay private, and information is shared only where a service requires it.</p><h2>Your rights</h2><p>Section to be drafted.</p><h2>Contact</h2><p>'+tbc('Privacy contact email')+'</p>'
-  :
-   '<h2>About this website</h2><p>This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.</p><h2>No guarantees</h2><p>Imperial does not guarantee government decisions or outcomes. Final approval of any citizenship or residency application rests with the relevant government.</p><h2>Use of this site</h2><p>Section to be drafted.</p><h2>Governing law</h2><p>'+tbc('Jurisdiction to confirm')+'</p>')+
-  '</div></section>';
+  var L = D.legal[kind], isP = kind==='privacy';
+  var body = L.sections.map(function(s){
+    return '<h2>'+esc(s.h)+'</h2>'+s.body.map(function(b){
+      if(typeof b==='string') return '<p>'+legalText(b)+'</p>';
+      if(b.offices) return legalOffices();
+      return (b.lead ? '<p>'+legalText(b.lead)+'</p>' : '')+'<ul>'+b.ul.map(function(li){ return '<li>'+legalText(li)+'</li>'; }).join('')+'</ul>';
+    }).join('');
+  }).join('');
+  return pageHero({cls:'plain', crumb:[[isP?'Privacy':'Terms',null]], eyebrow:'Legal', title:[esc(L.title)], lead:L.lead ? esc(L.lead) : null})+
+  '<section class="sec light"><div class="wrap legal"><div class="notice" data-r><span class="tbc">Placeholder</span><div><b>Awaiting legal review.</b> '+
+   (isP ? 'This notice describes what the site does today and is complete in substance. Counsel reviews and approves it before launch.' : 'This page is a placeholder. The final terms of use will be drafted and approved by counsel before launch.')+
+   ' Legal entity, licence number and registered address: '+tbc('to confirm')+'</div></div>'+
+  '<p class="small muted legal-updated">Last updated: '+(D.legal.updated ? esc(D.legal.updated) : tbc('Date of the version approved by counsel'))+'</p>'+
+  body+'</div></section>';
 }
 V.privacy = function(){return legal('privacy');};
 V.terms = function(){return legal('terms');};

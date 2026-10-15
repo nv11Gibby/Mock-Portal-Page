@@ -403,13 +403,98 @@ window.IHG = {
     soon:'The guide is being finalised. The team will send it to you by email as soon as it is ready.'
   },
 
+  /* Legal pages (v5 trust, brief section 8). The privacy notice says what the forms collect, where it goes, how long it is
+     kept and how to ask for a copy or for deletion, so that counsel reviews it rather than writes it. Tokens in the copy:
+     [[text]] renders the amber TO CONFIRM placeholder, {email} the group mailbox from contact.email, and {offices:true}
+     both office addresses. Every TO CONFIRM below is listed for counsel in docs/PRIVACY-NOTES.md. The terms page stays a
+     placeholder until counsel drafts it. Never name a law here that has not been confirmed to apply. */
+  legal: {
+    updated: '',   /* TO CONFIRM: date of the version approved by counsel; shown under the notice when set */
+    privacy: {
+      title: 'Privacy notice',
+      lead: 'What we collect when you write to us, where it goes, how long we keep it, and how to ask for a copy or for deletion. Written plainly, so it can be read in a few minutes.',
+      sections: [
+        {h:'Who we are', body:[
+          'This website is published by Imperial Holdings Group, the parent of Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate, with offices in Dubai and Lagos.',
+          'The entity responsible for your information, the data controller, is [[Legal entity, registered address and data controller]]. In this notice, we and us mean that entity.'
+        ]},
+        {h:'What we collect', body:[
+          'You can read this site without giving us any information about yourself. We collect personal information only when you send it to us through one of our forms: the enquiry card, the three step contact form, the Imperial Real Estate register interest form and the request for the citizenship guide.',
+          {lead:'Depending on the form, we ask for:', ul:[
+            'your name and email address;',
+            'your telephone number, if you choose to give it;',
+            'your country of residence, and your nationality or nationalities;',
+            'whether you are writing as a private client, a professional partner or an institution, and who the enquiry is for: yourself, your family or a client you are introducing;',
+            'what it concerns, which tells us which of our divisions should reply;',
+            'when you would like to begin, and a budget range if you choose to give one;',
+            'for Partners Club enquiries, your firm and your profession;',
+            'for property enquiries, what you are looking for, whether you wish to buy or rent, and the area that interests you;',
+            'how you would prefer to be contacted;',
+            'if you came to the form from the house finder, the ambitions you chose there;',
+            'your message, and your agreement to this notice.'
+          ]},
+          'Each form also records, without asking you, where the enquiry came from: the page you sent it from, the page you first arrived on, the site that referred you, and any campaign tags in the address you arrived by (utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid and ttclid), together with which of our forms and sites the enquiry came through. We use these to see which of our channels brought you to us. They describe a channel, not you, and we do not join them to any advertising profile.',
+          'The programme fit check on the Imperial Citizenship page keeps your five answers with your enquiry, so that the first conversation starts in the right place. Nothing is kept unless you then send the form.',
+          'If you ask us to verify your telephone number after sending a form, we send a one time code by WhatsApp or SMS and record whether it was entered. This step is optional. Your enquiry reaches us either way.',
+          'Our forms include a hidden field that only automated software fills in. We use it to reject spam, and for nothing else.',
+          'Our systems note the network address (the IP address) a form was sent from, so that one connection cannot flood us with submissions. When the Cloudflare Turnstile spam check is switched on, Cloudflare also receives that address, to tell a person from automated software. [[Whether Turnstile is switched on at launch]]',
+          'What you type into a form is kept in your own browser until the form is sent or you choose Start afresh, so that nothing is lost if the page reloads. It stays on your device and reaches us only when you press send. For the current visit only, your browser also keeps the campaign tags described above and a note that you have seen the opening animation.'
+        ]},
+        {h:'Where it goes', body:[
+          'Your enquiry goes first to Netlify, the company that hosts this website, which keeps a copy in its form inbox, and from there to Pipedrive, the customer relationship system we use, where it is stored. It is assigned to one named person in the relevant Imperial team: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy, Imperial Real Estate or the Group team. If you have written to us before, the new enquiry is added to your existing record rather than creating a second one.',
+          'Two further providers are used only when those features are switched on: an email provider, to send you a short confirmation of your enquiry, and a telephone verification provider, to send the one time code. Each receives only what its task needs: your name and email address for the confirmation, your telephone number for the code. [[Email provider (Resend in the current build) and telephone verification provider (Twilio Verify in the current build), and whether each is switched on at launch]]',
+          'We do not sell your information, and we do not share it with anyone for their own marketing. Within the Group it is seen only by the people who need it to answer you. Where a service is delivered by one of our trusted Partners, we share what that service needs, and only with your agreement.',
+          'Our offices are in the United Arab Emirates and Nigeria. The providers named above may store information outside the country you live in. [[Where each provider stores data, and the safeguards that apply, to be confirmed by counsel]]'
+        ]},
+        {h:'How long we keep it', body:[
+          'We keep your enquiry for [[Retention period, for example 24 months]] after our last contact with you, and then delete it, unless you have become a client, in which case your record is kept for as long as the relationship lasts and for any period the law requires afterwards.'
+        ]},
+        {h:'Your choices and your rights', body:[
+          'You can ask us at any time to send you a copy of the information we hold about you, to correct it, to delete it, or to stop contacting you. Write to {email} [[Dedicated privacy mailbox]] and we will reply promptly.',
+          'You can withdraw your agreement to this notice at any time by writing to the same address. This does not affect anything done before you withdrew it.',
+          'If you ask us to delete your information, we remove it from our systems and ask our providers to do the same, unless the law requires us to keep it, in which case we will tell you.',
+          'Depending on where you live, the law may give you further rights, including the right to complain to a supervisory authority. [[Applicable data protection law and supervisory authority for each office, to be confirmed by counsel]]'
+        ]},
+        {h:'Analytics and cookies', body:[
+          'This site sets no advertising cookies and no cookie that follows you to other sites, so there is no cookie banner.',
+          'When our analytics are switched on, they run in a cookie-free configuration: nothing is stored on your device, the service is asked not to keep your network address, and we see counts of visits and of which pages and buttons were used, not who you are. [[Analytics provider (Google Analytics 4, cookie-free, in the current build) and whether it is switched on at launch]]',
+          'The only things this site stores on your device are the form drafts and the two visit values described above. They exist for your convenience and reach us only as part of a form you choose to send.',
+          'Where a video appears on this site, the player loads only when you press play, in its do-not-track mode. The video host then receives your network address, as any website you visit does. Links to WhatsApp and to our booking pages take you to those services, which have their own privacy terms.'
+        ]},
+        {h:'Security', body:[
+          'We keep your information on systems that only authorised people can reach, and we limit it to the people who need it. No system is perfectly secure. If we learn of a breach that affects your information, we will tell you.'
+        ]},
+        {h:'Children', body:[
+          'This site is not aimed at children, and we do not knowingly collect information from anyone under 18.'
+        ]},
+        {h:'Changes to this notice', body:[
+          'If this notice changes, the new version will be published on this page with the date it took effect. [[Date of the version approved by counsel]]'
+        ]},
+        {h:'How to contact us', body:[
+          'Write to {email} [[Dedicated privacy mailbox]], or to either office.',
+          {offices:true}
+        ]}
+      ]
+    },
+    terms: {
+      title: 'Terms of use',
+      lead: null,
+      sections: [
+        {h:'About this website', body:['This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.']},
+        {h:'No guarantees', body:['Imperial does not guarantee government decisions or outcomes. Final approval of any citizenship or residency application rests with the relevant government.']},
+        {h:'Use of this site', body:['You may read and share what is published here for your own information. The text, photographs, logos and marks belong to Imperial Holdings Group or to those who licensed them to us. [[Full terms of use, to be drafted by counsel]]']},
+        {h:'Governing law', body:['These terms are governed by the law of [[Jurisdiction to confirm]].']}
+      ]
+    }
+  },
+
   /* Questions every house hears. Every answer restates something already said on this site. */
   faq: [
     {q:'Do I need any documents for a first conversation?', a:'No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared.', to:'/insights/before-a-first-conversation', tl:'Six things worth thinking about'},
     {q:'Will I have to deal with several people across the houses?', a:'No. One Relationship Manager is your point of contact across every house, and brings each one in when it is needed. You never have to explain your family twice.'},
     {q:'Can you guarantee that an application will be approved?', a:'No one honestly can. Final approval of any citizenship or residency application always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.'},
     {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you.'},
-    {q:'What happens to the information I share?', a:'It is used to respond to you, and shared only where a service requires it. Private matters stay private.', to:'/privacy', tl:'Privacy notice'},
+    {q:'What happens to the information I share?', a:'It is used to respond to you, kept in our customer relationship system, and shared only where a service requires it. Private matters stay private. You can ask for a copy, or for deletion, at any time.', to:'/privacy', tl:'Privacy notice'},
     {q:'I am a lawyer, banker or wealth adviser. Can I introduce a Client?', a:'Yes, through Imperial Partners Club. Your Partner Agreement sets out exactly how introductions work, you receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
     {q:'Is Imperial Real Estate open yet?', a:'Not yet. Imperial Real Estate is licensed and has not launched. You can register your interest and we will contact you when it opens.', to:'/divisions/real-estate', tl:'Register interest'},
     {q:'Where are you based?', a:'Our headquarters is in Dubai, with a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.'}

@@ -12,7 +12,7 @@
   --ink:#12110F; --ink-2:#0B0A09; --ink-3:#1A1916; --ink-4:#24221E;
   --paper:#F1ECE3; --paper-2:#E8E1D4; --stone:#D9D0BF;
   --gold:#C4A574; --gold-l:#DCC49B; --gold-ink:#7A5F36; --gold-d:#9C7F52;
-  --text:#F1ECE3; --soft:rgba(241,236,227,.76); --dim:rgba(241,236,227,.62); --faint:rgba(241,236,227,.4);
+  --text:#F1ECE3; --soft:rgba(241,236,227,.76); --dim:rgba(241,236,227,.62); --faint:rgba(241,236,227,.52);
   --line:rgba(241,236,227,.12); --line-2:rgba(241,236,227,.24);
   --l-text:#1A1815; --l-body:#45413B; --l-muted:#655F56; --l-line:rgba(26,24,21,.13); --l-line-2:rgba(26,24,21,.26);
   --head:'Manrope','Helvetica Neue',Arial,sans-serif; --sans:'Inter','Helvetica Neue',Helvetica,Arial,sans-serif;
@@ -1262,3 +1262,12 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .hh-cred{margin-top:14px}
 }
 .founder-film .vid-stage img{object-position:50% 18%}
+
+/* === v5 trust === */
+/* Legal pages: lists, the "last updated" line and the two office addresses in the privacy notice */
+.legal ul{margin:0 0 1em;padding-left:1.25em;color:var(--l-body)}
+.legal li{margin:4px 0;max-width:44em}
+.legal-updated{margin:-4px 0 8px}
+.legal-offices{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;margin:4px 0 1em;font-size:15px;color:var(--l-body);line-height:1.6}
+.legal-offices b{display:block;color:var(--l-text);font-weight:500;margin-bottom:2px}
+@media (max-width:640px){ .legal-offices{grid-template-columns:1fr} }
