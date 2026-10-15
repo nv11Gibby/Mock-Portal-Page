@@ -98,8 +98,10 @@
 </form>
 
 <noscript><div class="nojs">This site needs JavaScript to display. Please enable it, or contact Imperial Holdings Group directly.</div></noscript>
-<script src="assets/js/data.js?v=5"></script>
-<script src="shared/analytics.js?v=5"></script>
-<script src="assets/js/app.js?v=5"></script>
+<!-- defer: the prerendered page paints before the scripts are fetched and evaluated; they still run in this order, once
+     the document is parsed (the inline head script above runs first, as before). -->
+<script src="assets/js/data.js?v=5" defer></script>
+<script src="shared/analytics.js?v=5" defer></script>
+<script src="assets/js/app.js?v=5" defer></script>
 </body>
 </html>

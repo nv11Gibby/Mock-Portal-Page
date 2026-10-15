@@ -219,6 +219,9 @@ li{max-width:46em}
 .ph-logo{height:22px;width:auto;margin-bottom:26px}
 .wordmark{color:#B5915A;display:inline-flex;align-items:center;gap:12px;font-family:var(--head);font-weight:500;font-size:15px;letter-spacing:.24em;text-transform:uppercase}
 .wordmark img{height:18px;width:auto}
+/* The crown (assets/logos/Imperial-Crown-Gold.svg, 320 by 175) is sized by one dimension; its box is reserved before
+   the file arrives so the text beside or below it does not shift once the page paints ahead of the scripts. */
+.wordmark img,.iv-in img,.closing .crown,.nf .crown{aspect-ratio:320/175}
 .badge{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border:1px solid var(--line-2);border-radius:40px;font-size:12px;letter-spacing:.06em;color:var(--soft);background:rgba(14,13,11,.35)}
 .badge.gold{border-color:rgba(196,165,116,.6);color:var(--gold-l)}
 .badge.soon::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2.4s var(--e-out) infinite}
