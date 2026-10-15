@@ -138,6 +138,7 @@ async function syncPipedrive(o) {
   let person = await pd.findPersonByEmail(o.email);
   if (!person && phoneValue) person = await pd.findPersonByPhone(phoneValue);
   const existed = !!person;
+  let personUnchanged = false;
 
   /* organisation, when a firm or company is named */
   let org = null;
@@ -161,17 +162,23 @@ async function syncPipedrive(o) {
     if (o.matched.country) body[F.person.countryOfResidence] = o.matched.country;
     person = await pd.createPerson(body);
   } else {
-    const full = (await pd.getPerson(person.id).catch(() => null)) || person;
-    const upd = {};
-    const emails = (full.email || []).filter((e) => e && e.value);
-    if (!emails.some((e) => String(e.value).toLowerCase() === o.email)) upd.email = emails.concat([{ value: o.email, primary: emails.length === 0, label: 'work' }]);
-    const phones = (full.phone || []).filter((p) => p && p.value);
-    if (phoneValue && !phones.some((p) => samePhone(p.value, phoneValue))) upd.phone = phones.concat([{ value: phoneValue, primary: phones.length === 0, label: 'work' }]);
-    if (!full[F.person.verificationStatus]) upd[F.person.verificationStatus] = O.verificationStatus.notVerified;
-    if (o.matched.nationality && !full[F.person.nationality]) upd[F.person.nationality] = o.matched.nationality;
-    if (o.matched.country && !full[F.person.countryOfResidence]) upd[F.person.countryOfResidence] = o.matched.country;
-    if (org && !full.org_id) upd.org_id = org.id;
-    if (Object.keys(upd).length) await pd.updatePerson(person.id, upd).catch((err) => console.warn('person update failed', err && err.message));
+    /* The merge needs the full person: Pipedrive replaces the whole email and phone lists on PUT, and the search item
+       carries them under other names (emails, phones) without the custom fields. When the fetch fails (a 429 on a
+       burst, a transient 5xx) nothing is written to the person: a new email or phone is at worst not added, and the
+       note below carries it, rather than a list being overwritten on exactly the returning clients the dedupe protects. */
+    const full = await pd.getPerson(person.id).catch((err) => { console.warn('person fetch failed, person left unchanged', err && err.message); return null; });
+    if (full) {
+      const upd = {};
+      const emails = (full.email || []).filter((e) => e && e.value);
+      if (!emails.some((e) => String(e.value).toLowerCase() === o.email)) upd.email = emails.concat([{ value: o.email, primary: emails.length === 0, label: 'work' }]);
+      const phones = (full.phone || []).filter((p) => p && p.value);
+      if (phoneValue && !phones.some((p) => samePhone(p.value, phoneValue))) upd.phone = phones.concat([{ value: phoneValue, primary: phones.length === 0, label: 'work' }]);
+      if (!full[F.person.verificationStatus]) upd[F.person.verificationStatus] = O.verificationStatus.notVerified;
+      if (o.matched.nationality && !full[F.person.nationality]) upd[F.person.nationality] = o.matched.nationality;
+      if (o.matched.country && !full[F.person.countryOfResidence]) upd[F.person.countryOfResidence] = o.matched.country;
+      if (org && !full.org_id) upd.org_id = org.id;
+      if (Object.keys(upd).length) await pd.updatePerson(person.id, upd).catch((err) => console.warn('person update failed', err && err.message));
+    } else personUnchanged = true;
   }
 
   /* 2. lead or deal: reuse an open one of the same division for a returning person */
@@ -212,7 +219,7 @@ async function syncPipedrive(o) {
     activity = !!(await pd.addActivity(act).then(() => true).catch((err) => { console.warn('activity failed', err && err.message); return false; }));
   }
 
-  return { kind, id, personId: person.id, personExisted: existed, reused, labelRejected, activity, orgId: org ? org.id : undefined };
+  return { kind, id, personId: person.id, personExisted: existed, personUnchanged, reused, labelRejected, activity, orgId: org ? org.id : undefined };
 }
 
 /* input: {form, data, ctx:{ip, site, ref, submissionId, createdAt, fetch}, now} */
@@ -328,7 +335,7 @@ async function markVerified(o) {
 
 function summary(fn, r) {
   return [fn, r.ok ? 'ok' : 'rejected', 'form=' + (r.form || ''), 'division=' + (r.division || ''), 'kind=' + (r.kind || ''), 'id=' + (r.id || ''),
-    'score=' + (r.score || ''), 'ref=' + (r.ref || ''), r.reason ? 'reason=' + r.reason : '', r.reused ? 'reused=1' : '', r.personExisted ? 'returning=1' : '',
+    'score=' + (r.score || ''), 'ref=' + (r.ref || ''), r.reason ? 'reason=' + r.reason : '', r.detail ? 'detail=' + r.detail : '', r.reused ? 'reused=1' : '', r.personExisted ? 'returning=1' : '', r.personUnchanged ? 'person=unchanged' : '',
     r.confirmation ? 'email=' + (r.confirmation.sent ? 'sent' : (r.confirmation.skipped || r.confirmation.error || 'no')) : ''].filter(Boolean).join(' ');
 }
 

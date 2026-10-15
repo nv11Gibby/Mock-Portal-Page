@@ -169,6 +169,29 @@ test('dedupe by phone: a different email on a known number reuses the person and
   assert.equal(m.activities.length, 1);
 });
 
+test('returning person: when the full person cannot be fetched, nothing is written to the person, so no list is overwritten', async () => {
+  const p = m.seedPerson({ name: 'Known Client', email: 'known@example.com', phone: '+971 50 111 2222' });
+  p.email.push({ value: 'second@example.com', primary: false, label: 'home' });
+  m.failGetPerson = 429;
+  const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'known@example.com', phone: '+234 902 222 2024' }), ctx: ctx() });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.personExisted, true);
+  assert.equal(r.personUnchanged, true);
+  assert.equal(m.find('PUT', /\/persons\/\d+$/).length, 0, 'no PUT on the person');
+  assert.equal(m.find('POST', /\/persons$/).length, 0, 'no new person either');
+  assert.deepEqual(p.email.map((e) => e.value), ['known@example.com', 'second@example.com'], 'both emails kept');
+  assert.deepEqual(p.phone.map((e) => e.value), ['+971 50 111 2222'], 'the old phone kept');
+  assert.equal(m.leads.length, 1, 'the lead is still created');
+  assert.ok(m.notes[0].content.indexOf('Phone: +234 902 222 2024') > -1, 'the new phone is in the note');
+  assert.ok(core.summary('test', r).indexOf('person=unchanged') > -1);
+  m.failGetPerson = 0;
+  const ok = await core.processLead({ form: 'enquiry', data: data({ division: 'private-office', email: 'known@example.com', phone: '+234 902 222 2024' }), ctx: ctx() });
+  assert.equal(ok.personUnchanged, false);
+  const put = m.find('PUT', /\/persons\/\d+$/)[0];
+  assert.deepEqual(put.body.phone.map((e) => e.value), ['+971 50 111 2222', '+2349022222024'], 'with the full person the phone is added in E.164, nothing dropped');
+  assert.equal(put.body.email, undefined, 'the known email needs no change');
+});
+
 test('rate limit: the sixth submission from one address in ten minutes is refused', async () => {
   const ip = '198.51.100.7';
   for (let i = 0; i < 5; i++) {

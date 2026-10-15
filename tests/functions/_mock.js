@@ -70,6 +70,7 @@ function pipedrive(m, c) {
   }
   if (c.method === 'GET' && (mt = p.match(/^\/persons\/(\d+)\/deals$/))) return ok(m.deals.filter((d) => String(d.person_id) === mt[1] && d.status === 'open'));
   if (c.method === 'GET' && (mt = p.match(/^\/persons\/(\d+)$/))) {
+    if (m.failGetPerson) return jsonRes(m.failGetPerson, { success: false, error: 'mock: person fetch refused' });
     const x = m.persons.find((y) => String(y.id) === mt[1]);
     return x ? ok(x) : jsonRes(404, { success: false, error: 'not found' });
   }
