@@ -1,0 +1,4 @@
+# Function source is not a page: send it to the app like any other route.
+/netlify/*   /index.html   200!
+# Every route is drawn by the single-page app; real files (assets, manifest) are served first.
+/*    /index.html   200

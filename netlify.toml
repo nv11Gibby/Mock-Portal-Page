@@ -1,0 +1,13 @@
+# Imperial Holdings Group: Netlify configuration.
+# The site is static (publish the repository root). Every form submission triggers
+# netlify/functions/submission-created.js, which creates the lead or deal in Pipedrive.
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Set PIPEDRIVE_API_TOKEN in Site configuration > Environment variables (never in this file).
+# Optional: PIPEDRIVE_OWNER_CLIENTS, PIPEDRIVE_OWNER_PARTNERS, PIPEDRIVE_OWNER_INSTITUTIONS (Pipedrive user ids),
+# PIPEDRIVE_PIPELINE_PARTNERS / PIPEDRIVE_STAGE_PARTNERS, PIPEDRIVE_PIPELINE_INSTITUTIONS / PIPEDRIVE_STAGE_INSTITUTIONS.
