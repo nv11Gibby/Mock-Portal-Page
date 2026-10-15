@@ -1153,7 +1153,10 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 
 /* === v5 leads === */
 /* fallback message when neither Netlify Forms nor our own function could take the enquiry */
-.fb-kv{margin-top:12px;grid-template-columns:repeat(3,auto);justify-content:start;gap:8px 28px;color:var(--l-text)}
+.fb-kv{display:flex;flex-wrap:wrap;margin-top:12px;gap:8px 28px;color:var(--l-text)}
 .fb-kv span{color:var(--l-muted)}
-.fb-kv .ul{font-weight:500}
-@media (max-width:640px){ .fb-kv{grid-template-columns:1fr} }
+.fb-kv .ul{font-weight:500;white-space:nowrap}
+/* qualification fields shown by the choice (Partners Club, Real Estate) */
+.qual,.cond{margin-bottom:20px}
+.cond[hidden],.fgrid>.cond[hidden]{display:none}
+.fgrid>.cond{margin:0}
