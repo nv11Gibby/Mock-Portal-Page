@@ -1,7 +1,7 @@
-/* Imperial Holdings Group v4: clean-URL router (hash fallback on file://), views, one motion system, menus,
-   site search, house finder, Netlify forms with first-touch source tracking (see TRK) for the Pipedrive funnel
-   in netlify/functions/submission-created.js, Our Network, Journal and event galleries. Motion uses transform / opacity / clip-path only and switches off
-   under prefers-reduced-motion. */
+/* Imperial Holdings Group v5: clean-URL router (hash fallback on file://), views, one motion system, menus,
+   site search, house finder, forms with first-touch source tracking (see TRK) for the Pipedrive funnel
+   (Netlify Forms first, then our own function as a fallback: see submitLead), Our Network, Journal and event galleries.
+   Motion uses transform / opacity / clip-path only and switches off under prefers-reduced-motion. */
 (function(){
 'use strict';
 var D = window.IHG, app = document.getElementById('app'), body = document.body, root = document.documentElement;
@@ -11,7 +11,7 @@ var finePointer = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 var IMG = 'assets/img/', LOGO = 'assets/logos/';
 /* Over http(s) the site uses real paths (/about). Templates keep writing "#/about"; in history mode a
    MutationObserver rewrites those hrefs as they land in the DOM, so one template serves both modes. */
-var HIST = false; /* preview build: hash routing */
+var HIST = /^https?:$/.test(location.protocol);
 var KBD = /Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent) ? '\u2318K' : 'Ctrl K';
 function L(p){ return HIST ? p : '#'+p; }
 function fixLinks(scope){ if(!HIST) return; [].forEach.call((scope||document).querySelectorAll('a[href^="#/"]'), function(a){ a.setAttribute('href', a.getAttribute('href').slice(1)); }); }
@@ -37,7 +37,8 @@ var TRK = (function(){
   try{ sessionStorage.setItem(K, JSON.stringify(o)); }catch(e){}
   return o;
 })();
-function trackFields(){ return ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'].map(function(k){ return '<input type="hidden" name="'+k+'" value="'+esc(TRK[k]||'')+'">'; }).join('')+'<input type="hidden" name="page" value=""><input type="hidden" name="audience_resolved" value="">'; }
+var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'];
+function trackFields(){ return TRK_KEYS.map(function(k){ return '<input type="hidden" name="'+k+'" value="'+esc(TRK[k]||'')+'">'; }).join('')+'<input type="hidden" name="page" value=""><input type="hidden" name="audience_resolved" value="">'; }
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -51,6 +52,82 @@ function div(k){for(var i=0;i<D.divisions.length;i++) if(D.divisions[i].key===k)
 function pad2(n){return (n<10?'0':'')+n;}
 function photoAlt(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i].what; return '';}
 function img(k, alt, cls, v, eager){return '<img src="'+IMG+k+(v||'')+'.webp" alt="'+esc(alt==null?photoAlt(k):alt)+'"'+(cls?' class="'+cls+'"':'')+(eager?' fetchpriority="high"':' loading="lazy"')+' decoding="async">';}
+/* v5 media: consent-aware photographs and video. A photograph shows when the registry records consent for it, when
+   its event has consent recorded (events[i].consent), or on a preview build (data-preview on <html>). Otherwise
+   safePhoto() returns a fallback that shows no guests. Video blocks share one shape (see D.video in data.js):
+   an empty id renders the poster and a TO CONFIRM label; a real id renders the poster with a play button and loads
+   the player only on click (Vimeo with dnt=1, or Mux). The hero loop is rendered only when motion and data allow. */
+var PREVIEW = root.hasAttribute('data-preview'), VID = D.video || {};
+var PLAY = '<svg class="play" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11l9-5.5z" fill="currentColor"/></svg>';
+/* Fallback photograph per event while its guests' consent is outstanding: the three consent-free Easter Polo Cup
+   photographs, the Lagos and Dubai city photographs and the colonnade, chosen to suit each evening. */
+var EVENT_SAFE = {'easter-polo-cup-2026':'events/easter-polo-cup-2026/02', 'lagos-diplomatic-soiree-2025':'lagos', 'gala-dinner-lagos':'hero-alt', 'lagos-office-event':'events/easter-polo-cup-2026/04', 'delborough-dinner':'about'};
+function photoMeta(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i]; return null;}
+function eventBySlug(slug){for(var i=0;i<D.events.length;i++) if(D.events[i].slug===slug) return D.events[i]; return null;}
+function photoAllowed(k){
+  if(PREVIEW) return true;
+  var m = photoMeta(k), slug = m && m.event ? m.event : (k.indexOf('events/')===0 ? k.split('/')[1] : null), ev;
+  if(m && m.consent) return true;
+  if(slug){ ev = eventBySlug(slug); return !!(ev && ev.consent); }
+  return true; /* not from an event and not gated in the registry: nothing to hold back */
+}
+function safePhoto(k, fb){ return photoAllowed(k) ? k : (fb || 'about'); }
+function variantOf(k){ return k.indexOf('events/')===0 ? '' : k.indexOf('hero')===0 ? '-m' : '-c'; }
+function eventSafe(e){ return EVENT_SAFE[e.slug] || (e.city==='Dubai' ? 'closing' : 'hero-alt'); }
+function sortByIso(list){
+  return list.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){
+    var p = a.x.iso || '', q = b.x.iso || '';
+    if(p && q && p!==q) return p<q ? 1 : -1;
+    if(!!p !== !!q) return p ? -1 : 1;
+    return a.i-b.i;
+  }).map(function(o){return o.x;});
+}
+function loopOK(){ var c = navigator.connection || {}; return !mqReduce.matches && !c.saveData && !/2g/.test(c.effectiveType||''); }
+function heroLoop(v){
+  if(!v || !loopOK()) return '';
+  if(v.src) return '<video class="loop" data-loop muted playsinline loop preload="none" aria-hidden="true" tabindex="-1"><source src="'+esc(v.src)+'"></video>';
+  if(v.id && v.provider==='mux') return '<iframe class="loop" src="https://player.mux.com/'+encodeURIComponent(v.id)+'?autoplay=muted&muted=true&loop=true&controls=false" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
+  if(v.id) return '<iframe class="loop" src="https://player.vimeo.com/video/'+encodeURIComponent(v.id)+'?background=1&muted=1&loop=1&autoplay=1&dnt=1'+(v.hash?'&h='+encodeURIComponent(v.hash):'')+'" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
+  return '';
+}
+function videoBlock(v, cls){
+  if(!v) return '';
+  var pk = safePhoto(v.poster, 'hero-alt'), ready = !!v.id, title = v.title || 'Video';
+  return '<figure class="vid'+(cls?' '+cls:'')+(ready?'':' pending')+'" data-r'+(ready?' data-video data-provider="'+esc(v.provider||'vimeo')+'" data-id="'+esc(v.id)+'"'+(v.hash?' data-hash="'+esc(v.hash)+'"':'')+' data-vtitle="'+esc(title)+'"':'')+'>'+
+    '<div class="vid-stage">'+img(pk, title+' (poster)', 'vid-poster')+
+    (ready ? '<button type="button" class="vid-play" aria-label="Play '+esc(title)+'">'+PLAY+'<span>Play</span></button>' : '<span class="vid-tbc">'+PLAY+tbc(v.tbc||'Footage to be supplied')+'</span>')+'</div>'+
+    '<figcaption><b>'+esc(title)+'</b>'+(v.duration?'<i aria-hidden="true">·</i>'+esc(v.duration):'')+(v.captions?'<i aria-hidden="true">·</i><a class="vid-cc" href="'+esc(v.captions)+'">Captions</a>':'')+'</figcaption></figure>';
+}
+function homeVideo(){ var f = null; D.events.concat(D.journal).forEach(function(x){ if(!f && x.video && x.video.id) f = x.video; }); return f; }
+function playerSrc(f){
+  var p = f.getAttribute('data-provider'), id = encodeURIComponent(f.getAttribute('data-id')), h = f.getAttribute('data-hash');
+  if(p==='mux') return 'https://player.mux.com/'+id+'?autoplay=true';
+  return 'https://player.vimeo.com/video/'+id+'?dnt=1&autoplay=1&title=0&byline=0&portrait=0'+(h?'&h='+encodeURIComponent(h):'');
+}
+function bindMedia(){
+  [].forEach.call(app.querySelectorAll('[data-video]'), function(f){
+    var b = f.querySelector('.vid-play'); if(!b) return;
+    b.addEventListener('click', function(){
+      var st = f.querySelector('.vid-stage');
+      st.innerHTML = '<iframe src="'+esc(playerSrc(f))+'" title="'+esc(f.getAttribute('data-vtitle')||'Video')+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+      f.classList.add('playing');
+    });
+  });
+  [].forEach.call(app.querySelectorAll('video[data-loop]'), function(v){
+    v.muted = true; v.setAttribute('preload','auto');
+    var go = function(){ if(loopOK()){ var p = v.play(); if(p && p.catch) p.catch(function(){}); } else v.pause(); };
+    go();
+    if(mqReduce.addEventListener) mqReduce.addEventListener('change', go);
+  });
+}
+function relatedRow(kind, cur){
+  var list = kind==='event' ? sortByIso(D.events) : D.insights.slice(), same = [], other = [];
+  list.forEach(function(x){ if(x===cur) return; (x.cat===cur.cat ? same : other).push(x); });
+  var pick = same.concat(other).slice(0,3);
+  if(!pick.length) return '';
+  return '<section class="sec light alt" id="related"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Related')+mask(kind==='event'?['More evenings','from the house.']:['More from the house.'],'h2','d2')+'</div></div>'+
+    (kind==='event' ? '<div class="evgrid">'+pick.map(eventCard).join('')+'</div>' : '<div class="icards">'+pick.map(insightCard).join('')+'</div>')+'</div></section>';
+}
 function logoImg(d, colour, cls){
   if(d.logo) return '<img class="'+(cls||'')+'" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'">';
   return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="">'+esc(d.name)+'</span>';
@@ -76,7 +153,7 @@ function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',
 
 /* ---------- shared blocks ---------- */
 function pageHero(o){
-  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(o.img, null, '', '', true)+'</div></div>' : '';
+  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(safePhoto(o.img, o.fb), null, '', '', true)+'</div></div>' : '';
   var crumb = o.crumb ? '<nav class="crumb" aria-label="Breadcrumb" data-r><a href="#/">Home</a>'+o.crumb.map(function(c){return '<i aria-hidden="true">/</i>'+(c[1]?'<a href="'+c[1]+'">'+esc(c[0])+'</a>':'<span aria-current="page">'+esc(c[0])+'</span>');}).join('')+'</nav>' : '';
   return '<section class="ph'+(o.cls?' '+o.cls:'')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
 }
@@ -125,9 +202,9 @@ function mapBlock(){
 }
 function story(){
   var ch = [
-    {img:'dunes2', t:'One conversation', p:D.steps[0][1]},
-    {img:'marina', t:'The right house', p:D.steps[1][1]},
-    {img:'cistern', t:'One person, for the long term', p:D.steps[2][1]}
+    {img:'citizenship', t:'One conversation', p:D.steps[0][1]},
+    {img:'private-office', t:'The right house', p:D.steps[1][1]},
+    {img:'about', t:'One person, for the long term', p:D.steps[2][1]}
   ];
   return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
     '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
@@ -139,18 +216,21 @@ function story(){
 /* ---------- views ---------- */
 var V = {};
 V.home = function(){
-  var N = D.network, ev = D.events.filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
+  var N = D.network, HH = D.hero, hk = safePhoto(HH.photo, HH.fallback), nk = photoAllowed(HH.night) ? HH.night : null, hv = homeVideo();
+  var ev = sortByIso(D.events).filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
+  var NET_SAFE = ['events/easter-polo-cup-2026/04','closing','events/easter-polo-cup-2026/02','lagos'], AUD_SAFE = ['private-office','partners','about'];
+  var held = N.photos.some(function(p){return !photoAllowed(p);});
   return ''+
   /* hero: the strongest element of the existing site, kept. Two journeys: clients explore the ecosystem, partners go to IPC. */
   '<section class="hh" id="top"><div class="hh-pin">'+
-    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+'dusk-m.webp"><img src="'+IMG+'dusk.webp" alt="'+esc(photoAlt('dusk'))+'" fetchpriority="high"></picture></figure>'+
-    '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+'night-m.webp"><img src="'+IMG+'night.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>'+
+    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'+
+    (nk ? '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+nk+'-m.webp"><img src="'+IMG+nk+'.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>' : '')+
     '<div class="hh-c wrap">'+eyebrow('Imperial Holdings Group <i>·</i> Dubai <i>·</i> Lagos')+mask(['Two Cities.','One Horizon.'],'h1','d1',.15)+
     '<p class="lead" data-r style="--d:.55s">Five specialist divisions, one standard, and one person who knows your family.</p>'+
     '<div class="hh-row" data-r style="--d:.7s"><div class="journeys">'+
       '<div class="jny"><a class="btn gold mag" href="#/" data-scroll="ecosystem"><span>Explore our ecosystem</span>'+AR+'</a><small>For private clients</small></div>'+
       '<div class="jny"><a class="btn line" href="#/divisions/partners-club" data-dv="partners-club"><span>Partner with us</span>'+AR+'</a><small>For professional partners</small></div></div>'+
-    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p></div></div>'+
+    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred" data-r style="--d:.8s">'+tbc(HH.tbc)+'</p></div></div>'+
     '<span class="cue" aria-hidden="true">Scroll</span></div></section>'+
 
   '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow('The Group')+mask(['A house for a life','across borders.'],'h2','d2')+'</div>'+
@@ -162,8 +242,8 @@ V.home = function(){
   /* Our Network: one client journey, four photographs of genuine Imperial gatherings, three audiences */
   '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our Network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The ecosystem exists so that each step is taken with the others in view.</p></div>'+
    '<ol class="journey" aria-label="How a relationship with Imperial grows">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
-   '<div class="net-photos" data-r>'+N.photos.map(function(p,i){return '<figure class="np'+(i+1)+'">'+img(p,'')+'</figure>';}).join('')+'</div><p class="xs net-cap" data-r>Imperial gatherings in Dubai and Lagos. <a class="ul" href="#/journal">See selected events</a></p>'+
-   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><figure>'+img(a.img,'')+'</figure><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
+   '<div class="net-photos" data-r>'+N.photos.map(function(p,i){return '<figure class="np'+(i+1)+'">'+img(safePhoto(p, NET_SAFE[i]),'')+'</figure>';}).join('')+'</div><p class="xs net-cap" data-r>Imperial gatherings in Dubai and Lagos. '+(held?'Photographs of guests appear once they have confirmed they are happy to be featured. ':'')+'<a class="ul" href="#/journal">See selected events</a></p>'+
+   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><figure>'+img(safePhoto(a.img, AUD_SAFE[i]),'')+'</figure><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
 
   '<section class="sec lead-sec" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its founder, with one Group team working across every division.</p></div>'+
    '<div class="leaders real home">'+lead.map(function(l,i){return '<div class="leader" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div><div class="role">'+esc(l.role)+'</div><h3>'+esc(l.name)+'</h3></div>';}).join('')+
@@ -171,9 +251,11 @@ V.home = function(){
 
   '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Gatherings','worth the evening.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic collaborations, private gatherings and the relationships behind them.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
    '<div class="evgrid two">'+ev.map(eventCard).join('')+'</div></div></section>'+
+  /* one video block on the home page, only once a clip exists (first event or journal video with an id) */
+  (hv ? '<section class="sec light home-vid" id="film"><div class="wrap"><div class="sec-head"><div>'+eyebrow('On film')+mask(['The evening,','in motion.'],'h2','d2')+'</div></div>'+videoBlock(hv,'')+'</div></section>' : '')+
 
   '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: genuine company developments, insights, partnerships and selected events.</p></div>'+
-   '<div class="jlist">'+D.journal.slice(0,3).map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
+   '<div class="jlist">'+sortByIso(D.journal).slice(0,3).map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
   '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Global presence')+mask(['Led from Dubai','and Lagos.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Headquarters in Dubai, a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.</p></div>'+mapBlock()+'</div></section>'+
 
@@ -203,11 +285,13 @@ V.about = function(){
   '<section class="sec light alt" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its founder, with one Group team working across every division. Each division\u2019s own leadership is introduced on its website.</p></div>'+
    '<div class="leaders real">'+D.leadership.map(function(l,i){return '<div class="leader'+(l.img?'':' more')+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s">'+(l.img?'<div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div>':'')+'<div class="role">'+esc(l.role)+'</div><h3>'+esc(l.name||l.area)+'</h3><p>'+(l.name?esc(l.area)+'<br>Biography: '+tbc('to be approved'):'Introduced on each division\u2019s website.')+'</p></div>';}).join('')+'</div></div></section>'+
 
+  '<section class="sec light founder-film" id="founder-film"><div class="wrap split"><div>'+eyebrow('Founder film')+mask(['The founder,','on film.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s">A short film with the founder, 60 to 90 seconds, is planned for this page. '+tbc('Footage to be supplied')+'</p></div>'+videoBlock(VID.about,'')+'</div></section>'+
+
   '<section class="sec deep"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Where we work')+mask(['Led from Dubai.','At home worldwide.'],'h2','d2')+'</div></div>'+mapBlock()+'</div></section>'+closing();
 };
 
 V.divisions = function(){
-  return pageHero({img:'sils', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
+  return pageHero({img:'partners', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
     return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-img="'+IMG+d.img+'-c.webp" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
@@ -241,6 +325,7 @@ V.division = function(key){
     (d.includes?'<div style="margin-top:clamp(64px,7vw,100px)"><div class="eyebrow" data-r>Every plan includes</div><div class="includes">'+d.includes.map(function(x,i){return '<div data-r style="--d:'+(i%4*0.07).toFixed(2)+'s"><span>'+pad2(i+1)+'</span>'+esc(x)+'</div>';}).join('')+'</div></div>':'')+
     (d.standards?'<div style="margin-top:clamp(64px,7vw,100px)" class="split"><div>'+eyebrow('Shared standards')+'<h3 class="d3" data-r>Your reputation travels with ours.</h3></div><ul class="plist yes" data-r>'+d.standards.map(function(t){return '<li>'+TICK+'<span>'+esc(t)+'</span></li>';}).join('')+'</ul></div>':'')+
     '<div class="callout" data-r><div><b>Please note</b>'+esc(d.note)+'</div></div></div></section>';
+  h += (d.key==='citizenship' ? fitCheck()+guideForm() : '')+enquiryBlock(d.key);
   h += '<section class="sec deep"><div class="wrap cta-band"><div>'+(d.logo?'<img class="div-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="" data-r>':'<div data-r style="margin-bottom:30px">'+logoImg(d,'Gold','')+'</div>')+mask(ctaTitle(d),'h2','d2')+'<p class="lead" data-r style="margin-top:22px">'+(d.cta.real?'Programmes, eligibility and the team behind them, on the Imperial Citizenship website.':'The '+esc(d.name)+' website is in preparation. In the meantime, speak to us and we will connect you.')+'</p></div>'+
     '<div class="btns" data-r>'+extLink(d,'btn gold')+'<a class="btn line" href="#/contact?about='+d.key+'"><span>Speak to us</span></a></div></div></section>';
   return h + others(d);
@@ -267,7 +352,7 @@ function registerForm(){
 V.insights = function(q){
   var pre = (q && q.cat) || 'All';
   var cats = ['All'].concat(D.insights.map(function(a){return a.cat;}).filter(function(v,i,s){return s.indexOf(v)===i;}));
-  return pageHero({img:'monaco', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
+  return pageHero({img:'academy', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
   '<section class="sec light"><div class="wrap"><div class="notice" data-r><span class="sample">Sample</span><div><b>These are sample articles.</b> They show the layout and tone of the Insights section. Titles and copy draw on the Imperial Holdings brochure; final articles are to be written and approved before launch.</div></div>'+
    '<div class="filters" role="group" aria-label="Filter insights" data-r>'+cats.map(function(c){var n=c==='All'?D.insights.length:D.insights.filter(function(a){return a.cat===c;}).length, on=c===pre;return '<button class="'+(on?'on':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+on+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('')+'</div>'+
    '<h2 class="vh">Articles</h2><div class="icards four" id="icards">'+D.insights.map(function(a,i){var h=insightCard(a,i);return pre!=='All'&&a.cat!==pre?h.replace('class="icard"','class="icard hide"'):h;}).join('')+'</div><p class="vh" id="filterMsg" aria-live="polite"></p></div></section>'+closing();
@@ -275,13 +360,12 @@ V.insights = function(q){
 V.article = function(slug){
   var a=null; D.insights.forEach(function(x){if(x.slug===slug) a=x;}); if(!a) return null;
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
-  var more = D.insights.filter(function(x){return x.slug!==slug;}).slice(0,3);
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
   return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:'<div data-r style="margin-bottom:18px"><span class="sample">Sample article</span></div>', eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
   '<section class="sec light"><div class="wrap"><article class="article" id="article"><div class="notice" data-r><span class="sample">Sample</span><div><b>Sample article for layout.</b> Final copy to be written and approved. Author and publication date: '+tbc('to confirm')+'</div></div><p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
-  '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Read next')+mask(['More from the house.'],'h2','d2')+'</div></div><div class="icards">'+more.map(insightCard).join('')+'</div></div></section>';
+  relatedRow('article', a);
 };
 function splitTitle(t){
   var w = t.replace(/\.$/,'').split(' '), lines=[], cur='';
@@ -290,56 +374,117 @@ function splitTitle(t){
 }
 
 /* ---------- v4: events, journal, enquiry, finder section ---------- */
-function evWhen(e){ return e.date ? esc(e.date) : tbc('Date to confirm'); }
+function evWhen(e){ return e.date ? esc(e.date) : ''; }
 function eventCard(e,i){
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img('events/'+e.slug+'/cover', e.title)+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+' <i aria-hidden="true">·</i> '+evWhen(e)+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
+  var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+(ok ? img(k, e.title) : img(eventSafe(e), null))+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
 }
 function journalRow(j,i){
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(j.img,'','',j.own?'':'-c')+'</figure><div class="jb"><div class="meta">'+esc(j.kind)+' <i aria-hidden="true">·</i> '+(j.sample?'<span class="sample">Sample</span>':esc(j.date))+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  var ok = photoAllowed(j.img), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null, k = ok ? j.img : (ev ? eventSafe(ev) : 'about'), v = ok ? (j.own?'':'-c') : variantOf(k);
+  var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
+  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, ok?'':null, '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 V.journal = function(){
-  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
+  var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
+  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', fb:'events/easter-polo-cup-2026/02', cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
   '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Where the','network meets.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. One cover photograph for each, and a gallery inside.</p></div>'+
-   '<div class="evgrid">'+D.events.map(eventCard).join('')+'</div>'+
-   '<p class="xs" data-r style="margin-top:32px">Photographs of guests are published with their permission. '+tbc('Permissions to confirm before launch')+'</p></div></section>'+
-  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments, selected insights and partnerships.</p><p class="xs"><span class="sample">Sample</span>&nbsp; Entries marked Sample are layout samples, to be rewritten and approved.</p></div></div>'+
-   '<div class="jlist">'+D.journal.map(journalRow).join('')+'</div></div></section>'+closing();
+   '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
+   '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
+  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments, selected insights and partnerships.</p></div></div>'+
+   '<div class="jlist">'+rows.map(journalRow).join('')+'</div></div></section>'+closing();
 };
 V.event = function(slug){
-  var e = null, ix = -1; D.events.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
-  var n = D.events.length, prev = D.events[(ix-1+n)%n], next = D.events[(ix+1)%n];
-  var facts = [['When', evWhen(e)], ['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']];
-  var gal = ''; for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
-  return pageHero({img:'events/'+e.slug+'/cover', crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
+  var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
+  var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01');
+  var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
+  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']);
+  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
+  var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
+  return pageHero({img:'events/'+e.slug+'/cover', fb:eventSafe(e), crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
   '<section class="sec light"><div class="wrap split"><div>'+e.body.map(function(p){return '<p class="lead" data-r>'+esc(p)+'</p>';}).join('')+
     (e.guests?'<div data-r><div class="eyebrow" style="margin-top:34px">Among the guests</div><ul class="guests">'+e.guests.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>':'')+
     (e.tbc?'<p class="xs" data-r style="margin-top:24px">To confirm before launch: '+e.tbc.map(tbc).join(' ')+'</p>':'')+
-    (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+'</div>'+
+    (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+
+    '<div class="ev-share" data-r>'+shareBar(e, 'event')+'</div></div>'+
    '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?about=group&audience=institutions"><span>Start a strategic conversation</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
-  '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(['The evening,','in pictures.'],'h2','d2')+'</div><p class="xs" data-r>Photographs of guests appear with their permission. '+tbc('Permissions to confirm')+'</p></div><div class="gallery">'+gal+'</div></div></section>'+
+  '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(['The evening,','in pictures.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
+    (e.video ? videoBlock(e.video, 'gal-vid') : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
+  relatedRow('event', e)+
   '<section class="sec light"><div class="wrap"><nav class="pn" aria-label="More events" data-r><a href="#/journal/events/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/journal/events/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></div></section>'+closing();
 };
 /* home enquiry: one short form, qualified by audience and division, with source fields for Pipedrive */
-function enquiryBlock(){
+function enquiryBlock(pre){
   var C = D.contact;
   return '<section class="sec light enq" id="enquire"><div class="wrap split"><div>'+eyebrow('Confidential <i>·</i> No obligation')+mask(['Begin with','one conversation.'],'h2','d2')+
     '<p class="lead" data-r style="--d:.15s;margin-top:26px">Tell us what you are planning. A senior adviser will read your enquiry and reply personally.</p>'+
     '<div class="kv enq-kv" data-r style="--d:.2s"><div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div>'+C.offices.map(function(o){return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>';}).join('')+'</div>'+
-    '<p class="xs" data-r style="--d:.25s">Prefer three short steps? <a class="ul" href="#/contact">Use the guided form</a>.</p></div>'+
-    '<div data-r style="--d:.15s">'+enquiryForm()+'</div></div></section>';
+    '<p class="xs" data-r style="--d:.25s">Prefer three short steps? <a class="ul" href="#/contact'+(pre?'?about='+pre:'')+'">Use the guided form</a>.</p></div>'+
+    '<div data-r style="--d:.15s">'+enquiryForm(pre)+'</div></div></section>';
 }
 var AUDS = [['clients','A private client'],['partners','A professional partner or introducer'],['institutions','An institution or strategic partner']];
-function enquiryForm(){
-  return '<div class="form-card" data-form="enquiry" id="enq"><form novalidate name="enquiry" method="post"><input type="hidden" name="form-name" value="enquiry"><input type="hidden" name="routed_to" value="">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
+/* v5 qualification (BUILD-CONTRACT 4.2): names, values and labels are fixed there and in shared/lead-schema.json */
+var FOR_WHOM = [['myself','Myself'],['family','My family'],['client','A client I am introducing']];
+var TIMELINES = [['3m','Within 3 months'],['3-12m','3 to 12 months'],['exploring','Just exploring for now']];
+var BUDGETS = [['under-250k','Under US$250,000'],['250k-500k','US$250,000 to 500,000'],['500k-1m','US$500,000 to 1 million'],['over-1m','Over US$1 million'],['undisclosed','I would rather not say yet']];
+var RE_INTENTS = [['buy','Buy'],['rent','Rent']];
+function labelOf(list, v){ for(var i=0;i<list.length;i++) if(list[i][0]===v) return list[i][1]; return v || ''; }
+function selField(name, label, list, first, req, attrs){
+  return '<label class="field"><span>'+label+'</span><select name="'+name+'"'+(req?' required':'')+(attrs||'')+'><option value="">'+esc(first)+'</option>'+list.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('')+'</select>'+(req?'<em class="em">Please choose one.</em>':'')+'</label>';
+}
+/* about you: nationality and who the enquiry is for */
+function qualWho(){
+  return '<label class="field"><span>Nationality, or nationalities</span><input name="nationality" autocomplete="off" required><em class="em">Please tell us your nationality.</em></label>'+selField('for_whom', 'This enquiry is for', FOR_WHOM, 'Choose one', true);
+}
+/* your message: timing, and a budget band only if the person would like to say */
+function qualPlan(){
+  return selField('timeline', 'When would you like to begin?', TIMELINES, 'Choose one', true)+selField('budget', 'A budget in mind <i>(optional)</i>', BUDGETS, 'Only if you would like to say', false);
+}
+/* shown by the choice: Partners Club (or a partner audience) asks for firm and profession; Real Estate asks buy or rent and the area.
+   Hidden fields are disabled, so they are neither validated nor sent. data-req="choice" is required only when the choice itself is Partners Club. */
+function condFields(){
+  return '<div class="fgrid cond full" data-cond="partners" hidden><label class="field"><span>Firm</span><input name="firm" autocomplete="organization" data-req="choice" disabled><em class="em">Please tell us your firm.</em></label><label class="field"><span>Profession</span><input name="profession" autocomplete="organization-title" data-req="choice" disabled><em class="em">Please tell us your profession.</em></label></div>'+
+    '<div class="fgrid cond full" data-cond="real-estate" hidden>'+selField('re_intent', 'I am looking to', RE_INTENTS, 'Choose one', false, ' data-req="1" disabled')+'<label class="field"><span>Area of interest <i>(optional)</i></span><input name="re_area" autocomplete="off" disabled></label></div>';
+}
+function bindCond(form){
+  var conds = form.querySelectorAll('[data-cond]');
+  function apply(){
+    var ab = form.querySelector('input[name="about"]:checked'), dv = form.elements.namedItem('division'), v = ab ? ab.value : (dv ? dv.value : '');
+    var aud = form.elements.namedItem('audience'), a = aud ? aud.value : '';
+    var partners = v==='partners-club' ? 'choice' : (a==='partners' ? 'audience' : '');
+    [].forEach.call(conds, function(box){
+      var on = box.getAttribute('data-cond')==='partners' ? !!partners : v==='real-estate';
+      box.hidden = !on;
+      [].forEach.call(box.querySelectorAll('input,select'), function(f){
+        var r = f.getAttribute('data-req');
+        f.disabled = !on; f.required = on && (r==='1' || (r==='choice' && partners==='choice'));
+        if(!on){ var b = f.closest('.field'); if(b) b.classList.remove('err','ok'); f.setAttribute('aria-invalid','false'); }
+      });
+    });
+  }
+  if(conds.length) [].forEach.call(form.querySelectorAll('input[name="about"], select[name="division"], select[name="audience"]'), function(f){ f.addEventListener('change', apply); });
+  apply(); return apply;
+}
+function ensureHidden(form, name, value){ var f = form.elements.namedItem(name); if(f) return f; f = document.createElement('input'); f.type = 'hidden'; f.name = name; f.value = value; form.appendChild(f); return f; }
+/* consent (brief 8): every consent box links the privacy notice next to it. Templates use consentBox(); bindForms adds the link
+   to any consent box that still lacks one. */
+var PRIVACY_LINK = '<a class="ul" href="#/privacy">privacy notice</a>';
+function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span></label>'; }
+function ensurePrivacyLink(form){
+  [].forEach.call(form.querySelectorAll('.consent'), function(c){ if(c.querySelector('a[href$="/privacy"]')) return; var s = c.querySelector('span') || c; s.insertAdjacentHTML('beforeend', ' See our '+PRIVACY_LINK+'.'); });
+  fixLinks(form);
+}
+function enquiryForm(pre){
+  return '<div class="form-card" data-form="enquiry" id="enq"><form novalidate name="enquiry" method="post"><input type="hidden" name="form-name" value="enquiry"><input type="hidden" name="routed_to" value=""><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="lead_source" value="website"><input type="hidden" name="quiz_answers" value="">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
    '<div class="eyebrow">Private enquiry</div>'+
    '<div class="fgrid"><label class="field"><span>I am</span><select name="audience" required><option value="">Choose one</option>'+AUDS.map(function(a){return '<option value="'+a[0]+'">'+a[1]+'</option>';}).join('')+'</select><em class="em">Please tell us who you are.</em></label>'+
-   '<label class="field"><span>It concerns</span><select name="division" required><option value="">Choose the closest</option>'+D.enquiry.map(function(e){return '<option value="'+e.v+'">'+esc(e.l)+'</option>';}).join('')+'</select><em class="em">Please choose the closest.</em></label>'+
+   '<label class="field"><span>It concerns</span><select name="division" required><option value="">Choose the closest</option>'+D.enquiry.map(function(e){return '<option value="'+e.v+'"'+(pre===e.v?' selected':'')+'>'+esc(e.l)+'</option>';}).join('')+'</select><em class="em">Please choose the closest.</em></label>'+
    '<label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label>'+
    '<label class="field"><span>Phone, with country code <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
+   qualWho()+qualPlan()+condFields()+
    '<label class="field full"><span>How can we help?</span><textarea name="msg" rows="4" required></textarea><em class="em">A few lines are enough.</em></label></div>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">Send enquiry</span><span class="spin"></span></button><span class="xs">We use your details only to reply to this enquiry.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
 }
 function finderSec(){
@@ -350,7 +495,7 @@ V.contact = function(q){
   var pre = q.about || '', goals = (q.goals||'').split(',').filter(function(g){return D.finder.goals[g];});
   var gl = goals.map(function(g){for(var i=0;i<D.ambitions.length;i++) if(D.ambitions[i][0].toLowerCase()===g) return D.ambitions[i][0]; return g;});
   var steps = ['What it is about','About you','Your message'];
-  return pageHero({img:'contact', cls:'short', crumb:[['Contact',null]], eyebrow:'Speak to us', title:['Shall we begin?'], lead:'Three short steps. Tell us where you are, and where you would like to be. We will make sure the right house picks it up, with one person as your point of contact.'})+
+  return pageHero({img:'about', cls:'short', crumb:[['Contact',null]], eyebrow:'Speak to us', title:['Shall we begin?'], lead:'Three short steps. Tell us where you are, and where you would like to be. We will make sure the right house picks it up, with one person as your point of contact.'})+
   '<section class="sec light"><div class="wrap split cf-split"><div data-r><div class="form-card" data-form="contact" id="cf"><form novalidate name="contact" method="post">'+
    '<input type="hidden" name="form-name" value="contact"><input type="hidden" name="routed_to" value=""><input type="hidden" name="interests" value="'+esc(gl.join(', '))+'"><input type="hidden" name="audience" value="'+esc(q.audience||'')+'">'+trackFields()+
    '<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
@@ -370,20 +515,22 @@ V.contact = function(q){
    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label>'+
    '<label class="field"><span>Phone <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
+   qualWho()+
    '<label class="field full"><span>Preferred way to reach you</span><select name="pref"><option>Email</option><option>Phone call</option><option>Either</option></select></label></div>'+
    '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-next><span class="lbl">Continue</span>'+AR+'</button></div></div>'+
    /* step 3 */
    '<div class="cf-step" data-step="3"><h2 tabindex="-1">Your message</h2><p>A few lines are enough. No documents are needed for a first conversation.</p>'+
    '<dl class="cf-review" id="cfReview"></dl>'+
+   '<div class="fgrid qual">'+qualPlan()+'</div>'+condFields()+
    '<label class="field"><span>How can we help?</span><textarea name="msg" required placeholder="A few lines about your family, your plans or your practice."></textarea><em class="em">Please tell us a little about your enquiry.</em></label>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
    '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-send><span class="lbl">Send enquiry</span><span class="spin"></span></button></div>'+
    '<div class="form-err" role="alert" hidden></div>'+
    '<p class="xs" style="margin-top:16px">We use these details only to respond. Nothing is shared beyond what a service needs.</p></div>'+
    '</form></div></div>'+
    '<div data-r style="--d:.15s" class="cf-side">'+
-    D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div></div>';}).join('')+
-    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div><div><span>Booking</span>'+tbc('Booking link')+'</div></div></div>'+
+    D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div>'+waSide(o)+'</div>';}).join('')+
+    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div><div><span>Book a first conversation</span>'+bookingSide()+'</div></div></div>'+
     '<div class="side-card"><h3 class="h4">Before we speak</h3><p>You do not need any documents for the first conversation. It helps to think about who would be included, where you live and hold citizenship today, and any dates that matter.</p><p class="small muted">The first conversation is for listening. You do not have to decide anything on the first call.</p></div>'+
    '</div></div></section>'+
   '<section class="sec light alt" id="faq"><div class="wrap split"><div>'+eyebrow('Questions')+mask(['Before you','get in touch.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s;margin-top:26px">Short answers to what people ask most. Anything else, ask us directly.</p></div>'+faqList(D.faq,'c')+'</div></section>';
@@ -402,7 +549,7 @@ function legal(kind){
 V.privacy = function(){return legal('privacy');};
 V.terms = function(){return legal('terms');};
 V.notFound = function(){
-  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('arches','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
+  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
@@ -435,7 +582,7 @@ function buildChrome(){
 }
 
 /* ---------- router (view transitions with a shared division image) ---------- */
-var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {};
+var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered');
 if(HIST && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
 function parse(){
   var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
@@ -446,7 +593,7 @@ function parse(){
   var parts = qs[0].split('/').filter(Boolean);
   return {path:'/'+parts.join('/'), parts:parts, q:q};
 }
-function resolve(r){
+function resolve0(r){
   if(!r) return {html:V.notFound(), title:'Page not found', nav:null, nf:true};
   var p = r.parts;
   if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Two cities. One horizon. Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos: Citizenship, Partners Club, Private Office, Real Estate and Academy.'};
@@ -459,17 +606,105 @@ function resolve(r){
   if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken guidance on mobility, family planning and working with Imperial.'};
   if(p[0]==='insights' && p.length===2){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
   if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:'Contact', nav:'contact', view:'contact', desc:'Speak to Imperial Holdings Group. Three short steps, routed to the right house, with one person as your point of contact.'};
-  if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true};
-  if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true};
+  if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true, desc:'Privacy notice for the Imperial Holdings Group website: who we are, what we collect through our enquiry forms, how we use it and your rights.'};
+  if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true, desc:'Terms of use for the Imperial Holdings Group website: information only, not advice, and no guarantee of any government decision or outcome.'};
   return {html:V.notFound(), title:'Page not found', nav:null, nf:true, view:'nf'};
 }
+/* ---------- v5 search: per-route canonical, social image, Open Graph type and structured data ----------
+   pageMeta() decorates what resolve0() returns. Every fact comes from data.js (config, contact, divisions, events,
+   insights, faq); nothing is invented here. The social image is the page's own hero photograph, or assets/img/og.jpg
+   where a page has none. setMeta() writes it all into the head, so the prerender (build/build.js) and client-side
+   navigation produce the same tags. */
+var CFG = D.config || {}, SITE = String(CFG.siteUrl || '').replace(/\/+$/, '');
+var ORG_NAME = 'Imperial Holdings Group', ORG_DESC = 'One house with five specialist divisions: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate.';
+var CC = {'United Arab Emirates':'AE', 'Nigeria':'NG'};
+function abs(p){ return SITE + '/' + String(p).replace(/^\//, ''); }
+function postalLD(o){
+  var ln = o.lines || [], loc = ln[1] || '', i = loc.indexOf(','), a = {'@type':'PostalAddress', streetAddress: ln[0] || '', addressLocality: o.city};
+  if(i > -1) a.streetAddress += ', ' + loc.slice(0, i).trim();
+  else { var pc = /(\d{4,})/.exec(loc); if(pc) a.postalCode = pc[1]; }
+  if(ln[2]) a.addressCountry = CC[ln[2]] || ln[2];
+  return a;
+}
+function placeLD(o){ return {'@type':'Place', name: o.city + ', ' + o.role, telephone: o.tel, address: postalLD(o)}; }
+function orgRef(){ return {'@type':'Organization', '@id': SITE + '/#organization', name: ORG_NAME, url: SITE + '/', logo: {'@type':'ImageObject', url: abs('assets/logos/Imperial-Crown-Gold.svg')}}; }
+function orgLD(){
+  var C = D.contact, hq = C.offices[0], ref = orgRef();
+  return {'@context':'https://schema.org', '@type':'Organization', '@id': ref['@id'], name: ORG_NAME, url: ref.url, logo: ref.logo, description: ORG_DESC, email: C.email, telephone: hq.tel, address: postalLD(hq), location: C.offices.map(placeLD),
+    subOrganization: D.divisions.map(function(d){ var s = {'@type':'Organization', name: d.name}; if(d.cta && d.cta.real) s.url = d.cta.href; return s; })};
+}
+function officeLD(o){
+  return {'@context':'https://schema.org', '@type':'LocalBusiness', '@id': SITE + '/contact#' + o.city.toLowerCase(), name: ORG_NAME + ', ' + o.city, description: o.role, url: SITE + '/contact', image: abs('assets/img/og.jpg'), telephone: o.tel, email: D.contact.email, address: postalLD(o), parentOrganization: orgRef()};
+}
+function crumbLD(list){
+  var items = [['Home', '/']].concat(list);
+  return {'@context':'https://schema.org', '@type':'BreadcrumbList', itemListElement: items.map(function(c, i){ return {'@type':'ListItem', position: i + 1, name: c[0], item: c[1] === '/' ? SITE + '/' : SITE + c[1]}; })};
+}
+function fullDate(iso){ return /^\d{4}-\d{2}-\d{2}$/.test(iso || '') ? iso : null; }
+function countryOf(city){ var cc = null; D.contact.offices.forEach(function(o){ if(o.city === city && o.lines && o.lines[2]) cc = CC[o.lines[2]] || o.lines[2]; }); return cc; }
+function heroImage(html){
+  var m = /<section class="(?:ph|hh|nf)[^"]*">(?:(?!class="(?:ph-c|hh-c|wrap))[\s\S])*?<img src="(assets\/img\/[^"]+)"/.exec(html || '');
+  return m ? abs(m[1]) : abs('assets/img/og.jpg');
+}
+function pageMeta(out, r){
+  var p = r ? r.parts : [], path = r ? r.path : null, ld = [orgLD()], crumbs = null, x = null;
+  out.path = path;
+  out.canonical = (!out.nf && path) ? (path === '/' ? SITE + '/' : SITE + path) : null;
+  out.image = heroImage(out.html);
+  out.type = (out.view === 'article' || out.view === 'event') ? 'article' : 'website';
+  if(out.view === 'about') crumbs = [['About', '/about']];
+  else if(out.view === 'divisions') crumbs = [['Divisions', '/divisions']];
+  else if(out.view === 'division'){ x = div(p[1]); crumbs = [['Divisions', '/divisions'], [x.short, path]]; }
+  else if(out.view === 'journal') crumbs = [['Journal', '/journal']];
+  else if(out.view === 'event'){
+    D.events.forEach(function(e){ if(e.slug === p[2]) x = e; });
+    crumbs = [['Journal', '/journal'], [x.short, path]];
+    /* only what data.js records: a start date needs a full date, a venue is named only when known */
+    var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
+    if(x.venue) ev.location.name = x.venue;
+    var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
+    if(fullDate(x.iso)) ev.startDate = x.iso;
+    ld.push(ev);
+  }
+  else if(out.view === 'insights') crumbs = [['Insights', '/insights']];
+  else if(out.view === 'article'){
+    D.insights.forEach(function(a){ if(a.slug === p[1]) x = a; });
+    crumbs = [['Insights', '/insights'], [x.title, path]];
+    var art = {'@context':'https://schema.org', '@type':'Article', headline: x.title, description: x.dek, articleSection: x.cat, url: out.canonical, mainEntityOfPage: out.canonical, image: out.image, author: orgRef(), publisher: orgRef()};
+    if(fullDate(x.iso)) art.datePublished = x.iso;
+    ld.push(art);
+  }
+  else if(out.view === 'contact'){
+    crumbs = [['Contact', '/contact']];
+    D.contact.offices.forEach(function(o){ ld.push(officeLD(o)); });
+    ld.push({'@context':'https://schema.org', '@type':'FAQPage', mainEntity: D.faq.map(function(f){ return {'@type':'Question', name: f.q, acceptedAnswer: {'@type':'Answer', text: f.a}}; })});
+  }
+  else if(out.view === 'legal') crumbs = [[p[0] === 'privacy' ? 'Privacy' : 'Terms', path]];
+  if(crumbs && out.canonical) ld.push(crumbLD(crumbs));
+  out.ld = ld;
+  return out;
+}
+function resolve(r){ return pageMeta(resolve0(r), r); }
+/* The first-touch values in a prerendered page's hidden form fields belong to the build, not the visitor: refresh them
+   from TRK when the server markup is kept. The names mirror trackFields(). */
+var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'];
+var TRK_QUERY = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','ttclid'];
+function refreshTracking(scope){ [].forEach.call(scope.querySelectorAll('input[type="hidden"]'), function(i){ if(TRK_KEYS.indexOf(i.name) > -1) i.value = TRK[i.name] || ''; }); }
+function onlyTracking(q){ for(var k in q){ if(Object.prototype.hasOwnProperty.call(q, k) && TRK_QUERY.indexOf(k) < 0) return false; } return true; }
 function render(){
   var r = parse(), out = resolve(r);
-  app.innerHTML = out.html;
+  /* First render of a prerendered page: the browser has already painted this same markup (built by the same code), so
+     it is kept, together with its largest contentful paint, and only behaviour is bound. A query that changes the view
+     (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from what was
+     served (404.html on a path the app knows), gets a full render. */
+  if(prerendered && r && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
+  else app.innerHTML = out.html;
   fixLinks(app);
   curView = out.view; curQ = r ? r.q : {};
   document.title = out.title ? out.title+' · Imperial Holdings Group' : 'Imperial Holdings Group · Two Cities. One Horizon.';
   setMeta(out);
+  /* analytics (shared/analytics.js): one page view per route change, none for a same-path re-render */
+  if(window.ihgPageView && (r ? r.path : null) !== lastPath){ try{ window.ihgPageView(out.path || location.pathname, document.title); }catch(e){} }
   [].forEach.call(document.querySelectorAll('[data-nav]'), function(a){
     var on = a.getAttribute('data-nav')===out.nav;
     if(a.tagName==='A'){ if(on) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); }
@@ -479,6 +714,7 @@ function render(){
   body.classList.toggle('solid-hdr', !!out.solid);
   lastPath = r ? r.path : null;
   enhance();
+  prerendered = false;
 }
 function landY(y){ return typeof y==='number' ? y : 0; }
 function afterLand(){ if(pendingScroll){ var el=document.getElementById(pendingScroll); pendingScroll=null; if(el) window.scrollTo({top: el.getBoundingClientRect().top + window.pageYOffset - 90, behavior: reduced?'auto':'smooth'}); } }
@@ -516,12 +752,23 @@ function go(url, scrollTo){
   history.pushState({y:0}, '', url); route(0);
 }
 function setMeta(out){
-  var d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
-  [['name','description',d],['property','og:description',d],['property','og:title',document.title],['property','og:url',location.href]].forEach(function(m){
-    var el = document.head.querySelector('meta['+m[0]+'="'+m[1]+'"]'); if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); document.head.appendChild(el); } el.setAttribute('content', m[2]);
+  var H = document.head, d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
+  var t = document.title, url = out.canonical || location.href.split('#')[0], im = out.image || abs('assets/img/og.jpg'), isOg = /\/og\.jpg$/.test(im);
+  /* a null value removes the tag: the width and height are known for og.jpg only */
+  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['property','og:image',im],['property','og:image:width',isOg?'1200':null],['property','og:image:height',isOg?'630':null],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
+    var el = H.querySelector('meta['+m[0]+'="'+m[1]+'"]');
+    if(m[2]==null){ if(el) el.parentNode.removeChild(el); return; }
+    if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); H.appendChild(el); } el.setAttribute('content', m[2]);
   });
-  var ld = document.getElementById('ld-faq'); if(ld) ld.parentNode.removeChild(ld);
-  if(out.view==='contact'){ ld=document.createElement('script'); ld.type='application/ld+json'; ld.id='ld-faq'; ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'FAQPage',mainEntity:D.faq.map(function(f){return {'@type':'Question',name:f.q,acceptedAnswer:{'@type':'Answer',text:f.a}};})}); document.head.appendChild(ld); }
+  var can = H.querySelector('link[rel="canonical"]');
+  if(out.canonical){ if(!can){ can=document.createElement('link'); can.setAttribute('rel','canonical'); H.appendChild(can); } can.setAttribute('href', out.canonical); }
+  else if(can) can.parentNode.removeChild(can);
+  /* a page that does not exist is never indexed; the pre-launch noindex tag in index.html is left alone */
+  var rb = H.querySelector('meta[name="robots"][data-nf]');
+  if(out.nf && !H.querySelector('meta[name="robots"]')){ rb=document.createElement('meta'); rb.setAttribute('name','robots'); rb.setAttribute('data-nf',''); rb.setAttribute('content','noindex, follow'); H.appendChild(rb); }
+  else if(!out.nf && rb) rb.parentNode.removeChild(rb);
+  [].forEach.call(H.querySelectorAll('script[data-ld]'), function(s){ s.parentNode.removeChild(s); });
+  (out.ld||[]).forEach(function(o){ var s=document.createElement('script'); s.type='application/ld+json'; s.setAttribute('data-ld',''); s.textContent=JSON.stringify(o).replace(/</g,'\\u003c'); H.appendChild(s); });
 }
 function focusMain(){ var m=document.getElementById('main'); if(document.activeElement===body || !document.activeElement || !document.contains(document.activeElement)) m.focus({preventScroll:true}); }
 
@@ -530,7 +777,8 @@ var io = null, fx = {};
 function enhance(){
   if(io) io.disconnect();
   var els = app.querySelectorAll('[data-r], .steps, .wmap, .clipr');
-  if(reduced || !('IntersectionObserver' in window)){
+  /* prerendered: the markup already on screen carries .in, so the first client render keeps everything visible */
+  if(reduced || prerendered || !('IntersectionObserver' in window)){
     [].forEach.call(els, function(e){ e.classList.add('in'); });
     [].forEach.call(app.querySelectorAll('[data-count]'), function(el){ el._done=true; el.textContent=(+el.getAttribute('data-count')).toLocaleString('en-GB'); });
   } else {
@@ -548,7 +796,7 @@ function enhance(){
     reading: document.getElementById('reading'), article: document.getElementById('article')
   };
   if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
-  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare();
+  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare(); bindMedia();
   body.classList.toggle('on-contact', curView==='contact');
 }
 function count(el){
@@ -579,8 +827,7 @@ function onScroll(){
     var r = fx.hh.getBoundingClientRect(), p = clamp(-r.top/Math.max(1,r.height-H),0,1), e = p*p*(3-2*p);
     if(r.bottom > 0){
       fx.dusk.style.transform = 'scale('+(1.08-0.06*p).toFixed(4)+') translate3d(0,'+(p*3).toFixed(2)+'%,0)';
-      fx.night.style.opacity = e.toFixed(3);
-      fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')';
+      if(fx.night){ fx.night.style.opacity = e.toFixed(3); fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')'; }
       fx.hc.style.transform = 'translate3d(0,'+(-p*48).toFixed(1)+'px,0)';
     }
   }
@@ -819,21 +1066,245 @@ function mark(f, show){
   f.setAttribute('aria-invalid', (!good && show) ? 'true' : 'false');
   return good;
 }
-function encodeForm(form, extra){
-  var p = new URLSearchParams();
-  [].forEach.call(form.elements, function(f){ if(!f.name || f.disabled) return; if((f.type==='radio'||f.type==='checkbox') && !f.checked) return; p.append(f.name, f.type==='checkbox' ? 'yes' : f.value); });
-  Object.keys(extra||{}).forEach(function(k){ p.set(k, extra[k]); });
-  return p.toString();
+/* v5: every form's key value pairs, as one object (the same data goes urlencoded to Netlify Forms and as JSON to our own function) */
+function leadData(form, extra){
+  var o = {};
+  [].forEach.call(form.elements, function(f){ if(!f.name || f.disabled) return; if((f.type==='radio'||f.type==='checkbox') && !f.checked) return; o[f.name] = f.type==='checkbox' ? 'yes' : f.value; });
+  Object.keys(extra||{}).forEach(function(k){ o[k] = extra[k]; });
+  return o;
 }
-function submitNetlify(form, extra){
+function toQuery(o){ var p = new URLSearchParams(); Object.keys(o).forEach(function(k){ p.append(k, o[k]); }); return p.toString(); }
+/* analytics: shared/analytics.js defines window.ihgTrack when GA4 is configured; without it nothing is sent */
+function track(name, params){ if(typeof window.ihgTrack==='function'){ try{ window.ihgTrack(name, params||{}); }catch(e){} } }
+/* Submission (BUILD-CONTRACT 4.3). Primary: urlencoded POST to "/" for Netlify Forms, which then runs
+   submission-created. Fallback: the same data as JSON {form, data} to config.leadEndpoint (netlify/functions/lead.js).
+   Both failing rejects, and the caller shows the office telephones and the email; the draft stays in localStorage. */
+function submitLead(form, extra){
   if(!HIST) return Promise.reject(new Error('local'));
-  var t0 = Date.now();
-  return fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: encodeForm(form, extra)})
-    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return new Promise(function(ok){ setTimeout(ok, Math.max(0, (reduced?0:700) - (Date.now()-t0))); }); });
+  var t0 = Date.now(), data = leadData(form, extra), name = form.getAttribute('name') || data['form-name'] || '';
+  function settle(r){ return new Promise(function(ok){ setTimeout(function(){ ok(r); }, Math.max(0, (reduced?0:700) - (Date.now()-t0))); }); }
+  return fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: toQuery(data)})
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return {ok:true, via:'forms'}; })
+    .then(null, function(err){
+      var ep = D.config.leadEndpoint; if(!ep) throw err;
+      return fetch(ep, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({form:name, data:data})})
+        .then(function(res){ return res.json().then(function(j){ return j || {}; }, function(){ return {}; }).then(function(j){ if(!res.ok || !j.ok) throw new Error(j.reason || ('HTTP '+res.status)); j.via = 'lead'; return j; }); });
+    })
+    .then(settle);
 }
-function successHTML(title, msg){
+function fallbackHTML(){
+  var C = D.contact;
+  return '<b>We could not send this just now.</b> Please call or email us and we will take it from there. What you typed is kept on this device, so you can also try again later.'+
+    '<div class="kv fb-kv">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div></div>';
+}
+/* drafts: what someone typed survives a reload or a wander round the site, for every form (key ihg-draft-<form>) */
+var DRAFT_SKIP = {'form-name':1, company_url:1, consent:1, 'cf-turnstile-response':1};
+function draftKey(kind){ return 'ihg-draft-'+kind; }
+function readDraft(kind){ var d = store.get(draftKey(kind)); if(!d && kind==='contact') d = store.get('ihg-contact-draft'); return d; }
+function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && f.type!=='hidden' && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
+function saveDraft(form, kind){ var o = {}; draftFields(form).forEach(function(f){ if(f.type==='radio'){ if(f.checked) o[f.name] = f.value; return; } o[f.name] = f.value; }); store.set(draftKey(kind), o); }
+function restoreDraft(form, dr){ draftFields(form).forEach(function(f){ if(dr[f.name]==null) return; if(f.type==='radio'){ if(f.value===dr[f.name] && !form.querySelector('input[name="'+f.name+'"]:checked')) f.checked = true; return; } f.value = dr[f.name]; }); }
+function draftNote(form){
+  if(form.querySelector('.draft')) return;
+  var grid = form.querySelector('.fgrid'); if(!grid) return;
+  var dn = document.createElement('div'); dn.className = 'draft'; dn.hidden = true;
+  dn.innerHTML = '<span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button>';
+  grid.parentNode.insertBefore(dn, grid);
+}
+function successHTML(title, msg, inner){
   var burst = ''; for(var i=0;i<8;i++){ var a=i*45*Math.PI/180; burst += '<line x1="'+(50+Math.cos(a)*58).toFixed(1)+'" y1="'+(50+Math.sin(a)*58).toFixed(1)+'" x2="'+(50+Math.cos(a)*66).toFixed(1)+'" y2="'+(50+Math.sin(a)*66).toFixed(1)+'"/>'; }
-  return '<div class="success" role="status" tabindex="-1"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p><div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>Read while you wait</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>Send another</span></button></div></div>';
+  return '<div class="success" role="status" tabindex="-1"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>Read while you wait</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>Send another</span></button></div></div>';
+}
+/* success state: thank you, then the next steps (verification when a phone was given and the endpoint is enabled, then booking) */
+function showSuccess(wrap, info, anchor){
+  var t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.';
+  wrap.innerHTML = successHTML(t, info.msg, (info.inner||'')+'<div class="next" data-next-steps></div>');
+  var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
+  wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
+  var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
+  announce('Sent. '+t);
+  nextSteps(wrap, info);
+}
+function nextSteps(wrap, info){
+  var el = wrap.querySelector('[data-next-steps]'); if(!el) return;
+  function booking(){ el.insertAdjacentHTML('beforeend', bookingHTML(info)); bindMagnetic(el); }
+  if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
+  verifyStep(el, info, booking);
+}
+/* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first (the person can ask for SMS instead); when Twilio
+   is not configured the endpoint answers enabled:false and the step is skipped. Skipping keeps the lead, marked unverified. */
+function verifyHTML(phone, channel){
+  var by = channel==='sms' ? 'SMS' : 'WhatsApp', other = channel==='sms' ? 'whatsapp' : 'sms';
+  return '<div class="verify" data-verify><div class="eyebrow">Verify your phone</div>'+
+    '<p>We have sent a six-digit code by '+by+' to <b>'+esc(phone)+'</b>. Enter it to confirm the number is yours. It takes a moment and helps us reply faster.</p>'+
+    '<form class="verify-f" novalidate><label class="field"><span class="vh">Six-digit code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digits" aria-label="Six-digit code"></label><button class="btn gold sm" type="submit" data-verify-send><span class="lbl">Verify</span><span class="spin"></span></button></form>'+
+    '<div class="form-err" role="alert" hidden></div>'+
+    '<p class="xs verify-alt"><button class="tlink" type="button" data-channel="'+other+'">Send it by '+(other==='sms'?'SMS':'WhatsApp')+' instead</button><button class="tlink" type="button" data-verify-skip>Skip for now</button></p></div>';
+}
+function verifyStep(el, info, done){
+  var ref = '', channel = 'whatsapp';
+  function post(body){ return fetch(D.config.verifyEndpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }); }
+  function start(ch){ return post({action:'start', phone:info.phone, email:info.email, channel:ch}).then(function(r){ if(!r || r.ok===false || !r.enabled) throw new Error('off'); ref = r.ref || ''; channel = ch; return r; }); }
+  function draw(focus){
+    el.innerHTML = verifyHTML(info.phone, channel);
+    var f = el.querySelector('form'), inp = f.querySelector('input[name=code]'), btn = f.querySelector('[data-verify-send]'), err = el.querySelector('.form-err');
+    f._b = true;
+    function fail(msg){ err.innerHTML = msg; err.hidden = false; btn.classList.remove('loading'); btn.disabled = false; }
+    f.addEventListener('submit', function(e){
+      e.preventDefault(); var code = (inp.value||'').replace(/\D/g,'');
+      if(code.length!==6){ fail('<b>Please enter the six-digit code.</b>'); inp.focus(); return; }
+      err.hidden = true; btn.classList.add('loading'); btn.disabled = true;
+      post({action:'check', ref:ref, phone:info.phone, code:code, email:info.email}).then(function(r){
+        if(r && r.verified){ track('phone_verified', {form:info.kind, division:info.division}); el.innerHTML = '<p class="verified">'+TICK+'<span>Phone verified. Thank you.</span></p>'; announce('Phone verified.'); done(true); }
+        else fail('<b>That code did not match.</b> Please check it and try again, or ask for a new one.');
+      }, function(){ fail('<b>We could not check the code just now.</b> Please try again, or skip for now.'); });
+    });
+    el.querySelector('[data-verify-skip]').addEventListener('click', function(){ el.innerHTML = ''; announce('Verification skipped.'); done(false); });
+    el.querySelector('[data-channel]').addEventListener('click', function(){
+      var ch = this.getAttribute('data-channel'), by = ch==='sms' ? 'SMS' : 'WhatsApp'; err.hidden = true;
+      start(ch).then(function(){ draw(true); announce('A new code has been sent by '+by+'.'); }, function(){ fail('<b>We could not send the code by '+by+' just now.</b> Please try the other way, or skip for now.'); });
+    });
+    if(focus) inp.focus({preventScroll:true});
+    else announce('Verify your phone: a six-digit code has been sent by '+(channel==='sms'?'SMS':'WhatsApp')+'.');
+  }
+  start('whatsapp').then(function(){ draw(false); }, function(){ done(false); });
+}
+/* Booking (brief 3.4): one button per office from config.booking, with name, email and a1 (division) appended (Calendly style;
+   the same parameters are added to any other URL). An empty url shows the tbc text in the same spot. */
+function bookingURL(url, info){
+  var q = 'name='+encodeURIComponent(info.fullName||'')+'&email='+encodeURIComponent(info.email||'')+'&a1='+encodeURIComponent(info.division||'');
+  return url+(url.indexOf('?')>-1 ? '&' : '?')+q;
+}
+function bookingHTML(info){
+  var B = D.config.booking || {};
+  var rows = D.contact.offices.map(function(o){
+    var b = B[o.city.toLowerCase()]; if(!b) return '';
+    return b.url ? '<a class="btn sm mag" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
+  }).join('');
+  return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Your name, email and enquiry are passed along, so there is nothing to type again.</p><div class="btns">'+rows+'</div></div>';
+}
+function bookingSide(){
+  var B = D.config.booking || {};
+  return D.contact.offices.map(function(o){ var b = B[o.city.toLowerCase()]; if(!b) return ''; return '<div>'+(b.url ? '<a class="ul" href="'+esc(b.url)+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="">Book a conversation, '+esc(o.city)+'</a>' : tbc(b.tbc))+'</div>'; }).join('');
+}
+/* WhatsApp (brief 3.4): https://wa.me/<digits> from config.whatsapp; a small button in the header on mobile that opens a sheet with
+   both offices, and a button under each office on the Contact page. Clicks are tracked as whatsapp_click with the office name. */
+var WA = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a7.4 7.4 0 0 0-6.4 11.1L2.6 17.4l3.8-1A7.4 7.4 0 1 0 10 2.6z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.4 7.1c.2-.4.4-.5.7-.5h.5l.6 1.5-.5.7c.4.9 1.1 1.6 2 2l.7-.5 1.5.7v.4c0 .4-.2.8-.7 1-1 .3-2.4-.2-3.7-1.5S7 8.2 7.4 7.1z" fill="currentColor"/></svg>';
+function waLink(n){ return 'https://wa.me/'+String(n||'').replace(/\D/g,''); }
+function waOffice(o){ var w = (D.config.whatsapp||{})[o.city.toLowerCase()]; return w && w.number ? w : null; }
+function waSide(o){
+  var w = waOffice(o); if(!w) return '';
+  return '<div class="wa-side"><a class="btn line sm" href="'+waLink(w.number)+'" target="_blank" rel="noopener" data-wa="'+esc(o.city)+'">'+WA+'<span>WhatsApp '+esc(o.city)+'</span></a>'+(w.tbc?'<p class="xs wa-tbc">'+tbc(w.tbc)+'</p>':'')+'</div>';
+}
+function buildWhatsApp(){
+  var btn = document.getElementById('waBtn'), pop = document.getElementById('waPop'); if(!btn || !pop) return;
+  var rows = D.contact.offices.map(function(o){ var w = waOffice(o); if(!w) return ''; return '<a class="wa-row" href="'+waLink(w.number)+'" target="_blank" rel="noopener" data-wa="'+esc(o.city)+'">'+WA+'<span><b>'+esc(o.city)+'</b><span>'+esc(w.number)+'</span></span></a>'+(w.tbc?'<div class="wa-pop-tbc">'+tbc(w.tbc)+'</div>':''); }).join('');
+  if(!rows){ btn.hidden = true; return; }
+  pop.innerHTML = '<div class="wa-pop-h">WhatsApp us</div>'+rows;
+  function set(open){ pop.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); if(open){ var f = pop.querySelector('a'); if(f) f.focus({preventScroll:true}); } }
+  btn.addEventListener('click', function(){ set(pop.hidden); });
+  document.addEventListener('click', function(e){ if(pop.hidden) return; var t = e.target.closest ? e.target : e.target.parentNode; if(!t.closest('#waBtn') && !t.closest('#waPop')) set(false); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !pop.hidden){ set(false); btn.focus(); } });
+  pop.addEventListener('click', function(e){ if(e.target.closest('a')) set(false); });
+}
+buildWhatsApp();
+/* conversions on plain links: WhatsApp, booking and the guide download */
+document.addEventListener('click', function(e){
+  var t = e.target.closest ? e.target : e.target.parentNode, a = t.closest('a[data-wa], a[data-book], a[data-guide]'); if(!a) return;
+  if(a.hasAttribute('data-wa')) track('whatsapp_click', {office: a.getAttribute('data-wa')});
+  else if(a.hasAttribute('data-book')) track('booking_click', {office: a.getAttribute('data-book'), division: a.getAttribute('data-division')||''});
+  else track('guide_download', {division:'citizenship'});
+});
+/* Programme fit check (brief 3.4, citizenship page only). Questions live in D.fit; the answers prefill the enquiry card. */
+function fitOptions(q){
+  if(q.ambitions) return q.ambitions.map(function(n){ var a = null; D.ambitions.forEach(function(x){ if(x[0]===n) a = x; }); return {v:n.toLowerCase(), l:n, s:a ? a[1] : ''}; });
+  if(q.from==='timeline') return TIMELINES.map(function(o){ return {v:o[0], l:o[1], set:{timeline:o[0]}}; });
+  if(q.from==='budget') return BUDGETS.filter(function(o){ return o[0]!=='undisclosed'; }).map(function(o){ return {v:o[0], l:o[1], set:{budget:o[0]}}; });
+  return q.opts || [];
+}
+function fitCheck(){
+  var F = D.fit, n = F.questions.length;
+  return '<section class="sec deep" id="fit-sec"><div class="wrap"><div class="sec-head"><div>'+eyebrow(F.eyebrow)+mask(F.title,'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">'+esc(F.lead)+'</p></div>'+
+    '<div class="fit" id="fit" data-r><div class="fit-prog"><span class="fit-n" aria-live="polite">Question 1 of '+n+'</span><i class="fit-bar" aria-hidden="true"></i></div>'+
+    F.questions.map(function(q,i){
+      var opts = fitOptions(q);
+      return '<div class="fit-q'+(i===0?' on':'')+'" data-q="'+i+'" data-k="'+esc(q.k)+'"><h3 class="h3" tabindex="-1">'+esc(q.q)+'</h3><div class="fd-pers fit-opts">'+opts.map(function(o){ return '<button type="button" data-opt="'+esc(o.v)+'"'+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+'><b>'+esc(o.l)+'</b>'+(o.s?'<small>'+esc(o.s)+'</small>':'')+'</button>'; }).join('')+'</div>'+
+        '<div class="fit-nav">'+(i>0?'<button class="tlink" type="button" data-fit-back>'+BACK+'<span>Back</span></button>':'')+(q.skip?'<button class="tlink" type="button" data-opt="undisclosed" data-set="'+esc(JSON.stringify({budget:'undisclosed'}))+'">'+esc(q.skip)+'</button>':'')+'</div></div>';
+    }).join('')+
+    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold mag" href="#/divisions/citizenship" data-scroll="enquire"><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start over</button></div></div>'+
+    '</div></div></section>';
+}
+function bindFit(){
+  var f = document.getElementById('fit'); if(!f) return;
+  var qs = [].slice.call(f.querySelectorAll('.fit-q')), done = f.querySelector('.fit-done'), bar = f.querySelector('.fit-bar'), num = f.querySelector('.fit-n'), n = qs.length, ans = {}, sets = {}, cur = 0;
+  function show(i, back){
+    cur = i; qs.forEach(function(q,j){ q.classList.toggle('on', j===i); q.classList.toggle('back', !!back && j===i); });
+    done.classList.remove('on'); bar.style.backgroundSize = (i/n*100).toFixed(0)+'% 100%'; num.textContent = 'Question '+(i+1)+' of '+n;
+    qs[i].querySelector('h3').focus({preventScroll:true});
+  }
+  function finish(){
+    qs.forEach(function(q){ q.classList.remove('on'); }); bar.style.backgroundSize = '100% 100%'; num.textContent = 'Done'; done.classList.add('on'); done.focus({preventScroll:true});
+    var form = document.querySelector('[data-form="enquiry"] form');
+    if(form){
+      var set = {division:'citizenship', audience: ans.who==='client' ? 'partners' : 'clients', lead_source:'programme-fit', quiz_answers: JSON.stringify(ans)};
+      Object.keys(sets).forEach(function(k){ Object.keys(sets[k]).forEach(function(x){ set[x] = sets[k][x]; }); });
+      Object.keys(set).forEach(function(k){ var el = form.elements.namedItem(k); if(!el) return; el.value = set[k]; if(el.tagName==='SELECT'){ var ev = document.createEvent('Event'); ev.initEvent('change', true, true); el.dispatchEvent(ev); } });
+      saveDraft(form, 'enquiry');
+    }
+    track('quiz_completed', ans);
+    announce('Thank you. Your enquiry has been prefilled from these answers.');
+    setTimeout(function(){ var enq = document.getElementById('enquire'); if(enq) window.scrollTo({top: enq.getBoundingClientRect().top + window.pageYOffset - 90, behavior: reduced?'auto':'smooth'}); }, reduced ? 300 : 1200);
+  }
+  f.addEventListener('click', function(e){
+    var b = e.target.closest('[data-opt]');
+    if(b){
+      var q = b.closest('.fit-q'), k = q.getAttribute('data-k'), i = +q.getAttribute('data-q'), s = b.getAttribute('data-set');
+      ans[k] = b.getAttribute('data-opt'); delete sets[k]; if(s){ try{ sets[k] = JSON.parse(s); }catch(err){} }
+      [].forEach.call(q.querySelectorAll('[data-opt]'), function(x){ x.setAttribute('aria-pressed', x===b ? 'true' : 'false'); });
+      if(i+1<n) show(i+1); else finish();
+      return;
+    }
+    if(e.target.closest('[data-fit-back]')){ show(Math.max(0, cur-1), true); return; }
+    if(e.target.closest('[data-fit-reset]')){ ans = {}; sets = {}; [].forEach.call(f.querySelectorAll('[data-opt]'), function(x){ x.removeAttribute('aria-pressed'); }); show(0, true); }
+  });
+}
+/* Guide form (brief 3.4, citizenship page): name, email and consent; form guide, lead_source guide. */
+function guideForm(){
+  var G = D.guideCopy, C = D.config.guide;
+  return '<section class="sec light" id="guide"><div class="wrap split"><div>'+eyebrow(G.eyebrow)+mask(G.title,'h2','d2')+
+    '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(G.lead)+'</p><p class="small" data-r style="--d:.2s"><b>'+esc(C.title)+'</b>'+(C.file?'':'<br>'+tbc(C.tbc))+'</p></div>'+
+    '<div data-r style="--d:.15s"><div class="form-card" data-form="guide" id="guide-card"><form novalidate name="guide" method="post"><input type="hidden" name="form-name" value="guide"><input type="hidden" name="lead_source" value="guide"><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="division" value="citizenship"><input type="hidden" name="routed_to" value=""><input type="hidden" name="audience" value="clients">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
+    '<div class="eyebrow">Request the guide</div>'+
+    '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
+    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
+    consentBox('I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.')+
+    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(G.cta)+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
+}
+/* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
+   writes the token to a hidden cf-turnstile-response input inside the form. The company_url honeypot stays alongside it. */
+var TS = {loading:false, q:[]};
+function turnstileLoad(cb){
+  if(window.turnstile && window.turnstile.render){ cb(); return; }
+  TS.q.push(cb); if(TS.loading) return; TS.loading = true;
+  window.ihgTurnstileReady = function(){ var q = TS.q; TS.q = []; q.forEach(function(f){ f(); }); };
+  var s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=ihgTurnstileReady&render=explicit'; s.async = true; s.defer = true; document.head.appendChild(s);
+}
+function turnstileBind(form){
+  var key = D.config.turnstileSiteKey; if(!key) return;
+  var box = document.createElement('div'); box.className = 'ts';
+  var at = form.querySelector('.form-foot') || (form.querySelector('[data-send]') && form.querySelector('[data-send]').closest('.cf-nav'));
+  if(at) at.parentNode.insertBefore(box, at); else form.appendChild(box);
+  turnstileLoad(function(){
+    if(!document.contains(box) || form._ts != null) return;
+    try{ form._ts = window.turnstile.render(box, {sitekey:key, appearance:'interaction-only', theme:'light', action:form.getAttribute('name')||'form', callback:function(tok){ form._tsToken = tok; if(form._tsWait) form._tsWait(tok); }, 'expired-callback':function(){ form._tsToken = ''; try{ window.turnstile.reset(form._ts); }catch(e){} }, 'error-callback':function(){ form._tsToken = ''; if(form._tsWait) form._tsWait(''); }}); }catch(e){}
+  });
+}
+function turnstileToken(form){
+  if(!D.config.turnstileSiteKey || !window.turnstile || form._ts == null) return Promise.resolve('');
+  var t = ''; try{ t = window.turnstile.getResponse(form._ts) || ''; }catch(e){}
+  if(!t) t = form._tsToken || '';
+  if(t) return Promise.resolve(t);
+  return new Promise(function(ok){ var done = false; form._tsWait = function(tok){ if(done) return; done = true; form._tsWait = null; ok(tok||''); }; try{ window.turnstile.execute(form._ts); }catch(e){} setTimeout(function(){ if(form._tsWait) form._tsWait(''); }, 8000); });
 }
 function bindForms(){
   [].forEach.call(app.querySelectorAll('[data-form]'), function(wrap){
@@ -845,7 +1316,21 @@ function bindForms(){
       f.addEventListener('input', function(){ var b=f.closest('.field,.consent'); if(b && b.classList.contains('err')) mark(f, true); else if(f.type!=='checkbox' && f.type!=='radio') mark(f, false); });
       f.addEventListener('change', function(){ if(f.type==='checkbox') mark(f, f._tried); });
     });
-    var errBox = form.querySelector('.form-err');
+    var errBox = form.querySelector('.form-err'), anchor = wrap.id || (wrap.parentNode && wrap.parentNode.id) || '';
+    /* every form carries the tracking fields (rule 7), site and lead_source, even where the template left one out */
+    TRK_KEYS.forEach(function(k){ ensureHidden(form, k, TRK[k]||''); }); ensureHidden(form, 'page', ''); ensureHidden(form, 'audience_resolved', '');
+    if(kind==='interest') ensureHidden(form, 'audience', 'clients');
+    ensureHidden(form, 'site', D.config.site); ensureHidden(form, 'lead_source', 'website');
+    ensurePrivacyLink(form);
+    turnstileBind(form);
+    var applyCond = bindCond(form);
+    /* draft (every form): restore what was typed, keep saving, and offer a clean start */
+    draftNote(form);
+    var dr = readDraft(kind);
+    if(dr && (dr.name || dr.email || dr.msg)){ restoreDraft(form, dr); applyCond(); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
+    form.addEventListener('input', function(){ saveDraft(form, kind); }); form.addEventListener('change', function(){ saveDraft(form, kind); });
+    var clr = form.querySelector('[data-clear-draft]');
+    if(clr) clr.addEventListener('click', function(){ store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft'); render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
     /* qualification: which audience this enquiry belongs to (clients, partners, institutions) */
     function audOf(){
       var a = form.elements.namedItem('audience'); if(a && a.value) return a.value;
@@ -853,32 +1338,36 @@ function bindForms(){
       var ab = form.querySelector('input[name="about"]:checked'), dv = form.elements.namedItem('division'), v = ab ? ab.value : (dv ? dv.value : '');
       var r = 'clients'; D.enquiry.forEach(function(x){ if(x.v===v && x.aud) r = x.aud; }); return r;
     }
+    function val(n){ var f = form.elements.namedItem(n); return f && !f.disabled ? (f.value||'').trim() : ''; }
     function finish(dest, name){
       var btn = form.querySelector('[data-send], button[type=submit]'); btn.classList.add('loading'); btn.disabled = true; btn.setAttribute('aria-busy','true');
       if(errBox) errBox.hidden = true;
       if(form.company_url && form.company_url.value){ return; }
       var extra = {page: location.href, audience_resolved: audOf()};
       if(kind!=='interest') extra.routed_to = dest || 'Imperial Holdings Group';
-      submitNetlify(form, extra).then(function(){
-        if(kind==='contact') store.del(DRAFT);
-        var t = 'Thank you'+(name?', '+esc(name):'')+'.';
-        var m = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
-        wrap.innerHTML = successHTML(t, m);
-        var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
-        wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c=document.getElementById('cf')||document.getElementById('register')||document.getElementById('enq'); if(c) c.scrollIntoView({block:'center'}); });
-        var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
-        announce('Sent. '+t);
+      var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || (kind==='interest' ? 'real-estate' : ''));
+      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, lead_source:val('lead_source') || 'website'};
+      turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
+        store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
+        track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
+        if(kind==='guide'){
+          var G = D.guideCopy, GC = D.config.guide;
+          info.msg = esc(GC.file ? G.ready : G.soon);
+          info.inner = GC.file ? '<div class="btns" style="justify-content:center;margin-top:22px"><a class="btn gold" href="'+esc(GC.file)+'" download data-guide><span>Download the guide</span>'+AR+'</a></div>' : '<p>'+tbc(GC.tbc)+'</p>';
+        }
+        else info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
+        showSuccess(wrap, info, anchor);
       }, function(err){
         btn.classList.remove('loading'); btn.disabled = false; btn.removeAttribute('aria-busy');
-        if(errBox){ errBox.innerHTML = '<b>We could not send this just now.</b> '+(err && err.message==='local' ? 'Forms only send from the live website, not from a file opened on this computer.' : 'Please check your connection and try again. Nothing you typed has been lost.'); errBox.hidden = false; errBox.focus && errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
+        if(errBox){ errBox.innerHTML = err && err.message==='local' ? '<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.' : fallbackHTML(); errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
       });
     }
-    if(kind==='interest' || kind==='enquiry'){
+    if(kind==='interest' || kind==='enquiry' || kind==='guide'){
       form.addEventListener('submit', function(e){
         e.preventDefault(); var bad=null;
-        [].forEach.call(form.querySelectorAll('[required]'), function(f){ f._tried=true; if(!mark(f,true) && !bad) bad=f; });
+        [].forEach.call(form.querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
         if(bad){ bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
-        var dest = null;
+        var dest = kind==='guide' ? 'Imperial Citizenship' : null;
         if(kind==='enquiry'){ var dv = form.elements.namedItem('division').value; dest = 'the Group team'; D.enquiry.forEach(function(x){ if(x.v===dv){ var d = div(x.to); dest = d ? d.name : 'the Group team'; } }); }
         finish(dest, (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
       });
@@ -891,16 +1380,6 @@ function bindForms(){
     function chosen(){ return form.querySelector('input[name="about"]:checked'); }
     function upd(){ var c=chosen(), r=document.getElementById('routing'); if(c){ document.getElementById('routingCard').innerHTML = routingHTML(c.value); r.classList.add('show'); form.querySelector('.routes-wrap').classList.remove('err'); } else r.classList.remove('show'); }
     [].forEach.call(radios, function(r){ r.addEventListener('change', upd); });
-    /* draft: what someone typed survives a reload or a wander round the site */
-    var FIELDS = ['name','email','phone','country','pref','msg'], dr = store.get(DRAFT);
-    if(dr && (dr.name||dr.email||dr.msg)){
-      FIELDS.forEach(function(k){ if(dr[k] && form[k]) form[k].value = dr[k]; });
-      if(dr.about && !chosen()){ var rr = form.querySelector('input[name="about"][value="'+dr.about+'"]'); if(rr) rr.checked = true; }
-      document.getElementById('draft').hidden = false;
-    }
-    function saveDraft(){ var o={}; FIELDS.forEach(function(k){ o[k]=form[k].value; }); var c=chosen(); o.about=c?c.value:''; store.set(DRAFT, o); }
-    form.addEventListener('input', saveDraft); form.addEventListener('change', saveDraft);
-    form.querySelector('[data-clear-draft]').addEventListener('click', function(){ store.del(DRAFT); render(); var c=document.getElementById('cf'); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
     upd();
     function destName(){ var c=chosen(), dn='the Group team'; if(c) D.enquiry.forEach(function(x){ if(x.v===c.value){ var d=div(x.to); dn = d ? d.name : 'the Group team'; } }); return dn; }
     function review(){
@@ -908,7 +1387,7 @@ function bindForms(){
       var rows = [['About', lbl+' \u2192 '+destName()], ['Name', form.elements.namedItem('name').value], ['Email', form.email.value]];
       if(form.interests.value) rows.splice(1,0,['Interests', form.interests.value]);
       if(form.phone.value.trim()) rows.push(['Phone', form.phone.value]);
-      rows.push(['Country', form.country.value], ['Reply by', form.pref.value]);
+      rows.push(['Country', form.country.value], ['Nationality', form.nationality.value], ['For', labelOf(FOR_WHOM, form.for_whom.value)], ['Reply by', form.pref.value]);
       document.getElementById('cfReview').innerHTML = rows.map(function(r){ return '<dt>'+r[0]+'</dt><dd>'+esc(r[1])+'</dd>'; }).join('')+'<dt class="vh">Change</dt><dd><button class="tlink" type="button" data-edit>Edit these details</button></dd>';
       form.querySelector('[data-edit]').addEventListener('click', function(){ show(2, true); });
     }
@@ -924,7 +1403,7 @@ function bindForms(){
     function check(n){
       if(n===1){ if(!chosen()){ form.querySelector('.routes-wrap').classList.add('err'); return radios[0]; } return null; }
       var bad = null;
-      [].forEach.call(stepEls[n-1].querySelectorAll('[required]'), function(f){ f._tried=true; if(!mark(f,true) && !bad) bad=f; });
+      [].forEach.call(stepEls[n-1].querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
       return bad;
     }
     form.addEventListener('submit', function(e){
@@ -936,11 +1415,11 @@ function bindForms(){
     });
     [].forEach.call(form.querySelectorAll('[data-back]'), function(b){ b.addEventListener('click', function(){ show(Math.max(1,step-1), true); }); });
   });
+  bindFit();
 }
 
 
 /* ---------- house finder (home) ---------- */
-var DRAFT = 'ihg-contact-draft';
 function finder(){
   var F = D.finder;
   return '<div class="finder" id="finder">'+
@@ -1031,10 +1510,11 @@ function compare(){
 /* ---------- article sharing ---------- */
 var SHARE = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M6 7l4-4 4 4M4 11v5h12v-5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var LINK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 1M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1-1" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
-function shareBar(a){
+function shareBar(a, what){
+  what = what || 'article';
   return '<div class="share" data-share data-title="'+esc(a.title)+'"><span class="share-l">Share</span>'+
-    '<button type="button" data-sh="copy" aria-label="Copy link to this article">'+LINK+'<span>Copy link</span></button>'+
-    '<button type="button" data-sh="native" aria-label="Share this article" hidden>'+SHARE+'<span>Share</span></button>'+
+    '<button type="button" data-sh="copy" aria-label="Copy link to this '+what+'">'+LINK+'<span>Copy link</span></button>'+
+    '<button type="button" data-sh="native" aria-label="Share this '+what+'" hidden>'+SHARE+'<span>Share</span></button>'+
     '<a data-sh="li" target="_blank" rel="noopener" aria-label="Share on LinkedIn" href="#">in</a>'+
     '<a data-sh="wa" target="_blank" rel="noopener" aria-label="Share on WhatsApp" href="#">WA</a>'+
     '<a data-sh="mail" aria-label="Share by email" href="#">@</a></div>';
@@ -1073,7 +1553,7 @@ function palIndex(){
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
-  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:'events/'+e.slug+'/cover-p', v:'', kw:e.city+' '+e.cat+' event gallery'}); });
+  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', 'hero-alt'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
   D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
@@ -1151,8 +1631,9 @@ document.addEventListener('keydown', function(e){
 document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduced?'auto':'smooth'}); var m=document.getElementById('main'); m.focus({preventScroll:true}); });
 (function(){
   var v = document.getElementById('veil'), seen = false;
+  if(!v){ body.classList.remove('veiled'); return; }
   try{ seen = sessionStorage.getItem('ihg-intro')==='1'; sessionStorage.setItem('ihg-intro','1'); }catch(e){ seen = true; }
-  if(reduced || seen || location.pathname.length>1 && HIST){ v.parentNode.removeChild(v); return; }
+  if(reduced || seen || location.pathname.length>1 && HIST){ v.parentNode.removeChild(v); body.classList.remove('veiled'); return; }
   body.classList.add('veiled');
   var done = function(){ body.classList.add('unveil'); body.classList.remove('veiled'); setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); body.classList.remove('unveil'); }, 1100); };
   var t = setTimeout(done, 1500);
@@ -1168,4 +1649,19 @@ else window.addEventListener('hashchange', function(){ route(); });
 fixLinks(document);
 route(history.state && typeof history.state.y==='number' ? history.state.y : undefined);
 window.addEventListener('pageshow', tick);
+
+/* ---------- v5: export for the build and the tests ----------
+   routes() lists every path that gets its own HTML file (docs/BUILD-CONTRACT.md section 5). Query-string routes are
+   not listed. build/build.js renders each one through resolve() inside jsdom and tests/seo.js checks the output. */
+function routes(){
+  var out = ['/', '/about', '/divisions'];
+  D.divisions.forEach(function(d){ out.push('/divisions/'+d.key); });
+  out.push('/journal');
+  D.events.forEach(function(e){ out.push('/journal/events/'+e.slug); });
+  out.push('/insights');
+  D.insights.forEach(function(a){ out.push('/insights/'+a.slug); });
+  out.push('/contact', '/privacy', '/terms');
+  return out;
+}
+window.IHG_APP = {routes: routes, resolve: resolve, parse: parse};
 })();

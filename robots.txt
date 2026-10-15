@@ -1,0 +1,5 @@
+# Imperial Holdings Group. Pre-launch: the X-Robots-Tag header and the robots meta tag keep every page out of the index until the build runs with LAUNCH=1.
+User-agent: *
+Disallow: /.netlify/
+Allow: /
+Sitemap: https://www.imperialholdingsgroup.com/sitemap.xml

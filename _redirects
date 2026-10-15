@@ -1,0 +1,5 @@
+# Function source is not a page: send it to the app, which shows the not-found page.
+/netlify/*   /index.html   200!
+# No catch-all: every route has its own prerendered HTML in dist/ (build/build.js), so an unknown path gets
+# dist/404.html with a real 404 status. Old #/about links are rewritten by the inline script in the head of every
+# page (a server never sees the hash).
