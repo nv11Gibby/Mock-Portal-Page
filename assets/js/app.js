@@ -461,41 +461,116 @@ V.event = function(slug){
   relatedRow('event', e)+
   '<section class="sec light"><div class="wrap"><nav class="pn" aria-label="More events" data-r><a href="#/journal/events/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/journal/events/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></div></section>'+closing();
 };
-/* home enquiry: one short form, qualified by audience and division, with source fields for Pipedrive */
-function enquiryBlock(pre){
-  var C = D.contact;
-  return '<section class="sec light enq" id="enquire"><div class="wrap split"><div>'+eyebrow('Confidential <i>·</i> No obligation')+mask(['Begin with','one conversation.'],'h2','d2')+
-    '<p class="lead" data-r style="--d:.15s;margin-top:26px">Tell us what you are planning. A senior adviser will read your enquiry and reply personally.</p>'+
-    '<div class="kv enq-kv" data-r style="--d:.2s"><div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div>'+C.offices.map(function(o){return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>';}).join('')+'</div>'+
-    '<p class="xs" data-r style="--d:.25s">Prefer three short steps? <a class="ul" href="#/contact'+(pre?'?about='+pre:'')+'">Use the guided form</a>.</p></div>'+
-    '<div data-r style="--d:.15s">'+enquiryForm(pre)+'</div></div></section>';
+/* ---------- v6: Start a relationship (docs/RELATIONSHIP-JOURNEY.md) ----------
+   The journey is data (D.journeys): one chooser, three paths and one closing screen, posted as the contact form.
+   V.contact renders it and bindJourney (forms section) binds it. The home page and the division pages carry path
+   cards (enquiryBlock, which keeps its name: V.home and V.division call it) that open /contact on the right path. */
+function journeyOf(key){ var J = D.journeys.journeys; for(var i=0;i<J.length;i++) if(J[i].key===key) return J[i]; return null; }
+function pathOf(key){ var P = D.journeys.chooser.paths; for(var i=0;i<P.length;i++) if(P[i].key===key) return P[i]; return null; }
+/* the path a query names: ?journey (or ?audience, kept for existing links), else the path of ?about, else none (the chooser shows) */
+function journeyKey(q){
+  var k = q.journey || q.audience || '';
+  if(!journeyOf(k)) k = q.about ? (D.journeys.prefill.byDivision[q.about] || '') : '';
+  return journeyOf(k) ? k : '';
 }
-var AUDS = [['clients','A private client'],['partners','A professional partner or introducer'],['institutions','An institution or strategic partner']];
-/* v5 qualification (BUILD-CONTRACT 4.2): names, values and labels are fixed there and in shared/lead-schema.json */
+/* the routing name of a division (shared/lead-routing.json), as the confirmation and the Pipedrive note print it */
+function divisionName(key){ if(key==='group') return 'Imperial Holdings Group'; var d = div(key); return d ? d.name : ''; }
+/* the "(optional)" of a label in the muted style every v5 field used */
+function jLabel(t){ return esc(t).replace(/\((optional)\)/, '<i>($1)</i>'); }
+var J_ERR = {name:'Please enter your name.', email:'Please enter a valid email address.', country:'Please tell us the country.', firm:'Please tell us the name.', profession:'Please choose one, or tell us in a word or two.', interests:'Please choose at least one.'};
+function jErr(f){ return J_ERR[f.name] || (f.type==='choice' || f.type==='multi' ? 'Please choose one.' : 'Please complete this field.'); }
+function jWhen(f){ return f.when ? ' data-when="'+esc(JSON.stringify(f.when))+'"' : ''; }
+/* one choice card: the option, its sub line and, for a routing option, the house it goes to */
+function jOpt(f, o, i, name){
+  var attrs = (o.key?' data-key="'+esc(o.key)+'"':'')+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+(o.offerSwitch?' data-offer="'+esc(o.offerSwitch)+'"':'')+(f.dflt===o.v?' checked':'');
+  return '<label><input type="radio"'+(name?' name="'+name+'"':' data-choice="'+f.name+'"')+' value="'+esc(o.v)+'"'+attrs+'><span class="rt">'+(o.routes?'<small>'+esc(o.routes)+'</small>':'')+esc(o.l)+(o.s && !o.offerSwitch?'<em>'+esc(o.s)+'</em>':'')+'</span></label>';
+}
+/* Journey fields. Choices are radio cards (the v5 .routes cards). A multi choice and a choice-or-text keep one hidden
+   input with the posted value (the chosen labels comma separated, as the finder writes interests; the option label or
+   the free text) and nameless controls in front of it, so Netlify Forms, the function and the draft see one field. */
+function jField(f){
+  var req = f.required ? ' required' : '', hint = f.hint ? '<i class="jp-hint">'+esc(f.hint)+'</i>' : '', when = jWhen(f), lbl = jLabel(f.label), lid = 'jl-'+f.name;
+  if(f.type==='choice'){
+    return '<div class="jf routes-wrap" data-field="'+f.name+'" data-type="choice"'+(f.required?' data-required':'')+when+'><div class="jl" id="'+lid+'">'+lbl+'</div>'+hint+
+      '<div class="routes jc" role="radiogroup" aria-labelledby="'+lid+'">'+f.options.map(function(o,i){ return jOpt(f, o, i, f.name); }).join('')+'</div>'+
+      f.options.filter(function(o){ return o.offerSwitch; }).map(function(o){ return '<div class="jp-offer" data-offer-for="'+esc(o.v)+'" hidden><span>'+esc(o.s||'')+'</span><button class="tlink" type="button" data-path="'+esc(o.offerSwitch)+'">Switch to '+esc((pathOf(o.offerSwitch)||{}).title||'')+AR+'</button></div>'; }).join('')+
+      '<p class="route-err">'+esc(jErr(f))+'</p>'+(f.routingLine?'<div class="routing" data-routing data-line="'+esc(f.routingLine)+'"><div><div class="routing-card"></div></div></div>':'')+'</div>';
+  }
+  if(f.type==='multi'){
+    return '<div class="jf routes-wrap" data-field="'+f.name+'" data-type="multi"'+(f.required?' data-required':'')+when+'><div class="jl" id="'+lid+'">'+lbl+'</div>'+hint+
+      '<div class="routes jc" role="group" aria-labelledby="'+lid+'">'+f.options.map(function(o){ return '<label><input type="checkbox" data-multi="'+f.name+'" value="'+esc(o.v)+'"><span class="rt">'+esc(o.l)+'</span></label>'; }).join('')+'</div>'+
+      (f.name==='interests' ? '' : '<input type="hidden" name="'+f.name+'" value="">')+'<p class="route-err">'+esc(jErr(f))+'</p></div>';
+  }
+  if(f.type==='choice-or-text'){
+    var other = null; f.options.forEach(function(o){ if(o.text) other = o; });
+    return '<div class="jf routes-wrap" data-field="'+f.name+'" data-type="choice-or-text"'+(f.required?' data-required':'')+when+'><div class="jl" id="'+lid+'">'+lbl+'</div>'+hint+
+      '<div class="routes jc" role="radiogroup" aria-labelledby="'+lid+'">'+f.options.map(function(o,i){ return jOpt(f, o, i, null); }).join('')+
+      (other ? '<label class="field jp-other" hidden><span>'+esc(other.text.label)+'</span><input data-other="'+f.name+'" autocomplete="organization-title"></label>' : '')+'</div>'+
+      '<input type="hidden" name="'+f.name+'" value=""><p class="route-err">'+esc(jErr(f))+'</p></div>';
+  }
+  if(f.type==='checkbox') return consentBox(f.label);
+  if(f.type==='textarea') return '<label class="field full"'+when+'><span>'+lbl+'</span><textarea name="'+f.name+'" rows="'+(f.rows||3)+'"'+req+'></textarea>'+hint+(f.required?'<em class="em">'+esc(jErr(f))+'</em>':'')+'</label>';
+  var type = f.type==='email' ? ' type="email" inputmode="email"' : f.type==='tel' ? ' type="tel" inputmode="tel"' : '';
+  return '<label class="field"'+when+'><span>'+lbl+'</span><input name="'+f.name+'"'+type+(f.autocomplete?' autocomplete="'+f.autocomplete+'"':'')+req+'>'+hint+(f.required?'<em class="em">'+esc(jErr(f))+'</em>':'')+'</label>';
+}
+function jNav(n, total, last){
+  var C = D.journeys.closing;
+  return '<div class="cf-nav">'+(n>1?'<button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button>':'<span class="xs">Step 1 of '+total+'</span>')+
+    (last ? '<button class="btn gold" type="submit" data-send><span class="lbl">'+esc(C.cta)+'</span><span class="spin"></span></button>' : '<button class="btn" type="submit" data-next><span class="lbl">Continue</span>'+AR+'</button>')+'</div>';
+}
+/* one screen of a path; a screen with variants (the Partners scope screen) renders every variant and bindJourney shows the one the first answer chose */
+function jScreen(sc, n, total){
+  if(sc.variants) return '<div class="cf-step" data-step="'+n+'" data-screen="'+esc(sc.id)+'">'+Object.keys(sc.variants).map(function(k){ var v = sc.variants[k]; return '<div class="jp-variant" data-variant="'+esc(k)+'" hidden><h2 tabindex="-1">'+esc(v.title)+'</h2><p>'+esc(v.lead)+'</p><div class="fgrid">'+v.fields.map(jField).join('')+'</div></div>'; }).join('')+jNav(n, total)+'</div>';
+  return '<div class="cf-step" data-step="'+n+'" data-screen="'+esc(sc.id)+'"><h2 tabindex="-1">'+esc(sc.title)+'</h2><p>'+esc(sc.lead)+'</p><div class="fgrid">'+sc.fields.map(jField).join('')+'</div>'+jNav(n, total)+'</div>';
+}
+/* the closing screen, the same on every path: a quiet summary of the answers, the three contact fields, the channel, an optional note, consent */
+function jClosing(n, total){
+  var C = D.journeys.closing;
+  return '<div class="cf-step" data-step="'+n+'" data-screen="'+esc(C.id)+'"><h2 tabindex="-1">'+esc(C.title)+'</h2><p>'+esc(C.lead)+'</p>'+
+    '<div class="jp-sum" data-summary hidden></div>'+
+    '<div class="fgrid">'+C.fields.filter(function(f){ return f.type!=='checkbox'; }).map(jField).join('')+'</div>'+
+    C.fields.filter(function(f){ return f.type==='checkbox'; }).map(jField).join('')+jNav(n, total, true)+
+    '<p class="xs" style="margin-top:16px">'+esc(C.foot)+'</p></div>';
+}
+/* the screens of one path, with its progress bar; the Institutions path carries its division as a hidden field */
+function jScreens(key){
+  var j = journeyOf(key); if(!j) return '';
+  var C = D.journeys.closing, list = j.screens, total = list.length;
+  return '<ol class="cf-prog" data-prog aria-label="Progress">'+list.map(function(s,i){ return '<li'+(i===0?' class="cur" aria-current="step"':'')+'>'+(i+1)+'. '+esc(s.use?C.short:s.short)+'</li>'; }).join('')+'</ol>'+
+    (j.fixedDivision ? '<input type="hidden" name="about" value="'+esc(j.fixedDivision)+'">' : '')+
+    list.map(function(s,i){ return s.use ? jClosing(i+1, total) : jScreen(s, i+1, total); }).join('');
+}
+/* the routing card under the first answer: the house it goes to, by its logo, and one plain line */
+function routingLine(v, tpl){
+  var d = v==='group' ? null : div(v), name = v==='group' ? 'the Group' : (d ? d.name : '');
+  if(!name) return '';
+  var more = d ? (d.soon ? ' '+(D.journeys.states.received.variants['real-estate']||{}).append : '') : ' One person will read it and bring in the right house.';
+  return '<div>'+(d ? logoImg(d,'Black','rlogo') : '')+'<p>'+esc(tpl || 'This goes to {division}.').replace('{division}', '<strong>'+esc(name)+'</strong>')+esc(more||'')+'</p></div>';
+}
+/* Path cards. Home: the three paths of the chooser, each opening /contact on its path. Division page: one card,
+   "Start a relationship with <division>", opening the path with the division chosen. The buttons carry the hero labels. */
+function enquiryBlock(pre){
+  var J = D.journeys, C = J.chooser;
+  if(pre){
+    var pk = J.prefill.byDivision[pre] || 'clients', p = pathOf(pk), j = journeyOf(pk), name = divisionName(pre);
+    return '<section class="sec light enq" id="enquire"><div class="wrap split"><div>'+eyebrow(J.divisionCard.eyebrow)+mask(splitTitle(J.divisionCard.title.replace('{division}', name)),'h2','d2')+
+      '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(j.opening)+'</p></div>'+
+      '<div class="paths one" data-r style="--d:.15s"><a class="path-c" href="#/contact?about='+esc(pre)+'&via=division"><span class="ix">'+esc(p.title)+'</span><b>'+esc(name)+'</b><span class="path-t">'+esc(p.text)+'</span><span class="btn gold"><span>'+esc(p.card)+'</span>'+AR+'</span></a></div></div></section>';
+  }
+  return '<section class="sec light enq" id="enquire"><div class="wrap"><div class="sec-head"><div>'+eyebrow(C.eyebrow)+mask(C.title,'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">'+esc(C.lead)+'</p></div>'+
+    '<div class="paths">'+C.paths.map(function(p,i){ return '<a class="path-c" href="#/contact?journey='+esc(p.key)+'&via=home-paths" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><b>'+esc(p.title)+'</b><span class="path-t">'+esc(p.text)+'</span><span class="btn'+(i===0?' gold':' line')+'"><span>'+esc(p.card)+'</span>'+AR+'</span></a>'; }).join('')+'</div>'+
+    '<p class="xs" data-r style="margin-top:28px">'+esc(C.footnote)+'</p></div></section>';
+}
+/* v5 qualification lists (BUILD-CONTRACT 4.2): the fit check still reads the timeline and budget bands from here;
+   the journey screens carry their own copies in D.journeys with the same values and labels */
 var FOR_WHOM = [['myself','Myself'],['family','My family'],['client','A client I am introducing']];
 var TIMELINES = [['3m','Within 3 months'],['3-12m','3 to 12 months'],['exploring','Just exploring for now']];
 /* TO CONFIRM (Founder): the bands and the currency come from docs/BUILD-CONTRACT.md 4.2, not from the brief, which asks only
    for broad bands, optional and worded gently. shared/lead-schema.json lists the same values. */
 var BUDGETS = [['under-250k','Under US$250,000'],['250k-500k','US$250,000 to 500,000'],['500k-1m','US$500,000 to 1 million'],['over-1m','Over US$1 million'],['undisclosed','I would rather not say yet']];
-var RE_INTENTS = [['buy','Buy'],['rent','Rent']];
 function labelOf(list, v){ for(var i=0;i<list.length;i++) if(list[i][0]===v) return list[i][1]; return v || ''; }
-function selField(name, label, list, first, req, attrs){
-  return '<label class="field"><span>'+label+'</span><select name="'+name+'"'+(req?' required':'')+(attrs||'')+'><option value="">'+esc(first)+'</option>'+list.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join('')+'</select>'+(req?'<em class="em">Please choose one.</em>':'')+'</label>';
-}
-/* about you: nationality and who the enquiry is for */
-function qualWho(){
-  return '<label class="field"><span>Nationality, or nationalities</span><input name="nationality" autocomplete="off" required><em class="em">Please tell us your nationality.</em></label>'+selField('for_whom', 'This enquiry is for', FOR_WHOM, 'Choose one', true);
-}
-/* your message: timing, and a budget band only if the person would like to say */
-function qualPlan(){
-  return selField('timeline', 'When would you like to begin?', TIMELINES, 'Choose one', true)+selField('budget', 'A budget in mind <i>(optional)</i>', BUDGETS, 'If you wish to say', false);
-}
-/* shown by the choice: Partners Club (or a partner audience) asks for firm and profession; Real Estate asks buy or rent and the area.
-   Hidden fields are disabled, so they are neither validated nor sent. data-req="choice" is required only when the choice itself is Partners Club. */
-function condFields(){
-  return '<div class="fgrid cond full" data-cond="partners" hidden><label class="field"><span>Firm</span><input name="firm" autocomplete="organization" data-req="choice" disabled><em class="em">Please tell us your firm.</em></label><label class="field"><span>Profession</span><input name="profession" autocomplete="organization-title" data-req="choice" disabled><em class="em">Please tell us your profession.</em></label></div>'+
-    '<div class="fgrid cond full" data-cond="real-estate" hidden>'+selField('re_intent', 'I am looking to', RE_INTENTS, 'Choose one', false, ' data-req="1" disabled')+'<label class="field"><span>Area of interest <i>(optional)</i></span><input name="re_area" autocomplete="off" disabled></label></div>';
-}
+/* shown by a choice (v5 pattern, kept for any form that uses data-cond): hidden fields are disabled, so they are neither
+   validated nor sent. The journey screens apply the same rule through their own data-when conditions (bindJourney). */
 function bindCond(form){
   var conds = form.querySelectorAll('[data-cond]');
   function apply(){
@@ -525,65 +600,38 @@ function ensurePrivacyLink(form){
   [].forEach.call(form.querySelectorAll('.consent'), function(c){ if(c.querySelector('a[href$="/privacy"]')) return; var s = c.querySelector('span') || c; s.insertAdjacentHTML('beforeend', ' See our '+PRIVACY_LINK+'.'); });
   fixLinks(form);
 }
-function enquiryForm(pre){
-  return '<div class="form-card" data-form="enquiry" id="enq"><form novalidate name="enquiry" method="post"><input type="hidden" name="form-name" value="enquiry"><input type="hidden" name="routed_to" value=""><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="lead_source" value="website"><input type="hidden" name="quiz_answers" value="">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
-   '<div class="eyebrow">Private enquiry</div>'+
-   '<div class="fgrid"><label class="field"><span>I am</span><select name="audience" required><option value="">Choose one</option>'+AUDS.map(function(a){return '<option value="'+a[0]+'">'+a[1]+'</option>';}).join('')+'</select><em class="em">Please tell us who you are.</em></label>'+
-   '<label class="field"><span>It concerns</span><select name="division" required><option value="">Choose the closest</option>'+D.enquiry.map(function(e){return '<option value="'+e.v+'"'+(pre===e.v?' selected':'')+'>'+esc(e.l)+'</option>';}).join('')+'</select><em class="em">Please choose the closest.</em></label>'+
-   '<label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
-   '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label>'+
-   '<label class="field"><span>Phone, with country code <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
-   '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
-   qualWho()+qualPlan()+condFields()+
-   '<label class="field full"><span>How can we help?</span><textarea name="msg" rows="4" required></textarea><em class="em">A few lines are enough.</em></label></div>'+
-   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
-   '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">Send enquiry</span><span class="spin"></span></button><span class="xs">We use your details only to reply to this enquiry.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
-}
 function finderSec(){
   return '<section class="sec line-t" id="finder-sec"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Not sure where to start?')+mask(['Find your','house.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Two questions, and we will show which divisions would sit at your table. A starting point, not advice.</p></div>'+finder()+'</div></section>';
 }
 
+/* /contact: Start a relationship. The chooser shows when no query names a path; ?journey, ?audience or ?about choose
+   the path and the chooser becomes a quiet line with a Change link. ?about also chooses the division and skips the
+   first screen where the design allows (bindJourney); ?via names the entry point and stays in the URL, which the page
+   field carries into the Pipedrive note; ?goals keeps the house finder's interests. A preview build (data-preview on
+   <html>) shows its chip at the top of the form and sends nothing (bindJourney). */
 V.contact = function(q){
-  var pre = q.about || '', goals = (q.goals||'').split(',').filter(function(g){return D.finder.goals[g];});
+  var J = D.journeys, C = J.chooser, key = journeyKey(q), goals = (q.goals||'').split(',').filter(function(g){return D.finder.goals[g];});
   var gl = goals.map(function(g){for(var i=0;i<D.ambitions.length;i++) if(D.ambitions[i][0].toLowerCase()===g) return D.ambitions[i][0]; return g;});
-  var steps = ['What it is about','About you','Your message'];
-  return pageHero({img:'about', cls:'short', crumb:[['Contact',null]], eyebrow:'Speak to us', title:['Shall we begin?'], lead:'Three short steps. Tell us where you are, and where you would like to be. We will make sure the right house picks it up, with one person as your point of contact.'})+
-  '<section class="sec light"><div class="wrap split cf-split"><div data-r><div class="form-card" data-form="contact" id="cf"><form novalidate name="contact" method="post">'+
-   '<input type="hidden" name="form-name" value="contact"><input type="hidden" name="routed_to" value=""><input type="hidden" name="interests" value="'+esc(gl.join(', '))+'"><input type="hidden" name="audience" value="'+esc(q.audience||'')+'">'+trackFields()+
+  var jn = key ? journeyOf(key) : null;
+  return pageHero({img:'about', cls:'short', crumb:[['Contact',null]], eyebrow:C.eyebrow, title:C.title, lead:esc(C.lead)})+
+  '<section class="sec light"><div class="wrap split cf-split"><div data-r><div class="form-card" data-form="contact" id="cf" data-journey="'+esc(key)+'" data-about="'+esc(q.about||'')+'" data-via="'+esc(q.via||'')+'"><form novalidate name="contact" method="post">'+
+   '<input type="hidden" name="form-name" value="contact"><input type="hidden" name="routed_to" value=""><input type="hidden" name="interests" value="'+esc(gl.join(', '))+'"><input type="hidden" name="audience" value="'+esc(key)+'"><input type="hidden" name="lead_source" value="website"><input type="hidden" name="quiz_answers" value="">'+trackFields()+
    '<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
+   (PREVIEW ? '<div class="jp-preview" data-preview-chip><span class="jp-chip">'+esc(J.states.preview.chip)+'</span></div>' : '')+
    '<div class="draft" id="draft" hidden><span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button></div>'+
-   '<ol class="cf-prog" id="cfProg" aria-label="Progress">'+steps.map(function(s,i){return '<li class="'+(i===0?'cur':'')+'"'+(i===0?' aria-current="step"':'')+'>'+(i+1)+'. '+s+'</li>';}).join('')+'</ol>'+
-   /* step 1 */
-   '<div class="cf-step on" data-step="1"><h2 tabindex="-1">What can we help with?</h2><p>Choose the closest. We route it to the right house, and you keep one point of contact.</p>'+
    (gl.length?'<p class="from-finder"><span>From the house finder</span>'+gl.map(function(g){return '<b>'+esc(g)+'</b>';}).join('')+'</p>':'')+
-   '<div class="routes-wrap"><div class="routes" role="radiogroup" aria-label="What can we help with?" aria-describedby="routeErr">'+
-   D.enquiry.map(function(e){var d=div(e.to);return '<label><input type="radio" name="about" value="'+e.v+'"'+(pre===e.v?' checked':'')+'><span class="rt"><small>'+(d?esc(d.short):'Group')+'</small>'+esc(e.l)+'</span></label>';}).join('')+
-   '</div><p class="route-err" id="routeErr">Please choose what we can help with.</p></div>'+
-   '<div class="routing" id="routing"><div><div class="routing-card" id="routingCard"></div></div></div>'+
-   '<div class="cf-nav"><span class="xs">Step 1 of 3</span><button class="btn" type="submit" data-next><span class="lbl">Continue</span>'+AR+'</button></div></div>'+
-   /* step 2 */
-   '<div class="cf-step" data-step="2"><h2 tabindex="-1">About you</h2><p>So the right person can reply. We only use these details to respond.</p>'+
-   '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
-   '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label>'+
-   '<label class="field"><span>Phone, with country code <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
-   '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
-   qualWho()+
-   '<label class="field full"><span>Preferred way to reach you</span><select name="pref"><option>Email</option><option>Phone call</option><option>Either</option></select></label></div>'+
-   '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-next><span class="lbl">Continue</span>'+AR+'</button></div></div>'+
-   /* step 3 */
-   '<div class="cf-step" data-step="3"><h2 tabindex="-1">Your message</h2><p>A few lines are enough. No documents are needed for a first conversation.</p>'+
-   '<dl class="cf-review" id="cfReview"></dl>'+
-   '<div class="fgrid qual">'+qualPlan()+'</div>'+condFields()+
-   '<label class="field"><span>How can we help?</span><textarea name="msg" required placeholder="A few lines about your family, your plans or your practice."></textarea><em class="em">Please tell us a little about your enquiry.</em></label>'+
-   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
-   '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-send><span class="lbl">Send enquiry</span><span class="spin"></span></button></div>'+
-   '<p class="xs" style="margin-top:16px">We use these details only to respond. Nothing is shared beyond what a service needs.</p></div>'+
-   /* one error box for the three steps, outside them so it stays in view when a step is shown again (a refused address sends the person back to step 2) */
+   /* the chooser, screen 0: three path cards; a quiet line with a Change link once a path is chosen */
+   '<div class="jp-line" data-path-line'+(jn?'':' hidden')+'><span>Path: <b data-path-name>'+esc(jn?jn.name:'')+'</b></span><button class="tlink" type="button" data-choose>'+esc(J.closing.summary.change)+'</button></div>'+
+   '<div class="cf-step jp-chooser'+(jn?'':' on')+'" data-step="0" data-screen="'+esc(C.id)+'"><h2 tabindex="-1">'+esc(C.question)+'</h2><p>'+esc(C.prompt)+'</p>'+
+   '<div class="jp-paths" role="group" aria-label="'+esc(C.question)+'">'+C.paths.map(function(p,i){ return '<button type="button" class="jp-card" data-path="'+esc(p.key)+'"><span class="ix">'+pad2(i+1)+'</span><b>'+esc(p.title)+'</b><span class="jp-text">'+esc(p.text)+'</span><span class="jp-cta">'+esc(p.cta)+AR+'</span></button>'; }).join('')+'</div>'+
+   '<p class="xs jp-foot">'+esc(C.footnote)+'</p></div>'+
+   '<div data-screens>'+(key ? jScreens(key) : '')+'</div>'+
+   /* one error box for every screen, outside them so it stays in view when a screen is shown again (a refused address sends the person back to the closing screen) */
    '<div class="form-err" role="alert" hidden></div>'+
    '</form></div></div>'+
    '<div data-r style="--d:.15s" class="cf-side">'+
     D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div>'+waSide(o)+'</div>';}).join('')+
-    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div><div><span>Book a first conversation</span>'+bookingSide()+'</div></div></div>'+
+    '<div class="side-card"><h3 class="h3">Online</h3><div class="kv"><div><span>Email</span><a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a>'+(D.contact.emailTbc?' '+tbc(D.contact.emailTbc):'')+'</div><div><span>Book a first conversation</span>'+bookingSide()+'</div></div></div>'+
     '<div class="side-card"><h3 class="h4">Before we speak</h3><p>You do not need any documents for the first conversation. It helps to think about who would be included, where you live and hold citizenship today, and any dates that matter.</p><p class="small muted">The first conversation is for listening. You do not have to decide anything on the first call.</p></div>'+
    '</div></div></section>'+
   '<section class="sec light alt" id="faq"><div class="wrap split"><div>'+eyebrow('Questions')+mask(['Before you','get in touch.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s;margin-top:26px">Short answers to what people ask most. Anything else, ask us directly.</p></div>'+faqList(D.faq,'c')+'</div></section>';
@@ -695,7 +743,7 @@ function resolve0(r){
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken guidance on mobility, family planning and working with Imperial.'};
   if(p[0]==='insights' && p.length===2){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
-  if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:'Contact', nav:'contact', view:'contact', desc:'Speak to Imperial Holdings Group. Three short steps, routed to the right house, with one person as your point of contact.'};
+  if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:D.journeys.title, nav:'contact', view:'contact', desc:D.journeys.description};
   if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true, desc:'Privacy notice for the Imperial Holdings Group website: who we are, what we collect through our enquiry forms, how we use it and your rights.'};
   if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true, desc:'Terms of use for the Imperial Holdings Group website: information only, not advice, and no guarantee of any government decision or outcome.'};
   return {html:V.notFound(), title:'Page not found', nav:null, nf:true, view:'nf'};
@@ -720,11 +768,15 @@ function placeLD(o){ return {'@type':'Place', name: o.city + ', ' + o.role, tele
 function orgRef(){ return {'@type':'Organization', '@id': SITE + '/#organization', name: ORG_NAME, url: SITE + '/', logo: {'@type':'ImageObject', url: abs('assets/logos/Imperial-Crown-Gold.svg')}}; }
 function orgLD(){
   var C = D.contact, hq = C.offices[0], ref = orgRef();
-  return {'@context':'https://schema.org', '@type':'Organization', '@id': ref['@id'], name: ORG_NAME, url: ref.url, logo: ref.logo, description: ORG_DESC, email: C.email, telephone: hq.tel, address: postalLD(hq), location: C.offices.map(placeLD),
+  var o = {'@context':'https://schema.org', '@type':'Organization', '@id': ref['@id'], name: ORG_NAME, url: ref.url, logo: ref.logo, description: ORG_DESC, telephone: hq.tel, address: postalLD(hq), location: C.offices.map(placeLD),
     subOrganization: D.divisions.map(function(d){ var s = {'@type':'Organization', name: d.name}; if(d.cta && d.cta.real) s.url = d.cta.href; return s; })};
+  if(!C.emailTbc) o.email = C.email;   /* claims audit C24: the mailbox stays out of the structured data until it is confirmed */
+  return o;
 }
 function officeLD(o){
-  return {'@context':'https://schema.org', '@type':'LocalBusiness', '@id': SITE + '/contact#' + o.city.toLowerCase(), name: ORG_NAME + ', ' + o.city, description: o.role, url: SITE + '/contact', image: abs('assets/img/og.jpg'), telephone: o.tel, email: D.contact.email, address: postalLD(o), parentOrganization: orgRef()};
+  var b = {'@context':'https://schema.org', '@type':'LocalBusiness', '@id': SITE + '/contact#' + o.city.toLowerCase(), name: ORG_NAME + ', ' + o.city, description: o.role, url: SITE + '/contact', image: abs('assets/img/og.jpg'), telephone: o.tel, address: postalLD(o), parentOrganization: orgRef()};
+  if(!D.contact.emailTbc) b.email = D.contact.email;
+  return b;
 }
 function crumbLD(list){
   var items = [['Home', '/']].concat(list);

@@ -242,7 +242,9 @@ window.IHG = {
     {role:'Divisional leadership', area:'Citizenship, Private Office, Partners Club, Academy and Real Estate'}
   ],
 
-  contact: {email:'info@imperialholdingsgroup.com', offices:[
+  /* emailTbc (claims audit C24): the group mailbox is not confirmed by any source document. While it is set, the Contact
+     page shows the address with a To confirm chip and the structured data (JSON-LD) leaves the address out. */
+  contact: {email:'info@imperialholdingsgroup.com', emailTbc:'Group mailbox to confirm', offices:[
     {city:'Dubai', role:'Headquarters', lines:['804 Single Business Tower','Business Bay, Dubai','United Arab Emirates'], tel:'+971 4 546 1110', tz:'Asia/Dubai'},
     {city:'Lagos', role:'Regional hub', lines:['8 Aromire Road, Ikoyi','Lagos 106104','Nigeria'], tel:'+234 902 222 2024', tz:'Africa/Lagos'}
   ]},
@@ -397,8 +399,177 @@ window.IHG = {
     {v:'academy', l:'Training, learning or careers', to:'academy', aud:'partners'},
     {v:'real-estate', l:'Property in Dubai', to:'real-estate', aud:'clients'},
     {v:'group', l:'A strategic or institutional enquiry', to:'group', aud:'institutions'}
-  ]
-  ,
+  ],
+
+  /* Start a relationship (v6: docs/RELATIONSHIP-JOURNEY.md, data in docs/relationship-journey.json). One door at
+     /contact: a chooser, three paths and one closing screen, rendered by V.contact in app.js and bound by bindJourney.
+     The form posted is still "contact", so the Netlify Forms copy, the function core, the dedupe, the score and the
+     Pipedrive routing stay as built; org_type (Institutions path) is the one new field. Strings with {division} are
+     filled at run time from the routing name of the chosen division. The design notes (why each question exists, the
+     field mapping, the entry list) stay in the JSON file; this copy carries what the page renders, plus a short label
+     per screen for the progress bar and the home and division path card buttons (the hero labels, docs/HERO-OPTIONS).
+     TO CONFIRM (Founder): the budget bands and currency come from docs/BUILD-CONTRACT.md 4.2, not from the brief.
+     TO CONFIRM (counsel): the consent wording (docs/PRIVACY-NOTES.md section 4). */
+  journeys: {
+    version:'v6-journey-1', form:'contact', route:'/contact', title:'Start a relationship',
+    description:'Start a relationship with Imperial Holdings Group. Three paths: private clients, professional partners, institutions. One person reads your message and replies personally.',
+    chooser: {
+      id:'path', eyebrow:'Start a relationship', title:['Start a relationship.'],
+      lead:'Tell us a little about yourself and what you have in mind. One person at Imperial will read it and reply personally. Three paths; choose the one that describes you.',
+      question:'I am', prompt:'Three paths; choose the one that describes you.', field:'audience',
+      paths:[
+        {key:'clients', audience:'clients', title:'Private Clients', text:'Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.', cta:'Continue as a private client', card:'Arrange a first conversation', divisions:['citizenship','private-office','real-estate','group']},
+        {key:'partners', audience:'partners', title:'Professional Partners', text:'Lawyers, bankers, wealth advisers and family offices who introduce clients, and teams who train with Imperial Academy.', cta:'Continue as a professional partner', card:'Discuss becoming a Partner', divisions:['partners-club','academy']},
+        {key:'institutions', audience:'institutions', title:'Institutions and Strategic Relationships', text:'Governments, missions, institutions and organisations exploring a relationship with the Group.', cta:'Continue as an institution', card:'Open a strategic conversation', divisions:['group']}
+      ],
+      footnote:'Not sure which? Begin as a private client and we will take it from there.'
+    },
+    journeys:[
+      {
+        key:'clients', audience:'clients', name:'Private Clients', shortName:'Private client',
+        opening:'Tell us what you have in mind. We will bring in the right house, and one person will be your point of contact throughout.',
+        defaultDivision:null,
+        screens:[
+          {id:'need', short:'Your need', title:'What brings you to Imperial?', lead:'Choose the closest. It decides which house reads your message.', skipWhenPrefilled:'about', fields:[
+            {name:'about', type:'choice', required:true, label:'It concerns', routingLine:'This goes to {division}.', options:[
+              {v:'citizenship', l:'A second residency or citizenship', s:'For me, or for my family', routes:'Imperial Citizenship'},
+              {v:'private-office', l:'Continuing support as an existing Imperial Client', s:'Imperial Private Office', routes:'Imperial Private Office'},
+              {v:'real-estate', l:'A home or property in Dubai', s:'Imperial Real Estate, launching soon', routes:'Imperial Real Estate'},
+              {v:'group', l:'Something broader, or I am not yet sure', s:'The Group brings in the right house', routes:'the Group'}
+            ]}
+          ]},
+          {id:'who', short:'Who and where', title:'Who is this for, and where do you live?', lead:'So the right office replies, and the conversation starts in the right place.', fields:[
+            {name:'for_whom', type:'choice', required:true, label:'This is for', options:[
+              {v:'myself', l:'Myself'},
+              {v:'family', l:'My family'},
+              {v:'client', l:'A client I am introducing', s:'If you introduce clients professionally, the Professional Partners path is the one for you.', offerSwitch:'partners'}
+            ]},
+            {name:'country', type:'text', required:true, label:'Country of residence', autocomplete:'country-name'},
+            {name:'nationality', type:'text', required:false, label:'Nationality, or nationalities (optional)', hint:'It helps us prepare, and you may leave it for the conversation.', when:{about:['citizenship','private-office']}}
+          ]},
+          {id:'timing', short:'Timing', title:'Timing', lead:'A rough sense is enough. Nothing here commits you to anything.', fields:[
+            {name:'timeline', type:'choice', required:true, label:'When would you like to begin?', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]},
+            {name:'budget', type:'choice', required:false, label:'Is there a budget in mind? (optional)', hint:'A broad band is enough. It only helps us prepare the right options, and you may leave it for the conversation.', when:{about:['citizenship','real-estate']}, options:[
+              {v:'under-250k', l:'Under US$250,000'}, {v:'250k-500k', l:'US$250,000 to 500,000'}, {v:'500k-1m', l:'US$500,000 to 1 million'}, {v:'over-1m', l:'Over US$1 million'}, {v:'undisclosed', l:'I would rather not say yet'}
+            ]},
+            {name:'re_intent', type:'choice', required:false, label:'I am looking to', when:{about:['real-estate']}, options:[{v:'buy', l:'Buy'}, {v:'rent', l:'Rent'}]},
+            {name:'re_area', type:'text', required:false, label:'Area, if you have one in mind (optional)', when:{about:['real-estate']}}
+          ]},
+          {use:'closing'}
+        ]
+      },
+      {
+        key:'partners', audience:'partners', name:'Professional Partners', shortName:'Professional partner',
+        opening:'Your client stays your client. Tell us how you would like to work with Imperial, and one person who knows Partner practices will reply.',
+        defaultDivision:'partners-club',
+        screens:[
+          {id:'how', short:'How', title:'How would you like to work with Imperial?', lead:'Choose the closest.', skipWhenPrefilled:'about', fields:[
+            {name:'about', type:'choice', required:true, label:'I would like to', routingLine:'This goes to {division}.', options:[
+              {v:'partners-club', key:'introduce', l:'Introduce a client', s:'With their permission, and on written terms', set:{for_whom:'client'}, routes:'Imperial Partners Club'},
+              {v:'partners-club', key:'join', l:'Become an Imperial Partner', s:'Join the network of introducers and advisers', set:{for_whom:''}, routes:'Imperial Partners Club'},
+              {v:'academy', key:'learn', l:'Train or certify my team', s:'Imperial Academy', set:{for_whom:''}, routes:'Imperial Academy'}
+            ]}
+          ]},
+          {id:'practice', short:'Your practice', title:'About your practice', lead:'So the right person replies, and so written terms can follow if it comes to that.', fields:[
+            {name:'profession', type:'choice-or-text', required:true, label:'Your profession', options:[
+              {v:'Lawyer', l:'Lawyer'}, {v:'Private banker', l:'Private banker'}, {v:'Wealth adviser', l:'Wealth adviser'}, {v:'Family office', l:'Family office'},
+              {v:'Accountant or tax adviser', l:'Accountant or tax adviser'}, {v:'Immigration or relocation adviser', l:'Immigration or relocation adviser'}, {v:'Property professional', l:'Property professional'},
+              {v:'Other', l:'Other', text:{label:'Your profession, in a word or two', required:false}}
+            ]},
+            {name:'firm', type:'text', required:true, label:'Firm or organisation', autocomplete:'organization'},
+            {name:'country', type:'text', required:true, label:'Where you practise', hint:'Country', autocomplete:'country-name'}
+          ]},
+          {id:'scope', short:'Scope', variants:{
+            introduce:{title:'About the introduction', lead:'Nothing about your client yet. We ask for their details only once you have their permission and written terms are in place.', fields:[
+              {name:'interests', type:'multi', required:false, label:'What your client is considering', options:[
+                {v:'A second residency or citizenship', l:'A second residency or citizenship'}, {v:'A home or property in Dubai', l:'A home or property in Dubai'}, {v:'Continuing support from the Private Office', l:'Continuing support from the Private Office'}, {v:'Not sure yet', l:'They are not sure yet'}
+              ]},
+              {name:'timeline', type:'choice', required:true, label:'When would your client like to begin?', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
+            ]},
+            join:{title:'What you have in mind', lead:'So the first conversation is a useful one.', fields:[
+              {name:'interests', type:'multi', required:false, label:'I am interested in', options:[
+                {v:'Introducing clients', l:'Introducing clients'}, {v:'Approved materials for my team', l:'Approved materials for my team'}, {v:'Training with Imperial Academy', l:'Training with Imperial Academy'}, {v:'Co-hosting an event', l:'Co-hosting an event'}
+              ]},
+              {name:'timeline', type:'choice', required:false, label:'How soon? (optional)', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
+            ]},
+            learn:{title:'What you would like to learn', lead:'Imperial Academy trains Partner teams to explain the options accurately.', fields:[
+              {name:'interests', type:'multi', required:false, label:'I am interested in', options:[
+                {v:'Explaining residency and citizenship options accurately', l:'Explaining residency and citizenship options accurately'}, {v:'Approved materials and the claims list', l:'Approved materials and the claims list'}, {v:'Certification for my team', l:'Certification for my team'}, {v:'Something else', l:'Something else'}
+              ]},
+              {name:'timeline', type:'choice', required:false, label:'How soon? (optional)', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
+            ]}
+          }},
+          {use:'closing'}
+        ]
+      },
+      {
+        key:'institutions', audience:'institutions', name:'Institutions and Strategic Relationships', shortName:'Institution',
+        opening:'For organisations exploring a relationship with the Group. One person at Group level will read your message and reply personally.',
+        defaultDivision:'group', fixedDivision:'group',
+        screens:[
+          {id:'explore', short:'Exploring', title:'What would you like to explore?', lead:'Choose any that apply.', fields:[
+            {name:'interests', type:'multi', required:true, label:'We are exploring', options:[
+              {v:'A strategic partnership', l:'A strategic partnership'}, {v:'An event or diplomatic collaboration', l:'An event or diplomatic collaboration'}, {v:'Media, speaking or editorial', l:'Media, speaking or editorial'}, {v:'A service or supplier proposal', l:'A service or supplier proposal'}, {v:'Something else', l:'Something else'}
+            ]}
+          ]},
+          {id:'organisation', short:'Organisation', title:'About your organisation', lead:'So the message reaches the right person at Group level.', fields:[
+            {name:'firm', type:'text', required:true, label:'Organisation', autocomplete:'organization'},
+            {name:'org_type', type:'choice', required:true, label:'Which best describes it?', options:[
+              {v:'government', l:'Government or public body'}, {v:'mission', l:'Embassy, consulate or mission'}, {v:'financial', l:'Bank or financial institution'}, {v:'professional', l:'Law, advisory or professional services firm'}, {v:'property', l:'Developer or property group'}, {v:'media', l:'Media, events or hospitality'}, {v:'other', l:'Other'}
+            ]},
+            {name:'profession', type:'text', required:false, label:'Your role (optional)', autocomplete:'organization-title'},
+            {name:'country', type:'text', required:true, label:'Country', autocomplete:'country-name'},
+            {name:'timeline', type:'choice', required:false, label:'Is there a date that matters? (optional)', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
+          ]},
+          {use:'closing'}
+        ]
+      }
+    ],
+    closing:{
+      id:'you', short:'How we reply', title:'How shall we reply?', lead:'One person will read this and reply personally.',
+      summary:{show:true, change:'Change'},
+      fields:[
+        {name:'name', type:'text', required:true, label:'Full name', autocomplete:'name'},
+        {name:'email', type:'email', required:true, label:'Email', autocomplete:'email'},
+        {name:'phone', type:'tel', required:false, label:'Phone, with country code (optional)', hint:'If you give a number, we can confirm it by WhatsApp or SMS after you send.', autocomplete:'tel'},
+        {name:'pref', type:'choice', required:false, label:'Reply by', dflt:'Email', options:[{v:'Email', l:'Email'}, {v:'Phone call', l:'Phone call'}, {v:'Either', l:'Either'}]},
+        {name:'msg', type:'textarea', required:false, label:'Anything you would like us to know (optional)', rows:3},
+        {name:'consent', type:'checkbox', required:true, label:'I agree to Imperial Holdings Group using these details to reply to me, as described in the {privacy}.'}
+      ],
+      cta:'Send to Imperial', sending:'Sending',
+      foot:'Nothing is shared beyond the people who need it to reply.'
+    },
+    prefill:{
+      byDivision:{citizenship:'clients', 'private-office':'clients', 'real-estate':'clients', group:'clients', 'partners-club':'partners', academy:'partners'},
+      fromFitCheck:{draftKey:'ihg-draft-contact', sets:['about','audience','for_whom','country','timeline','budget','lead_source','quiz_answers']},
+      draft:{keepOnSwitch:['name','email','phone','pref','msg']}
+    },
+    /* Division page card: "Start a relationship with <division>", with the path's card label. The home page shows the
+       three chooser paths as cards. */
+    divisionCard:{title:'Start a relationship with {division}', eyebrow:'Start a relationship'},
+    states:{
+      sending:{button:'Sending'},
+      received:{
+        direct:{title:'Received, and with {division}.', text:'Reference {ref}. One person at {division} will be your point of contact and will reply personally.', announce:'Received.'},
+        forms:{title:'Received by Imperial.', text:'Your message has been received and is being passed to {division}. One person will reply personally.', announce:'Received.'},
+        variants:{
+          group:{division:'the Group', text:'Your message has been received by the Group. One person will read it, bring in the right house if one is needed, and reply personally.'},
+          'real-estate':{append:'Imperial Real Estate has not yet launched. We will tell you plainly what is possible today.'},
+          institutions:{division:'the Group'}
+        },
+        replyTime:{text:'', tbc:'Reply time standard (for example one working day, Dubai or Lagos hours)'},
+        next:{
+          guide:{when:{about:['citizenship']}, label:'Request the guide', href:'#/divisions/citizenship', scroll:'guide'},
+          site:{label:'Explore {division} online'},
+          journal:{label:'Read while you wait', href:'#/journal'},
+          again:{label:'Send another'}
+        }
+      },
+      failed:{title:'We could not send this just now.', text:'Please call or email us and we will take it from there. What you typed is kept on this device, so you can also try again later.'},
+      preview:{chip:'Preview build: nothing is sent from this preview', onSend:'Preview of the confirmation. Nothing was sent.'}
+    }
+  },
+
   /* House finder. Weights are a guide drawn from what each house does (see divisions[].does), not advice. */
   finder: {
     personas: [
@@ -430,7 +601,7 @@ window.IHG = {
      quiz_answers with lead_source programme-fit. Options with "from" use the fixed timeline and budget lists in app.js. */
   fit: {
     eyebrow:'Programme fit check', title:['Five questions.','A clearer first conversation.'],
-    lead:'Nothing here decides anything. Your answers simply prefill your enquiry, so the first conversation starts in the right place.',
+    lead:'Nothing here decides anything. Your answers simply prefill your message, so the first conversation starts in the right place.',
     questions:[
       {k:'who', q:'Who would be included?', opts:[
         {v:'myself', l:'Just me', set:{for_whom:'myself'}},
@@ -448,7 +619,7 @@ window.IHG = {
       {k:'timeline', q:'When would you like to begin?', from:'timeline'},
       {k:'budget', q:'Is there a budget in mind?', from:'budget', skip:'I would rather not say yet'}
     ],
-    done:{title:'Thank you.', text:'Your enquiry below has been prefilled from these answers. Add your name, your email and a few lines, and the right person will reply.', cta:'Go to your enquiry'}
+    done:{title:'Thank you.', text:'Your answers travel with you. Add your name and your email on the next page, and one person will reply.', cta:'Continue to your message'}
   },
 
   /* Downloadable guide (citizenship page). The file itself is config.guide.file; while it is empty the page shows config.guide.tbc. */
@@ -556,9 +727,9 @@ window.IHG = {
     {q:'Can you guarantee that an application will be approved?', a:'No one honestly can. Final approval of any citizenship or residency application always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.'},
     {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you.'},
     {q:'What happens to the information I share?', a:'It is used to respond to you, kept in our customer relationship system, and shared only where a service requires it. Private matters stay private. You can ask for a copy, or for deletion, at any time.', to:'/privacy', tl:'Privacy notice'},
-    {q:'I am a lawyer, banker or wealth adviser. Can I introduce a Client?', a:'Yes, through Imperial Partners Club. Your Partner Agreement sets out exactly how introductions work, you receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
+    {q:'I am a lawyer, banker or wealth adviser. Can I introduce a Client?', a:'Yes. Introductions are governed by a written agreement that sets out exactly how they work, you receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
     {q:'Is Imperial Real Estate open yet?', a:'Not yet. Imperial Real Estate is licensed and has not launched. You can register your interest and we will contact you when it opens.', to:'/divisions/real-estate', tl:'Register interest'},
-    {q:'Where are you based?', a:'Our headquarters is in Dubai, with a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.'}
+    {q:'Where are you based?', a:'Our headquarters is in Dubai and we have an office in Lagos. We work with Partners, advisers and specialists in the Caribbean, Europe and the Gulf.'}
   ]
 };
 })();
