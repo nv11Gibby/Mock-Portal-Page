@@ -600,6 +600,13 @@ V.error = function(){
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
+/* Mobile menu thumbnails. The menu is laid out while hidden (translated above the viewport), which puts the five
+   division photographs inside the browser's lazy-load margin, so a plain lazy img downloaded them at boot on every
+   page, ahead of the hero. They start as a transparent pixel with the real file in data-src; setMM() swaps the src
+   the first time the menu opens. The desktop mega menu keeps display:none until it opens, so its copies stay lazy. */
+var PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+function menuImg(k, v){return '<img src="'+PIXEL+'" data-src="'+IMG+k+(v||'')+'.webp" alt="" loading="lazy" decoding="async">';}
+function loadMenuImgs(scope){ [].forEach.call(scope.querySelectorAll('img[data-src]'), function(i){ i.src=i.getAttribute('data-src'); i.removeAttribute('data-src'); }); }
 function buildChrome(){
   document.getElementById('megaIn').innerHTML =
     '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
@@ -611,7 +618,7 @@ function buildChrome(){
     '<li style="--i:1"><a href="#/about"><span>About</span><span class="ix">02</span></a></li>'+
     '<li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>'+
       '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
-      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'">'+img(d.img,'','','-c')+'<span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
+      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'">'+menuImg(d.img,'-c')+'<span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
     '<li style="--i:3"><a href="#/" data-goto="network"><span>Our Network</span><span class="ix">04</span></a></li>'+
     '<li style="--i:4"><a href="#/journal"><span>Journal</span><span class="ix">05</span></a></li>'+
     '<li style="--i:5"><a href="#/contact"><span>Contact</span><span class="ix">06</span></a></li></ul>'+
@@ -1077,7 +1084,7 @@ var burger = document.getElementById('burger'), mm = document.getElementById('mm
 function setMM(open, instant){
   if(open === body.classList.contains('mm-open')) return;
   clearTimeout(mmT);
-  if(open){ mm.hidden=false; void mm.offsetWidth; body.classList.add('mm-open'); body.style.overflow='hidden'; tick(); setTimeout(function(){ var f=mm.querySelector('a,button'); if(f) f.focus({preventScroll:true}); }, 380); }
+  if(open){ loadMenuImgs(mm); mm.hidden=false; void mm.offsetWidth; body.classList.add('mm-open'); body.style.overflow='hidden'; tick(); setTimeout(function(){ var f=mm.querySelector('a,button'); if(f) f.focus({preventScroll:true}); }, 380); }
   else { body.classList.remove('mm-open'); body.style.overflow=''; if(instant || reduced) mm.hidden=true; else mmT=setTimeout(function(){ mm.hidden=true; }, 900); }
   burger.setAttribute('aria-expanded', open); burger.setAttribute('aria-label', open?'Close menu':'Open menu');
 }
