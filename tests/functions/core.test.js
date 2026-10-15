@@ -5,6 +5,7 @@ const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { createMock } = require('./_mock');
 const ratelimit = require('../../netlify/functions/lib/ratelimit');
+const pipedrive = require('../../netlify/functions/lib/pipedrive');
 const core = require('../../netlify/functions/lib/core');
 const routing = require('../../shared/lead-routing.json');
 const schema = require('../../shared/lead-schema.json');
@@ -25,6 +26,7 @@ let m;
 beforeEach(() => {
   m = createMock().install();
   ratelimit.reset();
+  pipedrive.resetLeadLabelCache();
   process.env.PIPEDRIVE_API_TOKEN = 'test-token';
   delete process.env.TURNSTILE_SECRET_KEY;
   delete process.env.EMAIL_API_KEY;
@@ -55,9 +57,13 @@ Object.keys(EXPECT).forEach((div) => {
     if (e.kind === 'deal') {
       assert.equal(body.pipeline_id, e.pipeline);
       assert.equal(body.stage_id, e.stage);
-      assert.deepEqual(body.label_ids, [O.label.hot]);
+      assert.deepEqual(body.label_ids, [O.label.hot], 'deals take the numeric deal label id');
+      assert.equal(body.visible_to, routing.pipedrive.visibleTo, 'deals take visible_to as a number');
       assert.equal(body.user_id, cfg.owner || undefined);
     } else {
+      assert.equal(posts.length, 1, 'one POST to /leads');
+      assert.deepEqual(body.label_ids, [m.leadLabelFor('hot')], 'leads take the Leads inbox label UUID for the band');
+      assert.equal(body.visible_to, String(routing.pipedrive.visibleTo), 'leads take visible_to as a string');
       assert.equal(body.owner_id, cfg.owner || undefined);
     }
     assert.equal(body[F.deal.division], e.division);
@@ -115,6 +121,20 @@ test('honeypot is rejected before any API call', async () => {
   assert.equal(m.calls.length, 0);
 });
 
+test('prototype keys never pass as a form, site or division', async () => {
+  for (const form of ['constructor', 'toString', 'hasOwnProperty', '__proto__']) {
+    const r = await core.processLead({ form, data: data({ division: 'citizenship' }), ctx: ctx() });
+    assert.equal(r.reason, 'form', form);
+  }
+  assert.equal(m.calls.length, 0);
+  assert.equal(core.resolveSite({ site: 'constructor' }, { site: '__proto__' }), 'ihg');
+  assert.equal(core.resolveDivision('enquiry', { division: 'constructor', about: '__proto__' }, 'ihg'), schema.sites.ihg.defaultDivision, 'falls through to the site default');
+  assert.equal(core.resolveDivision('constructor', {}, 'citizenship'), schema.sites.citizenship.defaultDivision, 'a prototype form name has no form defaults');
+  const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', site: 'constructor' }), ctx: ctx({ site: 'toString' }) });
+  assert.equal(r.ok, true);
+  assert.equal(r.site, 'ihg');
+});
+
 test('Turnstile: a rejected token fails, a good one passes, a missing one fails when the secret is set', async () => {
   process.env.TURNSTILE_SECRET_KEY = 'secret';
   m.turnstileOk = false;
@@ -129,6 +149,8 @@ test('Turnstile: a rejected token fails, a good one passes, a missing one fails 
   assert.equal(m.find('POST', /siteverify/)[1].body.response, 'tok');
   const missing = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship' }), ctx: ctx() });
   assert.equal(missing.reason, 'turnstile');
+  assert.ok(core.summary('submission-created', missing).indexOf('reason=turnstile detail=missing token') > -1, 'the log line says why: ' + core.summary('x', missing));
+  assert.ok(core.summary('submission-created', bad).indexOf('detail=invalid-input-response') > -1, 'Cloudflare error codes in the log line');
 });
 
 test('dedupe by email: person reused, note and activity added, open lead of the same division reused', async () => {
@@ -162,11 +184,37 @@ test('dedupe by phone: a different email on a known number reuses the person and
   assert.equal(r.ok, true);
   assert.equal(r.personId, p.id);
   assert.equal(m.find('POST', /\/persons$/).length, 0);
+  const search = m.find('GET', /\/persons\/search/).filter((c) => c.query.fields === 'phone');
+  assert.equal(search[0].query.term, '2348020000000', 'the full digit string is searched first');
+  m.calls.forEach((c) => { if (c.host === 'api.pipedrive.com') { assert.equal(c.headers['x-api-token'], 'test-token', 'token in the header'); assert.equal(c.query.api_token, undefined, 'never in the query string'); } });
   const put = m.find('PUT', /\/persons\/\d+$/)[0];
   assert.ok(put, 'person updated');
   assert.deepEqual(put.body.email.map((e) => e.value), ['amina.work@example.com', 'amina.home@example.com']);
   assert.equal(put.body[F.person.verificationStatus], O.verificationStatus.notVerified);
   assert.equal(m.activities.length, 1);
+});
+
+test('returning person: when the full person cannot be fetched, nothing is written to the person, so no list is overwritten', async () => {
+  const p = m.seedPerson({ name: 'Known Client', email: 'known@example.com', phone: '+971 50 111 2222' });
+  p.email.push({ value: 'second@example.com', primary: false, label: 'home' });
+  m.failGetPerson = 429;
+  const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'known@example.com', phone: '+234 902 222 2024' }), ctx: ctx() });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.personExisted, true);
+  assert.equal(r.personUnchanged, true);
+  assert.equal(m.find('PUT', /\/persons\/\d+$/).length, 0, 'no PUT on the person');
+  assert.equal(m.find('POST', /\/persons$/).length, 0, 'no new person either');
+  assert.deepEqual(p.email.map((e) => e.value), ['known@example.com', 'second@example.com'], 'both emails kept');
+  assert.deepEqual(p.phone.map((e) => e.value), ['+971 50 111 2222'], 'the old phone kept');
+  assert.equal(m.leads.length, 1, 'the lead is still created');
+  assert.ok(m.notes[0].content.indexOf('Phone: +234 902 222 2024') > -1, 'the new phone is in the note');
+  assert.ok(core.summary('test', r).indexOf('person=unchanged') > -1);
+  m.failGetPerson = 0;
+  const ok = await core.processLead({ form: 'enquiry', data: data({ division: 'private-office', email: 'known@example.com', phone: '+234 902 222 2024' }), ctx: ctx() });
+  assert.equal(ok.personUnchanged, false);
+  const put = m.find('PUT', /\/persons\/\d+$/)[0];
+  assert.deepEqual(put.body.phone.map((e) => e.value), ['+971 50 111 2222', '+2349022222024'], 'with the full person the phone is added in E.164, nothing dropped');
+  assert.equal(put.body.email, undefined, 'the known email needs no change');
 });
 
 test('rate limit: the sixth submission from one address in ten minutes is refused', async () => {
@@ -182,21 +230,47 @@ test('rate limit: the sixth submission from one address in ten minutes is refuse
   assert.equal(other.ok, true, 'another address is not affected');
 });
 
-test('lead label: tried as label_ids, then the title prefix carries the score when the API rejects it', async () => {
+test('lead label: the Leads inbox label is read from the account once and sent in a single POST; none when nothing matches; other errors are not retried', async () => {
   const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
-  assert.equal(r.ok, true);
+  assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(r.score, 'warm');
-  const posts = m.find('POST', /\/leads$/);
-  assert.equal(posts.length, 2, 'first with label_ids, then without');
-  assert.deepEqual(posts[0].body.label_ids, [O.label.warm]);
-  assert.equal(posts[1].body.label_ids, undefined);
-  assert.ok(posts[1].body.title.indexOf('[WARM] ') === 0);
-  assert.equal(r.labelRejected, true);
-  m.leadsAcceptLabels = true;
-  const r2 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'two@example.com', phone: '+971 50 123 4567', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
-  assert.equal(r2.labelRejected, false);
-  assert.equal(m.find('POST', /\/leads$/).length, 3);
-  assert.deepEqual(m.find('POST', /\/leads$/)[2].body.label_ids, [O.label.warm]);
+  let posts = m.find('POST', /\/leads$/);
+  assert.equal(posts.length, 1, 'one POST, with the account label');
+  assert.deepEqual(posts[0].body.label_ids, [m.leadLabelFor('warm')]);
+  assert.ok(posts[0].body.title.indexOf('[WARM] ') === 0);
+  assert.equal(r.labelRejected, false);
+  assert.equal(m.find('GET', /\/leadLabels$/).length, 1, 'labels read from the account');
+  const r2 = await core.processLead({ form: 'enquiry', data: data({ division: 'private-office', email: 'two@example.com', phone: '+971 50 123 4567', timeline: 'exploring' }), ctx: ctx() });
+  assert.equal(r2.score, 'exploring');
+  assert.equal(m.find('GET', /\/leadLabels$/).length, 1, 'read once per instance, then cached');
+  assert.deepEqual(m.find('POST', /\/leads$/)[1].body.label_ids, [m.leadLabelFor('exploring')], 'exploring maps to the Cold label');
+  /* an account whose lead labels are named differently: no label, the band stays in the title and the note */
+  pipedrive.resetLeadLabelCache();
+  m.leadLabels = [{ id: '0f1e2d3c-4b5a-4968-8776-655443322110', name: 'Website' }];
+  const r3 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'three@example.com', phone: '+971 50 123 4568', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
+  assert.equal(r3.ok, true);
+  posts = m.find('POST', /\/leads$/);
+  assert.equal(posts.length, 3);
+  assert.equal(posts[2].body.label_ids, undefined, 'no label when none matches');
+  assert.ok(posts[2].body.title.indexOf('[WARM] ') === 0, 'the band stays in the title');
+  assert.ok(m.notes[2].content.indexOf('Score: WARM') > -1, 'and in the note');
+  /* the labels endpoint failing costs only the label */
+  pipedrive.resetLeadLabelCache();
+  m.failLeadLabels = true;
+  const r4 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'four@example.com', phone: '+971 50 123 4569', timeline: '3-12m' }), ctx: ctx() });
+  assert.equal(r4.ok, true, JSON.stringify(r4));
+  assert.equal(m.find('POST', /\/leads$/)[3].body.label_ids, undefined);
+  /* a lead error that is not about the label is reported as is, never masked by a retry without the label */
+  m.failLeadLabels = false;
+  pipedrive.resetLeadLabelCache();
+  m.failLeadsOnce = true;
+  const r5 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'five@example.com', phone: '+971 50 123 4570', timeline: '3-12m' }), ctx: ctx() });
+  assert.equal(r5.ok, false);
+  assert.equal(r5.reason, 'sync');
+  assert.ok(/POST \/leads: 500/.test(r5.error), r5.error);
+  assert.equal(m.find('POST', /\/leads$/).length, 5, 'one POST only, no retry');
+  /* the numeric deal label id is never sent to the Leads API */
+  m.find('POST', /\/leads$/).forEach((p) => assert.ok(!p.body.label_ids || p.body.label_ids.every((x) => typeof x === 'string'), 'UUID strings only'));
 });
 
 test('nationality and country go on the person only when they match an option label', async () => {
@@ -272,16 +346,48 @@ test('confirmation email: sent through Resend only with the env, from the named 
   assert.ok(mail.text.indexOf('Imperial Citizenship') > -1);
   assert.ok(mail.text.indexOf(routing.office.dubai.tel) > -1 && mail.text.indexOf(routing.office.lagos.tel) > -1);
   assert.ok(mail.text.indexOf('reply to this email') > -1);
+  assert.ok(/\nImperial Holdings Group\nenquiries@example\.com$/.test(mail.text), 'signed with the sending mailbox: ' + mail.text.slice(-60));
   const call = m.find('POST', /\/emails$/)[0];
   assert.equal(call.headers.Authorization, 'Bearer re_test');
+  /* a name that is not a plain word never reaches the greeting: the mail from the named mailbox relays nothing the sender chose */
+  const phish = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'five@example.com', phone: '+971 50 123 4571', name: 'Http://evil.example/claim-your-refund Mr' }), ctx: ctx() });
+  assert.equal(phish.confirmation.sent, true);
+  const ptext = m.emails[1].text;
+  assert.ok(ptext.indexOf('Hello,') === 0, ptext.slice(0, 40));
+  assert.equal(ptext.indexOf('evil.example'), -1);
+  assert.deepEqual(m.emails[1].to, ['five@example.com'], 'only to the submitted address');
+  /* the register interest and guide variants */
+  const interest = await core.processLead({ form: 'interest', data: { name: 'Buyer', email: 'buyer@example.com', country: 'Ghana', interest: 'A family home in Dubai', consent: 'yes' }, ctx: ctx() });
+  assert.equal(interest.confirmation.sent, true);
+  const itext = m.emails[2].text;
+  assert.ok(itext.indexOf('registering your interest in Imperial Real Estate') > -1, itext);
+  assert.ok(itext.indexOf('has not launched yet') > -1);
+  assert.equal(itext.indexOf('first conversation'), -1, 'no invitation to a first conversation for a division that has not launched');
+  assert.equal(m.emails[2].subject, 'Your interest in Imperial Real Estate');
+  const guide = await core.processLead({ form: 'guide', data: { name: 'Guide Reader', email: 'reader2@example.com', consent: 'yes' }, ctx: ctx() });
+  assert.equal(guide.confirmation.sent, true);
+  assert.ok(m.emails[3].text.indexOf('It will follow by email from the team') > -1, m.emails[3].text);
+  assert.equal(m.emails[3].subject, 'Your guide request');
   const bad = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'x@yopmail.com' }), ctx: ctx() });
   assert.equal(bad.reason, 'disposable');
-  assert.equal(m.emails.length, 1, 'nothing sent to a rejected address');
+  assert.equal(m.emails.length, 4, 'nothing sent to a rejected address');
   delete process.env.PIPEDRIVE_API_TOKEN;
   const kept = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'three@example.com' }), ctx: ctx({ submissionId: 'sub-1' }) });
   assert.equal(kept.confirmation.sent, true, 'a Netlify submission is stored even without Pipedrive, so the email still goes');
   const direct = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'four@example.com' }), ctx: ctx() });
   assert.equal(direct.confirmation.sent, false, 'a direct submission that was not stored gets no email');
+});
+
+test('email greeting: a plain first name is used, anything else falls back to Hello', () => {
+  const { compose } = require('../../netlify/functions/lib/email');
+  const lead = (name) => ({ email: 'x@example.com', name, form: 'enquiry', divisionName: 'Imperial Citizenship', leadSource: 'website' });
+  [['Amina Test', 'Dear Amina,'], ["O'Brien", "Dear O'Brien,"], ['Jean-Luc Picard', 'Dear Jean-Luc,'], ['Müller', 'Dear Müller,'], ['Ælfred', 'Dear Ælfred,'],
+    ['Http://evil.example/claim-your-refund Mr', 'Hello,'], ['Zaid.', 'Hello,'], ['A1', 'Hello,'], ['', 'Hello,'], ['x'.repeat(41), 'Hello,']].forEach((c) => {
+    assert.ok(compose(lead(c[0])).text.indexOf(c[1]) === 0, c[0] + ' -> ' + c[1]);
+  });
+  assert.ok(/\nImperial Holdings Group\nenquiries@example\.com$/.test(compose(lead('Amina'), 'Imperial Holdings Group <enquiries@example.com>').text));
+  assert.ok(/\nImperial Holdings Group\nhello@example\.com$/.test(compose(lead('Amina'), 'hello@example.com').text), 'a bare address works too');
+  assert.ok(new RegExp('\\n' + routing.office.email + '$').test(compose(lead('Amina')).text), 'without a sender the office mailbox from the routing file');
 });
 
 test('markVerified sets Verified on the person and notes the newest open lead or deal', async () => {
@@ -298,4 +404,54 @@ test('markVerified sets Verified on the person and notes the newest open lead or
   const missing = await core.markVerified({ email: 'nobody@example.com', phone: '+10000000000', channel: 'sms', retryDelayMs: 0 });
   assert.equal(missing.ok, false);
   assert.equal(missing.reason, 'person');
+});
+
+test('markVerified looks the person up four times, 1.5 s apart by default, so a person written after the code check is still marked', async () => {
+  let searches = 0;
+  const orig = global.fetch;
+  global.fetch = async (url, init) => {
+    /* each attempt searches by phone (full digits, then the nine digit tail) and by email: three searches when nothing matches */
+    if (/\/persons\/search/.test(String(url))) { searches++; if (searches === 7) m.seedPerson({ name: 'Late Person', email: 'late@example.com', phone: '+2348020000777' }); }
+    return orig(url, init);
+  };
+  const r = await core.markVerified({ email: 'late@example.com', phone: '+2348020000777', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(m.find('PUT', /\/persons\/\d+$/)[0].body[F.person.verificationStatus], O.verificationStatus.verified);
+  assert.equal(searches, 7, 'the person appeared on the third attempt and was found by phone at once');
+  m.calls.length = 0; searches = 0;
+  const gone = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(gone.reason, 'person');
+  assert.equal(searches, 12, 'four attempts, each by phone (two terms) then by email');
+  const one = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0, attempts: 1 });
+  assert.equal(one.reason, 'person');
+});
+
+test('markVerified only marks the person who holds the verified number', async () => {
+  /* a person named by email alone, whose numbers do not include the verified one: nothing is written */
+  const victim = m.seedPerson({ name: 'Victim', email: 'victim@example.com', phone: '+971500000001', custom: { [F.person.verificationStatus]: O.verificationStatus.notVerified } });
+  m.seedLead({ person_id: victim.id, title: 'Website: Victim · Imperial Citizenship' });
+  const r = await core.markVerified({ email: 'victim@example.com', phone: '+2348020009999', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'mismatch');
+  assert.equal(m.find('PUT', /\/persons/).length, 0, 'no update');
+  assert.equal(m.notes.length, 0, 'no note');
+  assert.equal(victim[F.person.verificationStatus], O.verificationStatus.notVerified);
+  /* the person who holds the number is marked although the email in the request is someone else's */
+  const holder = m.seedPerson({ name: 'Holder', email: 'holder@example.com', phone: '+234 802 000 9999' });
+  const h = await core.markVerified({ email: 'victim@example.com', phone: '+2348020009999', channel: 'whatsapp', retryDelayMs: 0 });
+  assert.equal(h.ok, true, JSON.stringify(h));
+  assert.equal(h.personId, holder.id);
+  assert.equal(m.find('PUT', /\/persons\/\d+$/)[0].path, '/v1/persons/' + holder.id);
+  assert.equal(victim[F.person.verificationStatus], O.verificationStatus.notVerified, 'the victim is untouched');
+  /* a returning person found by email gets the number from the current submission a moment later: the retry sees it */
+  const late = m.seedPerson({ name: 'Returning', email: 'returning@example.com', phone: '+971500000002' });
+  let gets = 0;
+  const orig = global.fetch;
+  global.fetch = async (url, init) => {
+    if (new RegExp('/persons/' + late.id + '$').test(String(url).split('?')[0])) { gets++; if (gets === 2) late.phone.push({ value: '+2348020001234', primary: false, label: 'work' }); }
+    return orig(url, init);
+  };
+  const l = await core.markVerified({ email: 'returning@example.com', phone: '+2348020001234', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(l.ok, true, JSON.stringify(l));
+  assert.equal(l.personId, late.id);
 });

@@ -33,7 +33,10 @@ function stub(window){
   }
 }
 
-/* opts: {root, indexPath, siteUrl, scripts: [absolute paths in load order]} */
+/* opts: {root, indexPath, siteUrl, scripts: [absolute paths in load order], preview}
+   preview: set data-preview on the html element before the app runs, so a preview build renders the photographs
+   that still lack recorded consent (app.js reads the attribute once, at load: setting it after the render would
+   change nothing in the markup). */
 function createRenderer(opts){
   const html = fs.readFileSync(opts.indexPath, 'utf8');
   const scripts = opts.scripts.map(function(p){ return {name: path.relative(opts.root, p), src: fs.readFileSync(p, 'utf8')}; });
@@ -45,6 +48,7 @@ function createRenderer(opts){
     const dom = new JSDOM(html, {url: opts.siteUrl + routePath, runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc});
     const w = dom.window;
     stub(w);
+    if(opts.preview) w.document.documentElement.setAttribute('data-preview', '');
     /* What the app removes from the page (the intro veil on deep links) is put back before serialising, so every
        prerendered page carries the same markup as index.html and the browser's copy of the app finds what it expects. */
     const veil = w.document.getElementById('veil');

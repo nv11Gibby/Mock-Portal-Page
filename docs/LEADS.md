@@ -50,6 +50,10 @@ Files:
 
 ## 2. The config files (change these, not the code)
 
+The three JSON files below are bundled into each function by esbuild (`lib/config.js` requires them with static
+paths) and are never published: `npm run build` leaves them out of `dist/shared` on purpose, and `tests/seo.js`
+checks that it does. A change takes effect on the next deploy.
+
 ### `shared/lead-routing.json`
 
 `divisions` holds one entry per division key (`citizenship`, `private-office`, `partners-club`, `academy`,
@@ -78,7 +82,7 @@ Current routing (15 October 2026 snapshot):
 To find the user ids once the token exists (read-only call, safe to run):
 
 ```
-curl -s "https://api.pipedrive.com/v1/users?api_token=$PIPEDRIVE_API_TOKEN" | python3 -c "import json,sys; [print(u['id'], u['name'], u['email']) for u in json.load(sys.stdin)['data']]"
+curl -s -H "x-api-token: $PIPEDRIVE_API_TOKEN" https://api.pipedrive.com/v1/users | python3 -c "import json,sys; [print(u['id'], u['name'], u['email']) for u in json.load(sys.stdin)['data']]"
 ```
 
 Put each id in `owner`, commit, deploy. The audience from the form still sets the Contact Type (Client 230,
@@ -118,9 +122,13 @@ Well known throwaway email providers. Checked case-insensitively, including subd
 | Phone | Person phone, in E.164 when a country code was given; Verification Status Not Verified (983) at creation, Verified (982) after a successful code |
 | Everything else, every tracking field, the message, the score reasons, the Netlify submission id or the direct reference | The note on the person and the lead or deal |
 
-Lead labels: the Leads API has its own label set, so the deal label ids may be rejected on a lead. The core tries
-`label_ids` first and, if the API rejects it, creates the lead without it. The title prefix and the note carry the
-score either way, so nothing is lost. Deals accept the label ids.
+Lead labels: the Leads inbox has its own label set with UUID ids, separate from the deal labels (787, 788, 827), which
+the Leads API rejects. The core reads the account's lead labels once per function instance (`GET /leadLabels`, cached
+for ten minutes) and sends the first label whose name starts with Hot, Warm or Cold (the exploring band) in
+`label_ids`. Nothing is created in the account: if no label matches, the lead goes without one, and the title prefix
+and the note carry the score either way. TO CONFIRM: that the three Leads inbox labels exist with those leading words
+(the snapshot lists only the deal labels). Deals take the numeric deal label ids. `visible_to` is sent as a string on
+leads (the Leads API types it so) and as a number on deals, persons and organisations.
 
 ### Score
 
@@ -150,20 +158,55 @@ assigned to the division owner.
 * Rate limit: 5 submissions per 10 minutes per IP (`reason: rate`), as a token bucket in the memory of the function
   instance. This is best effort on serverless: each instance keeps its own buckets, a cold start empties them, and
   parallel instances do not share them. It stops a casual flood; Turnstile and Netlify's own filter do the rest.
-  `verify` start is limited the same way, and code checks to 10 per 10 minutes.
+* SMS pumping: every `verify` start costs a Twilio send, and an attacker who can start verifications at will runs up
+  the bill on numbers they control (toll fraud) until Twilio suspends the account, which would switch the step off
+  for real leads. The function therefore brakes a start four ways, all best effort: (1) the request must carry an
+  email or a submission reference next to the phone, as the page sends after an enquiry (`reason: enquiry`
+  otherwise; this is a shape check, not a proof); (2) at most 5 starts per address per hour and 3 per phone number
+  per hour, in the same in-memory buckets as above (`reason: rate`), with one shared bucket when no client address
+  is known so the limit never silently switches off; code checks stay at 10 per address per 10 minutes; (3) when
+  `TURNSTILE_SECRET_KEY` is set, a start needs a fresh `cf-turnstile-response` token like a submission (`reason:
+  turnstile`; the page mints one for the start and for the resend; a missing token is refused without asking
+  Cloudflare, and the outage rule above applies). (4) Nothing in the function can prove that the enquiry was stored:
+  the Netlify Forms path returns no reference and a Pipedrive lookup at start would race `submission-created` (the
+  person is created a moment after the page calls start), so no CRM check is made. The backstop is in the Twilio
+  console: switch on Verify Fraud Guard and set the service rate limits for the Verify service (TO CONFIRM: who holds
+  the Twilio account), and watch the function log for `verify start rejected reason=rate` bursts.
 * Phone verification (`verify.js`): `{action:'start', phone, email, channel}` sends a code through Twilio Verify and
   answers `{ok:true, enabled:true, ref}`; without the Twilio env it answers `{ok:true, enabled:false}` and the page
-  skips the step. `{action:'check', ref, phone, code, email}` answers `{ok:true, verified:true}` after a good code,
-  sets Verification Status to Verified and adds a note on the person's newest open lead or deal; a wrong code answers
-  `{ok:true, verified:false, reason:'code'}`, an expired one `reason:'expired'`. A skipped step leaves the lead Not
-  Verified, which the core set at creation. The number must carry a country code (`+` or `00`).
+  skips the step. `{action:'check', ref, phone, code, email}` answers `{ok:true, verified:true, recorded:true}` after
+  a good code, sets Verification Status to Verified and adds a note on the person's newest open lead or deal; a wrong
+  code answers `{ok:true, verified:false, reason:'code'}`, an expired one `reason:'expired'`. A skipped step leaves
+  the lead Not Verified, which the core set at creation. The number must carry a country code (`+` or `00`).
+* Who gets marked: only the person who holds the verified number. `markVerified()` looks the person up by phone
+  first; a person found by the email in the request is accepted only when one of their numbers is the number Twilio
+  approved, so naming someone else's email never marks that person. Because the page checks the code while
+  `submission-created` may still be writing the person (or adding the phone to a returning person), the lookup is
+  repeated up to four times, 1.5 seconds apart. When nobody holds the number by then, the answer is
+  `{ok:true, verified:true, recorded:false, reason:'person'|'mismatch'}`: the code was right, nothing was written,
+  and the function log carries a warning (`verify check: code accepted but not recorded reason=...`) so the team
+  can mark the person by hand. The page tells the visitor the code was accepted and does not ask for it again
+  (Twilio removes an approved verification, so a second check would fail).
 
 ## 5. Confirmation email
 
 `sendConfirmation()` in `lib/email.js` sends one short plain text email through the Resend HTTPS API when
 `EMAIL_API_KEY` and `EMAIL_FROM` are set: thank you, which division will be in touch, one next step (reply with a
-good time, or call the office; both office numbers), signed by the named mailbox. Nothing is sent without the env.
-It is sent only when the lead is stored (in Pipedrive, or as a Netlify Forms submission).
+good time, or call the office; both office numbers), signed "Imperial Holdings Group" with the address part of
+`EMAIL_FROM` (the sending mailbox; the office mailbox from the routing file only when no sender is set). Nothing is
+sent without the env. It is sent only when the lead is stored (in Pipedrive, or as a Netlify Forms submission), and
+only to the submitted address.
+
+Every line is fixed text. The only values from the submission are the division name (from the routing file, chosen
+by the division key) and the greeting: "Dear <first name>," when the first word of the name is a plain word (letters,
+with apostrophes or hyphens inside, up to 40 characters), otherwise "Hello,". A name such as a URL or a token with
+digits never reaches the mail, so the named mailbox cannot be used to relay text a sender chose.
+
+Three variants: an enquiry (the default), a guide request (form `guide`, title suffix "(guide)": "Thank you for
+requesting the guide. It will follow by email from the team"; the function attaches nothing, the division owner
+sends the approved PDF by reply, and once `config.guide.file` is set in data.js its URL belongs in this variant),
+and a register interest form (form `interest`, Imperial Real Estate, which has not launched: "we will write to you
+when it opens", with "reply or call" instead of an invitation to a first conversation).
 TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 
 ## 6. Environment variables (Netlify: Site configuration > Environment variables)
@@ -171,11 +214,12 @@ TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 | Variable | Needed for | Notes |
 |---|---|---|
 | `PIPEDRIVE_API_TOKEN` | Everything in Pipedrive | Pipedrive > Personal preferences > API. Without it leads stay in the Netlify Forms inbox only and the direct endpoint answers `reason: unconfigured`. |
-| `TURNSTILE_SECRET_KEY` | Turnstile check | Pair of the site key in `D.config.turnstileSiteKey`. Off when empty. |
+| `TURNSTILE_SECRET_KEY` | Turnstile check on submissions and on `verify` start | Pair of the site key in `D.config.turnstileSiteKey`. Off when empty. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Phone verification | All three or nothing; the step is skipped without them. |
 | `EMAIL_API_KEY`, `EMAIL_FROM` | Confirmation email | Resend API key and the named mailbox, for example `Imperial Holdings Group <enquiries@...>`. Off when either is empty. |
 | `EMAIL_REPLY_TO` | Confirmation email | Optional reply address. |
 | `LEAD_RATE_LIMIT`, `LEAD_RATE_WINDOW_MINUTES` | Rate limit | Defaults 5 and 10. |
+| `VERIFY_RETRY_DELAY_MS` | Phone verification | Pause between the person lookups after a good code (section 4). Default 1500; the offline tests set 0. |
 | `LEAD_ALLOWED_ORIGINS` | Other Imperial sites | Comma separated origins allowed to call `lead` and `verify` besides the site's own origin. |
 | `LEAD_SITE` | Site key | Default `ihg`; the hidden `site` field overrides it per submission. |
 
@@ -191,10 +235,15 @@ Runs `node --test tests/functions/*.test.js` (Node 22, built-in test runner, no 
 replaces `fetch` with an in-memory Pipedrive, Turnstile, Twilio and Resend, records every request and lets the tests
 assert on what was written. Covered: each of the six division choices (kind, owner, pipeline, stage, score, note with
 every tracking field), the owner from the config file, disposable email, honeypot, Turnstile pass and fail, dedupe by
-email and by phone with note and activity, reuse of an open record, rate limit, lead label fallback, nationality and
+email and by phone with note and activity, reuse of an open record, rate limit, lead labels read from the account (and
+none when nothing matches), nationality and
 country matching, guide and interest defaults, programme fit and partner details, no token, Pipedrive failure, the
-confirmation email, `markVerified`, the direct endpoint (origin, methods, bodies, references), the Netlify event, the
-score table, and the verify function (start without env, start with env, rate limit, right code, wrong code).
+confirmation email (the greeting rule and the three variants), a returning person whose full record cannot be
+fetched, prototype keys, `markVerified` (retries, phone first, mismatch), the direct endpoint (origin, methods,
+bodies, references), the Netlify event, the score table (including a search engine referrer), phone normalisation
+(`validate.test.js`), and the verify function (start without env, start with env, the per address and per phone
+limits, the shared bucket without an address, the email or reference requirement, Turnstile on start, provider
+errors kept out of the answer, right code, wrong code, a right code nobody holds).
 
 Nothing in the tests or the code calls a live service without its env; the tests clear the env they do not want.
 
@@ -204,6 +253,14 @@ Prerequisites: the site is deployed on Netlify, `PIPEDRIVE_API_TOKEN` is set, th
 `shared/lead-routing.json` (or left at 0 for the token's user) and deployed. Each step writes a real record in
 Pipedrive; agree with the team first who deletes the test records afterwards.
 
+Also before launch: switch on Netlify form notifications (Site configuration > Forms > Form notifications, an email
+notification per form: `enquiry`, `contact`, `interest`, `guide`) to the enquiries mailbox (TO CONFIRM: which mailbox).
+The Netlify Forms inbox is the safety net when the function rejects or fails a submission (`reason=turnstile`,
+`reason=rate`, `reason=sync`): the visitor still sees the thank you state and no confirmation email goes out for
+turnstile and rate, so without a notification nobody looks at those submissions. The function log line carries the
+reason and, for Turnstile, the detail (`detail=missing token` when the Turnstile script was blocked in the browser,
+or Cloudflare's error codes).
+
 1. Open the deployed site, go to Contact, choose "Citizenship or residency for my family", fill the form with a
    real mailbox you can read, a phone with country code, timeline "Within 3 months", any budget band, and a message
    that starts with `TEST`. Submit.
@@ -211,7 +268,11 @@ Pipedrive; agree with the team first who deletes the test records afterwards.
    `submission-created ok form=contact division=citizenship kind=lead id=... score=hot ref=N...`.
 3. In Pipedrive: Leads inbox has `[HOT] Website: <name> · Imperial Citizenship` with the owner, the Division field, a
    note with the message, the score line and every tracking field, and the person with Verification Status
-   Not Verified. Record the lead id.
+   Not Verified. Record the lead id. Check the note's `referrer:` line against the page that first brought you to
+   the site: Netlify adds its own `referrer` (the page that posted the form) to the submission data, and if it wins
+   over the page's first-touch field, add a field with a name Netlify does not use (for example `ref_first`) to
+   `shared/lead-schema.json`, the hidden forms and `trackFields()`, and let `noteLines()` prefer it. TO CONFIRM on
+   this step; not verifiable offline.
 4. Repeat step 1 for the other five choices (Private Office, Partners Club with a firm and profession, Academy, Real
    Estate with buy or rent and an area, Group). Expect leads for Private Office and Real Estate, deals in Introducer
    Pipeline [2026] > Introducer IN for Partners Club and Academy, and a deal in Opportunity Requests > New Request for

@@ -29,8 +29,9 @@ stop any enquiry from arriving. Issues are listed in section 5.
    step is enabled), `EMAIL_API_KEY` and `EMAIL_FROM` (so the confirmation email path runs against the Resend mock),
    `TURNSTILE_SECRET_KEY` unset. Global `fetch` is replaced by the mock: person search returns nothing until the
    harness has created that email or phone; POST persons, organisations, leads, deals, notes and activities return ids
-   and keep the bodies; PUT persons is recorded; the Leads API rejects deal label ids as the real one does, so the
-   core's retry without a label is exercised; Twilio start always succeeds and check approves `123456` only; Resend
+   and keep the bodies; PUT persons is recorded; the Leads API accepts only the UUIDs of its own lead labels, which the
+   mock serves from `GET /leadLabels` (Hot Lead, Warm lead, Cold Lead), as the real one does; Twilio start always
+   succeeds and check approves `123456` only; Resend
    returns an id. Every call is written to `tests/e2e-output/mock-log.json` with the test that caused it, the method,
    path, query (token removed), body, status and response. `results.json` and `summary.md` sit next to it. The
    directory is ignored by git.
@@ -93,9 +94,11 @@ Every note carried the thirteen tracking lines with the values the page captured
 `campaign: e2e-...`, the five `utm_*`, empty `gclid` and `fbclid`, `landing` and `page` as the full contact URL,
 `referrer` empty), the Netlify submission id, "Verification: Not Verified (code not entered yet)" and the score reasons.
 Owner: every division has `owner: 0` in `shared/lead-routing.json` (TO CONFIRM), so no `owner_id` or `user_id` is sent
-and Pipedrive will assign the token's user; the harness asserts the absence. Lead labels: the first POST to `/leads`
-carries the deal label id and is rejected (the Leads API wants its own label UUIDs, which the mock mirrors); the core
-retries without, and the score stays in the title prefix and the note. Deals accept the label ids.
+and Pipedrive will assign the token's user; the harness asserts the absence. Lead labels: since the fix round the core
+reads the account's Leads inbox labels (`GET /leadLabels`, UUID ids) and sends the one whose name starts with Hot, Warm
+or Cold in a single POST to `/leads`; the numeric deal label ids are never sent to the Leads API, and the score stays
+in the title prefix and the note. Deals take the deal label ids. The result rows above were recorded before that
+change (two POSTs per lead); a rerun of the harness refreshes them.
 
 ## 4. What the person sees
 
@@ -137,7 +140,8 @@ retries without, and the score stays in the title prefix and the note. Deals acc
 4. **Low. Stale comment in `netlify.toml`** (lines 16 to 18): it lists `PIPEDRIVE_OWNER_CLIENTS`,
    `PIPEDRIVE_OWNER_PARTNERS`, `PIPEDRIVE_OWNER_INSTITUTIONS`, `PIPEDRIVE_PIPELINE_*` and `PIPEDRIVE_STAGE_*` as
    optional environment variables; nothing reads them. Owners, pipelines and stages live in `shared/lead-routing.json`
-   and the real variables are in `docs/LEADS.md` section 6.
+   and the real variables are in `docs/LEADS.md` section 6. Fixed in the fix round: the comment now lists the
+   variables from section 6 and points at the routing file for owners, pipelines and stages.
 5. **Low. No `test:a11y` script.** The build contract and the task brief mention it among the local tools; `package.json`
    has `check`, `smoke`, `test:functions`, `test:seo`, `build` and now `test:e2e`. Nothing to run for accessibility.
 6. **Info.** `lead.js` answers `{ok, ref, kind}` without the record id, by design (the page shows the reference only).

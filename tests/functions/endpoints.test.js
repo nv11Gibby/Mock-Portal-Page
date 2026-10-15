@@ -5,6 +5,7 @@ const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { createMock } = require('./_mock');
 const ratelimit = require('../../netlify/functions/lib/ratelimit');
+const pipedrive = require('../../netlify/functions/lib/pipedrive');
 const lead = require('../../netlify/functions/lead');
 const created = require('../../netlify/functions/submission-created');
 
@@ -23,6 +24,7 @@ let m;
 beforeEach(() => {
   m = createMock().install();
   ratelimit.reset();
+  pipedrive.resetLeadLabelCache();
   process.env.PIPEDRIVE_API_TOKEN = 'test-token';
   delete process.env.TURNSTILE_SECRET_KEY;
   delete process.env.LEAD_ALLOWED_ORIGINS;

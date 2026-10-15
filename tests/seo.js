@@ -20,6 +20,7 @@ const DIR = path.resolve(process.argv[2] || path.join(ROOT, 'dist'));
 const PORT = parseInt(process.argv[3] || '8776', 10);
 const BASE = 'http://127.0.0.1:' + PORT;
 const LAUNCH = process.env.LAUNCH === '1';
+const PREVIEW = process.env.BUILD_PREVIEW === '1';
 
 const sandbox = {window: {}};
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'assets/js/data.js'), 'utf8'), sandbox, {filename: 'data.js'});
@@ -41,6 +42,41 @@ function ldBlocks(html){
   return out;
 }
 function types(blocks){ return blocks.map(function(b){ return b['@type']; }); }
+
+/* Hero preloads. The first hero image as the page renders it (the home picture in figure.dusk, the pageHero image in
+   the .ph section, or the not-found backdrop), with its mobile source when the markup gives one, is what the build
+   must preload: nothing else, and nothing over 200 KB (an oversize hero is left out and reported, not preloaded).
+   Derived here from the markup, independently of build/build.js. */
+const HERO_LIMIT = 200 * 1024;
+function fileSize(href){ try{ return fs.statSync(path.join(DIR, href.replace(/^\//, '').split('?')[0])).size; }catch(e){ return -1; } }
+function heroImages(html){
+  const body = html.slice(html.indexOf('<body'));
+  const m = /<figure class="dusk">|<section class="(?:ph|nf)(?:\s[^"]*)?"><div class="ph-bg"/.exec(body);
+  if(!m) return [];
+  const rest = body.slice(m.index);
+  const img = /<img[^>]*>/.exec(rest); if(!img) return [];
+  const src = attr(img[0], /\ssrc="([^"]+)"/); if(!src) return [];
+  const out = [{href: src, media: ''}];
+  rest.slice(0, img.index).replace(/<source media="([^"]+)" srcset="([^"]+)"/g, function(mm, media, srcset){ out.push({href: srcset.split(',')[0].trim().split(/\s+/)[0], media: media}); return mm; });
+  const mob = out.filter(function(x){ return /max-width:\s*(\d+)px/.test(x.media); })[0];
+  if(mob) out[0].media = '(min-width:' + (parseInt(/max-width:\s*(\d+)px/.exec(mob.media)[1], 10) + 1) + 'px)';
+  return out.map(function(x){ x.size = fileSize(x.href); return x; });
+}
+function key(x){ return x.href + (x.media ? ' ' + x.media : ''); }
+function expectedPreloads(html){ return heroImages(html).filter(function(x){ return x.size >= 0 && x.size <= HERO_LIMIT; }).map(key); }
+function actualPreloads(html){
+  const out = [];
+  html.slice(0, html.indexOf('<body')).replace(/<link rel="preload" as="image" href="([^"]+)"(?: media="([^"]+)")?/g, function(m, href, media){ out.push(key({href: href, media: media || ''})); return m; });
+  return out;
+}
+const oversize = {};
+function preloadProblems(html, label){
+  const want = expectedPreloads(html), got = actualPreloads(html), problems = [];
+  if(got.join(' | ') !== want.join(' | ')) problems.push('preloads [' + got.join(', ') + '] expected [' + want.join(', ') + ']');
+  got.forEach(function(k){ const s = fileSize(k.split(' ')[0]); if(s < 0 || s > HERO_LIMIT) problems.push('preload ' + k + ' is ' + (s < 0 ? 'missing' : Math.round(s / 1024) + ' KB')); });
+  heroImages(html).forEach(function(x){ if(x.size > HERO_LIMIT) (oversize[x.href] = oversize[x.href] || []).push(label); });
+  return problems;
+}
 
 function startServer(){
   return new Promise(function(resolve, reject){
@@ -84,6 +120,16 @@ function startServer(){
       if(/^\/journal\/events\/./.test(route) && ty.indexOf('Event') < 0) problems.push('no Event');
       if(titles[title]) problems.push('title also on ' + titles[title]); titles[title] = route;
       if(descs[desc]) problems.push('description also on ' + descs[desc]); descs[desc] = route;
+      preloadProblems(h, route).forEach(function(p){ problems.push(p); });
+      /* consent gating in the markup: an event's photographs are prerendered on a preview build (or once the event
+         records consent) and absent otherwise, with the matching gallery note */
+      if(/^\/journal\/events\//.test(route)){
+        const ev = D.events.filter(function(e){ return '/journal/events/' + e.slug === route; })[0] || {};
+        const show = PREVIEW || !!ev.consent, has = h.indexOf('/assets/img/events/' + ev.slug + '/01.webp') > -1;
+        if(ev.n > 0 && has !== show) problems.push('gallery photographs ' + (has ? 'present' : 'absent') + ' on a ' + (PREVIEW ? 'preview' : 'production') + ' build');
+        if(show && !ev.consent && h.indexOf('Preview build: photographs of guests are shown before their consent is recorded.') < 0) problems.push('preview gallery note missing');
+        if(!show && h.indexOf('Photographs will appear once guests have confirmed') < 0) problems.push('consent gallery note missing');
+      }
       ok(!problems.length, label + (title || '').slice(0, 60), problems.join('; '));
     }
     /* search assets */
@@ -115,8 +161,21 @@ function startServer(){
     ok(LAUNCH ? !/^\s*X-Robots-Tag:/m.test(headers) : /^\s*X-Robots-Tag: noindex/m.test(headers), '_headers robots header matches LAUNCH=' + (LAUNCH ? '1' : '0'));
     const redirects = fs.readFileSync(path.join(DIR, '_redirects'), 'utf8');
     ok(!/^\/\*\s/m.test(redirects), '_redirects has no catch-all rewrite');
-    const heroes = []; index.replace(/<link rel="preload" as="image" href="([^"]+)"/g, function(m, href){ let s = -1; try{ s = fs.statSync(path.join(DIR, href.replace(/^\//, '').split('?')[0])).size; }catch(e){} heroes.push({href: href, size: s}); return m; });
-    ok(heroes.length > 0 && heroes.every(function(x){ return x.size > 0 && x.size <= 200 * 1024; }), 'hero preloads under 200 KB: ' + heroes.map(function(x){ return x.href + ' ' + Math.round(x.size / 1024) + ' KB'; }).join(', '));
+    /* hero preloads: the home page carries its desktop and mobile hero; 404.html and error.html their backdrop */
+    const homePre = actualPreloads(index);
+    ok(homePre.length === 2 && homePre.some(function(k){ return /max-width/.test(k); }) && homePre.some(function(k){ return /min-width/.test(k); }) && !preloadProblems(index, '/').length, 'home page preloads its own desktop and mobile hero: ' + homePre.join(', '));
+    ['404.html', 'error.html'].forEach(function(f){
+      const h = fs.readFileSync(path.join(DIR, f), 'utf8'), p = preloadProblems(h, f);
+      ok(!p.length && actualPreloads(h).length === 1, f + ' preloads its own backdrop only', p.join('; ') || actualPreloads(h).join(', '));
+    });
+    const big = Object.keys(oversize);
+    if(big.length) console.log('warn hero over 200 KB, not preloaded (re-export under 200 KB): ' + big.map(function(h){ return h + ' ' + Math.round(fileSize(h) / 1024) + ' KB on ' + oversize[h].join(', '); }).join('; '));
+    /* the lead config never reaches the public site: dist/shared holds the public files only */
+    const shared = fs.existsSync(path.join(DIR, 'shared')) ? fs.readdirSync(path.join(DIR, 'shared')) : [];
+    const privateLeft = shared.filter(function(f){ return /^(lead-routing|lead-schema|disposable-domains)\.json$/.test(f); });
+    const publicMissing = ['tokens.css', 'analytics.js', 'ecosystem.json', 'chrome'].filter(function(f){ return shared.indexOf(f) < 0; });
+    const routingHttp = await get(BASE + '/shared/lead-routing.json');
+    ok(!privateLeft.length && !publicMissing.length && routingHttp.status === 404, 'dist/shared: no lead JSON published (' + shared.join(', ') + ')', (privateLeft.length ? 'published ' + privateLeft.join(',') : '') + (publicMissing.length ? ' missing ' + publicMissing.join(',') : '') + ' /shared/lead-routing.json status ' + routingHttp.status);
   } finally {
     server.kill();
   }

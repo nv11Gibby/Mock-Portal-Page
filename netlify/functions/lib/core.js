@@ -29,17 +29,19 @@ function esc(s) { return String(s === undefined || s === null ? '' : s).replace(
 function label(field, value) { const f = schema.fields[field]; return (f && f.labels && f.labels[value]) || value || ''; }
 function dateOnly(ms) { return new Date(ms).toISOString().slice(0, 10); }
 function addDays(ms, days) { return dateOnly(ms + days * 86400000); }
+/* Own keys only: a form, site or division named "constructor" or "__proto__" must not pass through the prototype. */
+function has(obj, key) { return !!key && Object.prototype.hasOwnProperty.call(obj, key); }
 
 function resolveSite(data, ctx) {
-  if (data.site && schema.sites[data.site]) return data.site;
-  if (ctx.site && schema.sites[ctx.site]) return ctx.site;
+  if (has(schema.sites, data.site)) return data.site;
+  if (has(schema.sites, ctx.site)) return ctx.site;
   return 'ihg';
 }
 
 function resolveDivision(form, data, site) {
-  const formCfg = schema.forms[form] || {};
+  const formCfg = has(schema.forms, form) ? schema.forms[form] : {};
   const candidates = [data.division, data.about, formCfg.defaultDivision, schema.sites[site].defaultDivision, 'group'];
-  for (let i = 0; i < candidates.length; i++) if (candidates[i] && routing.divisions[candidates[i]]) return candidates[i];
+  for (let i = 0; i < candidates.length; i++) if (has(routing.divisions, candidates[i])) return candidates[i];
   return 'group';
 }
 
@@ -138,6 +140,7 @@ async function syncPipedrive(o) {
   let person = await pd.findPersonByEmail(o.email);
   if (!person && phoneValue) person = await pd.findPersonByPhone(phoneValue);
   const existed = !!person;
+  let personUnchanged = false;
 
   /* organisation, when a firm or company is named */
   let org = null;
@@ -161,17 +164,23 @@ async function syncPipedrive(o) {
     if (o.matched.country) body[F.person.countryOfResidence] = o.matched.country;
     person = await pd.createPerson(body);
   } else {
-    const full = (await pd.getPerson(person.id).catch(() => null)) || person;
-    const upd = {};
-    const emails = (full.email || []).filter((e) => e && e.value);
-    if (!emails.some((e) => String(e.value).toLowerCase() === o.email)) upd.email = emails.concat([{ value: o.email, primary: emails.length === 0, label: 'work' }]);
-    const phones = (full.phone || []).filter((p) => p && p.value);
-    if (phoneValue && !phones.some((p) => samePhone(p.value, phoneValue))) upd.phone = phones.concat([{ value: phoneValue, primary: phones.length === 0, label: 'work' }]);
-    if (!full[F.person.verificationStatus]) upd[F.person.verificationStatus] = O.verificationStatus.notVerified;
-    if (o.matched.nationality && !full[F.person.nationality]) upd[F.person.nationality] = o.matched.nationality;
-    if (o.matched.country && !full[F.person.countryOfResidence]) upd[F.person.countryOfResidence] = o.matched.country;
-    if (org && !full.org_id) upd.org_id = org.id;
-    if (Object.keys(upd).length) await pd.updatePerson(person.id, upd).catch((err) => console.warn('person update failed', err && err.message));
+    /* The merge needs the full person: Pipedrive replaces the whole email and phone lists on PUT, and the search item
+       carries them under other names (emails, phones) without the custom fields. When the fetch fails (a 429 on a
+       burst, a transient 5xx) nothing is written to the person: a new email or phone is at worst not added, and the
+       note below carries it, rather than a list being overwritten on exactly the returning clients the dedupe protects. */
+    const full = await pd.getPerson(person.id).catch((err) => { console.warn('person fetch failed, person left unchanged', err && err.message); return null; });
+    if (full) {
+      const upd = {};
+      const emails = (full.email || []).filter((e) => e && e.value);
+      if (!emails.some((e) => String(e.value).toLowerCase() === o.email)) upd.email = emails.concat([{ value: o.email, primary: emails.length === 0, label: 'work' }]);
+      const phones = (full.phone || []).filter((p) => p && p.value);
+      if (phoneValue && !phones.some((p) => samePhone(p.value, phoneValue))) upd.phone = phones.concat([{ value: phoneValue, primary: phones.length === 0, label: 'work' }]);
+      if (!full[F.person.verificationStatus]) upd[F.person.verificationStatus] = O.verificationStatus.notVerified;
+      if (o.matched.nationality && !full[F.person.nationality]) upd[F.person.nationality] = o.matched.nationality;
+      if (o.matched.country && !full[F.person.countryOfResidence]) upd[F.person.countryOfResidence] = o.matched.country;
+      if (org && !full.org_id) upd.org_id = org.id;
+      if (Object.keys(upd).length) await pd.updatePerson(person.id, upd).catch((err) => console.warn('person update failed', err && err.message));
+    } else personUnchanged = true;
   }
 
   /* 2. lead or deal: reuse an open one of the same division for a returning person */
@@ -189,7 +198,11 @@ async function syncPipedrive(o) {
       const deal = await pd.createDeal(body);
       kind = 'deal'; id = deal.id;
     } else {
-      const body = Object.assign({ title, person_id: person.id, visible_to: PD.visibleTo, label_ids: [labelId] }, fields);
+      /* Leads: visible_to is a string enum in the Leads API (a number on deals), and the label is the account's own
+         Leads inbox label for the band (a UUID from GET /leadLabels), never the numeric deal label id. */
+      const body = Object.assign({ title, person_id: person.id, visible_to: String(PD.visibleTo) }, fields);
+      const leadLabel = await pd.leadLabelId(o.score.band);
+      if (leadLabel) body.label_ids = [leadLabel];
       if (org) body.organization_id = org.id;
       if (owner) body.owner_id = owner;
       const lead = await pd.createLead(body);
@@ -212,7 +225,7 @@ async function syncPipedrive(o) {
     activity = !!(await pd.addActivity(act).then(() => true).catch((err) => { console.warn('activity failed', err && err.message); return false; }));
   }
 
-  return { kind, id, personId: person.id, personExisted: existed, reused, labelRejected, activity, orgId: org ? org.id : undefined };
+  return { kind, id, personId: person.id, personExisted: existed, personUnchanged, reused, labelRejected, activity, orgId: org ? org.id : undefined };
 }
 
 /* input: {form, data, ctx:{ip, site, ref, submissionId, createdAt, fetch}, now} */
@@ -224,7 +237,7 @@ async function processLead(input) {
   const result = { ok: false, form, ref: ctx.ref || newRef(now) };
 
   if (honeypotTripped(raw)) return Object.assign(result, { reason: 'honeypot' });
-  if (!schema.forms[form]) return Object.assign(result, { reason: 'form' });
+  if (!has(schema.forms, form)) return Object.assign(result, { reason: 'form' });
   const data = pick(raw);
 
   if (ctx.ip) {
@@ -277,21 +290,41 @@ async function processLead(input) {
 }
 
 /* After a successful code check: Verification Status = Verified on the person, a note on the newest open lead or deal.
-   The person may be created a moment after the form was sent, so one retry follows a short pause. */
+   Only the person who holds the verified number is marked: the lookup is by phone first; a person found by email is
+   accepted only when one of their numbers is the number Twilio approved (an email in the request body is never enough
+   on its own). The person, or the phone on a returning person, may be written by submission-created a moment after the
+   code is checked, so the lookup is repeated up to o.attempts times (default 4), o.retryDelayMs apart (default 1500 ms,
+   about 6 s in all, inside Netlify's default function timeout). Result: {ok:true, personId, kind, id} or
+   {ok:false, reason:'unconfigured'|'person'|'mismatch'|'sync'}; mismatch means a person with that email exists but
+   does not hold the number, and nothing was written. */
 async function markVerified(o) {
   const token = config.pipedriveToken();
   if (!token) return { ok: false, reason: 'unconfigured' };
   const pd = pipedrive.client(token, o.fetch);
   const now = o.now || Date.now();
   const email = checkEmail(o.email).email || '';
+  const phone = o.phone || '';
+  const attempts = Math.max(1, Number(o.attempts) || 4);
+  const delay = o.retryDelayMs === undefined ? 1500 : o.retryDelayMs;
+  const holds = (p) => (p.phone || []).some((ph) => ph && samePhone(ph.value, phone));
   try {
-    const find = async () => (email ? await pd.findPersonByEmail(email) : null) || (o.phone ? await pd.findPersonByPhone(o.phone) : null);
-    let person = await find();
-    if (!person) {
-      await new Promise((r) => setTimeout(r, o.retryDelayMs === undefined ? 1500 : o.retryDelayMs));
-      person = await find();
+    let person = null, mismatch = false;
+    for (let i = 0; i < attempts && !person; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, delay));
+      if (phone) person = await pd.findPersonByPhone(phone);
+      if (!person && email) {
+        const byEmail = await pd.findPersonByEmail(email);
+        if (byEmail) {
+          const full = await pd.getPerson(byEmail.id).catch(() => null);
+          if (full && holds(full)) person = byEmail;
+          else mismatch = true;
+        }
+      }
     }
-    if (!person) return { ok: false, reason: 'person' };
+    if (!person) {
+      if (mismatch) console.warn('verification not recorded: the person found by email does not hold the verified number');
+      return { ok: false, reason: mismatch ? 'mismatch' : 'person' };
+    }
     const upd = {};
     upd[F.person.verificationStatus] = O.verificationStatus.verified;
     await pd.updatePerson(person.id, upd);
@@ -308,7 +341,7 @@ async function markVerified(o) {
 
 function summary(fn, r) {
   return [fn, r.ok ? 'ok' : 'rejected', 'form=' + (r.form || ''), 'division=' + (r.division || ''), 'kind=' + (r.kind || ''), 'id=' + (r.id || ''),
-    'score=' + (r.score || ''), 'ref=' + (r.ref || ''), r.reason ? 'reason=' + r.reason : '', r.reused ? 'reused=1' : '', r.personExisted ? 'returning=1' : '',
+    'score=' + (r.score || ''), 'ref=' + (r.ref || ''), r.reason ? 'reason=' + r.reason : '', r.detail ? 'detail=' + r.detail : '', r.reused ? 'reused=1' : '', r.personExisted ? 'returning=1' : '', r.personUnchanged ? 'person=unchanged' : '',
     r.confirmation ? 'email=' + (r.confirmation.sent ? 'sent' : (r.confirmation.skipped || r.confirmation.error || 'no')) : ''].filter(Boolean).join(' ');
 }
 

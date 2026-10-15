@@ -46,13 +46,18 @@ function checkEmail(value) {
   return { ok: true, email: e, domain };
 }
 
-/* E.164 when the number carries a country code (+ or 00), otherwise '' (the raw text is still kept on the person). */
+/* E.164 when the number carries a country code (+ or 00), otherwise '' (the raw text is still kept on the person).
+   A trunk zero written after the country code, as in +234 (0) 902 222 2024 or +44 07700 900123, is dropped: a "(0)"
+   group anywhere, and a single 0 straight after the code for the countries the site serves (Nigeria +234, the UAE
+   +971, the United Kingdom +44), whose national numbers never start with 0 in E.164. */
+const TRUNK_ZERO_RE = /^\+(234|971|44)0(?=\d)/;
 function phoneE164(raw) {
   let s = clean(raw, 40);
   if (!s) return '';
-  s = s.replace(/[\s().-]/g, '');
+  s = s.replace(/\(\s*0\s*\)/g, '').replace(/[\s().-]/g, '');
   if (s.indexOf('00') === 0) s = '+' + s.slice(2);
   if (s.charAt(0) !== '+') return '';
+  s = s.replace(TRUNK_ZERO_RE, '+$1');
   return /^\+[1-9]\d{6,14}$/.test(s) ? s : '';
 }
 
