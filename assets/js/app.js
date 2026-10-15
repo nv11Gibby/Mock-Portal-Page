@@ -482,7 +482,7 @@ function jErr(f){ return J_ERR[f.name] || (f.type==='choice' || f.type==='multi'
 function jWhen(f){ return f.when ? ' data-when="'+esc(JSON.stringify(f.when))+'"' : ''; }
 /* one choice card: the option, its sub line and, for a routing option, the house it goes to */
 function jOpt(f, o, i, name){
-  var attrs = (o.key?' data-key="'+esc(o.key)+'"':'')+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+(o.offerSwitch?' data-offer="'+esc(o.offerSwitch)+'"':'')+(f.dflt===o.v?' checked':'');
+  var attrs = (o.key?' data-key="'+esc(o.key)+'"':'')+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+(o.offerSwitch?' data-offer="'+esc(o.offerSwitch)+'"':'')+(o.text?' data-text':'')+(f.dflt===o.v?' checked':'');
   return '<label><input type="radio"'+(name?' name="'+name+'"':' data-choice="'+f.name+'"')+' value="'+esc(o.v)+'"'+attrs+'><span class="rt">'+(o.routes?'<small>'+esc(o.routes)+'</small>':'')+esc(o.l)+(o.s && !o.offerSwitch?'<em>'+esc(o.s)+'</em>':'')+'</span></label>';
 }
 /* Journey fields. Choices are radio cards (the v5 .routes cards). A multi choice and a choice-or-text keep one hidden
@@ -535,9 +535,13 @@ function jClosing(n, total){
 /* the screens of one path, with its progress bar; the Institutions path carries its division as a hidden field */
 function jScreens(key){
   var j = journeyOf(key); if(!j) return '';
-  var C = D.journeys.closing, list = j.screens, total = list.length;
+  var C = D.journeys.closing, list = j.screens, total = list.length, names = {}, sets = {};
+  /* a field an option sets (the Partners "Introduce a client" option sets for_whom) that no screen of the path asks for
+     travels as a hidden field inside the screens, so it leaves with the path when the person switches */
+  list.forEach(function(s){ var fs = s.fields || []; if(s.variants) Object.keys(s.variants).forEach(function(k){ fs = fs.concat(s.variants[k].fields); }); fs.forEach(function(f){ names[f.name] = 1; (f.options||[]).forEach(function(o){ Object.keys(o.set||{}).forEach(function(k){ sets[k] = 1; }); }); }); });
   return '<ol class="cf-prog" data-prog aria-label="Progress">'+list.map(function(s,i){ return '<li'+(i===0?' class="cur" aria-current="step"':'')+'>'+(i+1)+'. '+esc(s.use?C.short:s.short)+'</li>'; }).join('')+'</ol>'+
     (j.fixedDivision ? '<input type="hidden" name="about" value="'+esc(j.fixedDivision)+'">' : '')+
+    Object.keys(sets).filter(function(k){ return !names[k]; }).map(function(k){ return '<input type="hidden" name="'+esc(k)+'" value="">'; }).join('')+
     list.map(function(s,i){ return s.use ? jClosing(i+1, total) : jScreen(s, i+1, total); }).join('');
 }
 /* the routing card under the first answer: the house it goes to, by its logo, and one plain line */
@@ -1228,13 +1232,6 @@ document.addEventListener('click', function(e){
 });
 
 /* ---------- forms (nothing is sent) ---------- */
-function routingHTML(v){
-  var e=null; D.enquiry.forEach(function(x){if(x.v===v) e=x;}); if(!e) return '';
-  var d = div(e.to);
-  if(!d) return '<div><strong>We will pass this to the Group team.</strong><p>One person will reply and bring in the right house.</p></div>';
-  var go = d.soon ? '<a class="tlink" href="#/divisions/real-estate">Register interest instead'+AR+'</a>' : extLink(d,'tlink', d.cta.real?'Or go direct: '+esc(d.cta.domain):'Visit the website');
-  return '<div>'+logoImg(d,'Black','rlogo')+'<p>Your enquiry will be routed to <strong>'+esc(d.name)+'</strong>'+(d.soon?', which has not yet launched. We will register your interest.':'.')+'</p></div>'+go;
-}
 /* Disposable addresses (brief 3.3): the list the function uses (shared/disposable-domains.json), fetched once, so the
    person is told before the enquiry is sent instead of thanked for a lead the backend then drops. Without the list
    (file://, or the fetch failing) the check passes here and the function's own check still applies. */
@@ -1272,6 +1269,8 @@ function mark(f, show){
    aria-describedby in bindForms and the error box has role="alert"; this names the first invalid field, and how many
    there are, in the live region whenever a step or a form is sent with something missing. */
 function fieldLabel(f){
+  var grp = f.closest('[data-field]'), gl = grp && grp.querySelector('.jl');
+  if(gl) return gl.textContent.replace(/\s+/g,' ').trim();
   if(f.type==='checkbox') return 'Consent';
   if(f.type==='radio') return 'What we can help with';
   var box = f.closest('.field'), s = box && box.querySelector('span');
@@ -1280,7 +1279,7 @@ function fieldLabel(f){
 function errorText(f){
   var box = f.closest('.field,.consent'), em = box && box.querySelector('.em');
   if(em) return em.textContent;
-  var re = f.type==='radio' ? document.getElementById('routeErr') : null;
+  var grp = f.closest('[data-field]'), re = grp ? grp.querySelector('.route-err') : (f.type==='radio' ? document.getElementById('routeErr') : null);
   return re ? re.textContent : 'Please check this field.';
 }
 function announceInvalid(form, bad){
@@ -1329,8 +1328,9 @@ function fallbackHTML(){
 /* drafts: what someone typed survives a reload or a wander round the site, for every form (key ihg-draft-<form>) */
 var DRAFT_SKIP = {'form-name':1, company_url:1, consent:1, 'cf-turnstile-response':1};
 /* the hidden fields worth keeping: what the programme fit check wrote (brief 3.4), so a wander round the site does not
-   turn a programme-fit lead back into a plain website lead */
-var DRAFT_HIDDEN = {lead_source:1, quiz_answers:1};
+   turn a programme-fit lead back into a plain website lead, and the journey's own hidden answers (v6): the path, the
+   division of the Institutions path, the multi choice and the profession choice, which post through hidden inputs */
+var DRAFT_HIDDEN = {lead_source:1, quiz_answers:1, audience:1, about:1, interests:1, profession:1, for_whom:1};
 function draftKey(kind){ return 'ihg-draft-'+kind; }
 function readDraft(kind){ var d = store.get(draftKey(kind)); if(!d && kind==='contact') d = store.get('ihg-contact-draft'); return d; }
 function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && (f.type!=='hidden' || DRAFT_HIDDEN[f.name]) && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
@@ -1343,24 +1343,54 @@ function draftNote(form){
   dn.innerHTML = '<span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button>';
   grid.parentNode.insertBefore(dn, grid);
 }
-function successHTML(title, msg, inner){
+function successHTML(title, msg, inner, chip){
   var burst = ''; for(var i=0;i<8;i++){ var a=i*45*Math.PI/180; burst += '<line x1="'+(50+Math.cos(a)*58).toFixed(1)+'" y1="'+(50+Math.sin(a)*58).toFixed(1)+'" x2="'+(50+Math.cos(a)*66).toFixed(1)+'" y2="'+(50+Math.sin(a)*66).toFixed(1)+'"/>'; }
-  return '<div class="success" role="status" tabindex="-1"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>Read while you wait</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>Send another</span></button></div></div>';
+  return '<div class="success'+(chip?' preview':'')+'" role="status" tabindex="-1">'+(chip?'<div class="jp-preview"><span class="jp-chip">'+esc(chip)+'</span></div>':'')+'<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>'+esc(D.journeys.states.received.next.journal.label)+'</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>'+esc(D.journeys.states.received.next.again.label)+'</span></button></div></div>';
 }
-/* success state: thank you, then the next steps (verification when a phone was given and the endpoint is enabled, then booking) */
+/* The received state of the journey (docs/RELATIONSHIP-JOURNEY.md section 5). The wording follows which route
+   confirmed it: the function answers ok with a reference only after Pipedrive took the record (via lead), so the page
+   can say the message is with the house; a Netlify Forms acceptance (via forms) means Netlify holds the submission and
+   the function runs afterwards, so the page says received by Imperial and being passed on. The Group and the
+   Institutions path say "the Group"; Real Estate adds that it has not launched. */
+function receivedCopy(info){
+  var R = D.journeys.states.received, V = R.variants, v = info.journey==='institutions' ? V.institutions : V[info.division], direct = info.via==='lead' && !!info.ref;
+  var dn = (v && v.division) || info.divisionName || 'Imperial Holdings Group', base = direct ? R.direct : R.forms;
+  var text = (!direct && v && v.text) ? v.text : base.text;
+  text = text.replace(/\{division\}/g, dn).replace('{ref}', info.ref || '');
+  if(v && v.append) text += ' '+v.append;
+  return {title: base.title.replace(/\{division\}/g, dn), text: text, announce: base.announce};
+}
+/* the journey's own next steps after booking: the guide on the citizenship route, the house's website where it is real */
+function journeyLinks(info){
+  if(info.kind!=='contact') return '';
+  var N = D.journeys.states.received.next, out = [], s = null;
+  if(N.guide && N.guide.when && N.guide.when.about.indexOf(info.division)>-1) out.push('<a class="tlink" href="'+N.guide.href+'" data-go="'+esc(N.guide.scroll||'')+'">'+esc(N.guide.label)+AR+'</a>');
+  D.sites.forEach(function(x){ if(x.key===info.division && x.real && !x.home) s = x; });
+  if(s) out.push('<a class="tlink" href="'+esc(s.href)+'" target="_blank" rel="noopener">'+esc(N.site.label.replace('{division}', s.name))+NE+'</a>');
+  return out.length ? '<div class="jp-next">'+out.join('')+'</div>' : '';
+}
+/* success state: thank you, then the next steps (verification when a phone was given and the endpoint is enabled, then booking).
+   For the journey the title and text come from receivedCopy; a preview build renders the same state under its label,
+   without the tick animation and without the announcement (nothing was sent). */
 function showSuccess(wrap, info, anchor){
-  var t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.';
-  wrap.innerHTML = successHTML(t, info.msg, (info.inner||'')+'<div class="next" data-next-steps></div>');
+  var t, msg, chip = '', said;
+  if(info.kind==='contact'){ var rc = receivedCopy(info); t = rc.title; msg = (info.name ? 'Thank you, '+esc(info.name)+'. ' : '')+esc(rc.text); said = rc.announce; if(info.preview) chip = D.journeys.states.preview.onSend; }
+  else { t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.'; msg = info.msg; said = 'Sent. '+t; }
+  wrap.innerHTML = successHTML(t, msg, (info.inner||'')+'<div class="next" data-next-steps></div>', chip);
+  fixLinks(wrap);
   var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
   wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
   var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
-  announce('Sent. '+t);
+  if(!info.preview) announce(said);
   nextSteps(wrap, info);
 }
 function nextSteps(wrap, info){
   var el = wrap.querySelector('[data-next-steps]'); if(!el) return;
-  function booking(){ el.insertAdjacentHTML('beforeend', bookingHTML(info)); bindMagnetic(el); }
-  if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
+  function booking(){
+    el.insertAdjacentHTML('beforeend', bookingHTML(info)+journeyLinks(info)); bindMagnetic(el); fixLinks(el);
+    var g = el.querySelector('[data-go]'); if(g) g.addEventListener('click', function(e){ e.preventDefault(); go(HIST ? g.getAttribute('href') : g.getAttribute('href').slice(1), g.getAttribute('data-go')); });
+  }
+  if(info.preview || !info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
   verifyStep(el, info, booking);
 }
 /* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first; when WhatsApp cannot deliver (the number is
@@ -1483,7 +1513,7 @@ function fitCheck(){
       return '<div class="fit-q'+(i===0?' on':'')+'" data-q="'+i+'" data-k="'+esc(q.k)+'"><h3 class="h3" tabindex="-1">'+esc(q.q)+'</h3><div class="fd-pers fit-opts">'+opts.map(function(o){ return '<button type="button" data-opt="'+esc(o.v)+'"'+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+'><b>'+esc(o.l)+'</b>'+(o.s?'<small>'+esc(o.s)+'</small>':'')+'</button>'; }).join('')+'</div>'+
         '<div class="fit-nav">'+(i>0?'<button class="tlink" type="button" data-fit-back>'+BACK+'<span>Back</span></button>':'')+(q.skip?'<button class="tlink" type="button" data-opt="undisclosed" data-set="'+esc(JSON.stringify({budget:'undisclosed'}))+'">'+esc(q.skip)+'</button>':'')+'</div></div>';
     }).join('')+
-    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold mag" href="#/divisions/citizenship" data-scroll="enquire"><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start over</button></div></div>'+
+    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold mag" href="#/contact?about=citizenship&via=fit" data-fit-go><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start over</button></div></div>'+
     '</div></div></section>';
 }
 function bindFit(){
@@ -1494,18 +1524,22 @@ function bindFit(){
     done.classList.remove('on'); bar.style.backgroundSize = (i/n*100).toFixed(0)+'% 100%'; num.textContent = 'Question '+(i+1)+' of '+n;
     qs[i].querySelector('h3').focus({preventScroll:true});
   }
+  /* v6: the answers become the journey's draft (docs/RELATIONSHIP-JOURNEY.md, prefill.fromFitCheck) and the done
+     state's button opens /contact?about=citizenship&via=fit, where the journey restores them and opens on the first
+     screen that still needs an answer. Someone introducing a client is sent down the Professional Partners path, with
+     the division left for the first screen (its two Partners Club options are recorded differently) and the client's
+     interest noted; the answers travel as quiz_answers with lead_source programme-fit either way. */
   function finish(){
     qs.forEach(function(q){ q.classList.remove('on'); }); bar.style.backgroundSize = '100% 100%'; num.textContent = 'Done'; done.classList.add('on'); done.focus({preventScroll:true});
-    var form = document.querySelector('[data-form="enquiry"] form');
-    if(form){
-      var set = {division:'citizenship', audience: ans.who==='client' ? 'partners' : 'clients', lead_source:'programme-fit', quiz_answers: JSON.stringify(ans)};
-      Object.keys(sets).forEach(function(k){ Object.keys(sets[k]).forEach(function(x){ set[x] = sets[k][x]; }); });
-      Object.keys(set).forEach(function(k){ var el = form.elements.namedItem(k); if(!el) return; el.value = set[k]; if(el.tagName==='SELECT'){ var ev = document.createEvent('Event'); ev.initEvent('change', true, true); el.dispatchEvent(ev); } });
-      saveDraft(form, 'enquiry');
-    }
+    var P = D.journeys.prefill.fromFitCheck, client = ans.who==='client';
+    var set = {about: client ? '' : 'citizenship', audience: client ? 'partners' : 'clients', lead_source:'programme-fit', quiz_answers: JSON.stringify(ans)};
+    Object.keys(sets).forEach(function(k){ Object.keys(sets[k]).forEach(function(x){ set[x] = sets[k][x]; }); });
+    if(client){ delete set.for_whom; set.interests = 'A second residency or citizenship'; }
+    var dr = store.get(P.draftKey) || {};
+    Object.keys(set).forEach(function(k){ dr[k] = set[k]; });
+    store.set(P.draftKey, dr);
     track('quiz_completed', ans);
-    announce('Thank you. Your enquiry has been prefilled from these answers.');
-    setTimeout(function(){ var enq = document.getElementById('enquire'); if(enq) window.scrollTo({top: enq.getBoundingClientRect().top + window.pageYOffset - 90, behavior: reduced?'auto':'smooth'}); }, reduced ? 300 : 1200);
+    announce('Thank you. Your answers will prefill your message.');
   }
   f.addEventListener('click', function(e){
     var b = e.target.closest('[data-opt]');
@@ -1558,16 +1592,22 @@ function turnstileToken(form){
   if(t) return Promise.resolve(t);
   return new Promise(function(ok){ var done = false; form._tsWait = function(tok){ if(done) return; done = true; form._tsWait = null; ok(tok||''); }; try{ window.turnstile.execute(form._ts); }catch(e){} setTimeout(function(){ if(form._tsWait) form._tsWait(''); }, 8000); });
 }
+/* every field's error text linked through aria-describedby, and the marks on blur, input and change (also for the
+   screens the journey renders later: fields already wired are skipped) */
+function wireFields(form, kind, scope){
+  [].forEach.call((scope||form).querySelectorAll('input,select,textarea'), function(f){
+    if(f._w) return; f._w = true;
+    var em = f.parentNode.querySelector('.em'); if(em){ em.id = kind+'-'+f.name+'-e'; f.setAttribute('aria-describedby', em.id); }
+    f.addEventListener('blur', function(){ if(f.type!=='radio' && f.type!=='checkbox' && (f.value||'').trim()) mark(f, true); });
+    f.addEventListener('input', function(){ var b=f.closest('.field,.consent'); if(b && b.classList.contains('err')) mark(f, true); else if(f.type!=='checkbox' && f.type!=='radio') mark(f, false); });
+    f.addEventListener('change', function(){ if(f.type==='checkbox' && f.name) mark(f, f._tried); });
+  });
+}
 function bindForms(){
   [].forEach.call(app.querySelectorAll('[data-form]'), function(wrap){
     var form = wrap.querySelector('form'); if(!form || form._b) return; form._b = true;
     var kind = wrap.getAttribute('data-form');
-    [].forEach.call(form.querySelectorAll('input,select,textarea'), function(f){
-      var em = f.parentNode.querySelector('.em'); if(em){ em.id = kind+'-'+f.name+'-e'; f.setAttribute('aria-describedby', em.id); }
-      f.addEventListener('blur', function(){ if(f.type!=='radio' && (f.value||'').trim()) mark(f, true); });
-      f.addEventListener('input', function(){ var b=f.closest('.field,.consent'); if(b && b.classList.contains('err')) mark(f, true); else if(f.type!=='checkbox' && f.type!=='radio') mark(f, false); });
-      f.addEventListener('change', function(){ if(f.type==='checkbox') mark(f, f._tried); });
-    });
+    wireFields(form, kind);
     var errBox = form.querySelector('.form-err'), anchor = wrap.id || (wrap.parentNode && wrap.parentNode.id) || '';
     /* every form carries the tracking fields (rule 7), site and lead_source, even where the template left one out */
     TRK_KEYS.forEach(function(k){ ensureHidden(form, k, TRK[k]||''); }); ensureHidden(form, 'page', ''); ensureHidden(form, 'audience_resolved', '');
@@ -1580,7 +1620,8 @@ function bindForms(){
     /* draft (every form): restore what was typed, keep saving, and offer a clean start */
     draftNote(form);
     var dr = readDraft(kind);
-    if(dr && (dr.name || dr.email || dr.msg || dr.quiz_answers)){ restoreDraft(form, dr); applyCond(); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
+    /* the journey restores its own draft (bindJourney), screen by screen */
+    if(kind!=='contact' && dr && (dr.name || dr.email || dr.msg || dr.quiz_answers)){ restoreDraft(form, dr); applyCond(); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
     form.addEventListener('input', function(){ saveDraft(form, kind); }); form.addEventListener('change', function(){ saveDraft(form, kind); });
     var clr = form.querySelector('[data-clear-draft]');
     if(clr) clr.addEventListener('click', function(){ store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft'); render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
@@ -1610,15 +1651,19 @@ function bindForms(){
       if(form.company_url && form.company_url.value){ busy(btn, false); showErr(fallbackHTML()); return; }
       var extra = {page: location.href, audience_resolved: audOf()};
       if(kind!=='interest') extra.routed_to = dest || 'Imperial Holdings Group';
-      var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || (kind==='interest' ? 'real-estate' : ''));
-      var dn = division==='group' ? 'Imperial Holdings Group' : ((div(division)||{}).name || '');
-      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, divisionName:dn, lead_source:val('lead_source') || 'website'};
+      var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || val('about') || (kind==='interest' ? 'real-estate' : ''));
+      var dn = divisionName(division);
+      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, divisionName:dn, lead_source:val('lead_source') || 'website', journey: kind==='contact' ? audOf() : '', entry: wrap.getAttribute('data-via') || ''};
       var em = form.elements.namedItem('email');
       disposableList().then(function(){
         if(em && !mark(em, true)){ busy(btn, false); emailProblem(em, disposableEmail(em.value)); return; }
-        return turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
+        return turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(res){
           store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
-          track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
+          /* which route confirmed it (showSuccess words the journey's received state by it): forms, or lead with the function's reference */
+          info.via = (res && res.via) || 'forms'; info.ref = (res && res.ref) || '';
+          var ev = {form:kind, division:division, lead_source:info.lead_source};
+          if(kind==='contact'){ ev.journey = info.journey; ev.via = info.entry; }
+          track('enquiry_submitted', ev);
           if(kind==='guide'){
             var G = D.guideCopy, GC = D.config.guide;
             info.msg = esc(GC.file ? G.ready : G.soon);
@@ -1647,50 +1692,216 @@ function bindForms(){
       });
       return;
     }
-    /* contact: three steps with routing */
-    var stepEls = [].slice.call(form.querySelectorAll('.cf-step')), prog = [].slice.call(form.querySelectorAll('#cfProg li')), step = 1;
-    var titles = ['What it is about','About you','Your message'];
-    var radios = form.querySelectorAll('input[name="about"]');
-    function chosen(){ return form.querySelector('input[name="about"]:checked'); }
-    function upd(){ var c=chosen(), r=document.getElementById('routing'); if(c){ document.getElementById('routingCard').innerHTML = routingHTML(c.value); r.classList.add('show'); form.querySelector('.routes-wrap').classList.remove('err'); } else r.classList.remove('show'); }
-    [].forEach.call(radios, function(r){ r.addEventListener('change', upd); });
-    upd();
-    function destName(){ var c=chosen(), dn='the Group team'; if(c) D.enquiry.forEach(function(x){ if(x.v===c.value){ var d=div(x.to); dn = d ? d.name : 'the Group team'; } }); return dn; }
-    function review(){
-      var c = chosen(), lbl = ''; D.enquiry.forEach(function(x){ if(c && x.v===c.value) lbl = x.l; });
-      var rows = [['About', lbl+' \u2192 '+destName()], ['Name', form.elements.namedItem('name').value], ['Email', form.email.value]];
-      if(form.interests.value) rows.splice(1,0,['Interests', form.interests.value]);
-      if(form.phone.value.trim()) rows.push(['Phone', form.phone.value]);
-      rows.push(['Country', form.country.value], ['Nationality', form.nationality.value], ['For', labelOf(FOR_WHOM, form.for_whom.value)], ['Reply by', form.pref.value]);
-      document.getElementById('cfReview').innerHTML = rows.map(function(r){ return '<dt>'+r[0]+'</dt><dd>'+esc(r[1])+'</dd>'; }).join('')+'<dt class="vh">Change</dt><dd><button class="tlink" type="button" data-edit>Edit these details</button></dd>';
-      form.querySelector('[data-edit]').addEventListener('click', function(){ show(2, true); });
-    }
-    function show(n, back){
-      step = n;
-      stepEls.forEach(function(s){ var on=+s.getAttribute('data-step')===n; s.classList.toggle('on', on); s.classList.toggle('back', !!back && on); });
-      prog.forEach(function(li,i){ li.classList.toggle('done', i<n-1); li.classList.toggle('cur', i===n-1); if(i===n-1) li.setAttribute('aria-current','step'); else li.removeAttribute('aria-current'); });
-      if(n===3) review();
-      var h = stepEls[n-1].querySelector('h2'); h.focus({preventScroll:true});
-      announce('Step '+n+' of 3: '+titles[n-1]);
-      var top = wrap.getBoundingClientRect().top; if(top < 70 || top > window.innerHeight*0.6) window.scrollTo({top: top + window.pageYOffset - 110, behavior: reduced?'auto':'smooth'});
-    }
-    form._showStep = show;
-    function check(n){
-      if(n===1){ if(!chosen()){ form.querySelector('.routes-wrap').classList.add('err'); return radios[0]; } return null; }
-      var bad = null;
-      [].forEach.call(stepEls[n-1].querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
-      return bad;
-    }
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-      var bad = check(step);
-      if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); var r=bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
-      if(step<3){ show(step+1); return; }
-      finish(destName(), (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
-    });
-    [].forEach.call(form.querySelectorAll('[data-back]'), function(b){ b.addEventListener('click', function(){ show(Math.max(1,step-1), true); }); });
+    /* contact: the Start a relationship journey */
+    bindJourney(wrap, form, {kind:kind, anchor:anchor, finish:finish, val:val, dr:dr});
   });
   bindFit();
+}
+/* ---------- v6: the journey binding (docs/RELATIONSHIP-JOURNEY.md sections 3 to 5) ----------
+   The chooser is screen 0; a path's screens are rendered into [data-screens] from D.journeys when the path is chosen
+   (by the query, by the draft, or by a card) and again when the person switches path, keeping name, email, phone,
+   the reply channel and the message (prefill.draft.keepOnSwitch) and clearing the other path's answers. Fields with
+   a "when" condition are hidden and disabled when it does not hold, as the v5 conditional fields were. ?about chooses
+   the division and skips the first screen when it names exactly one of its options (the Partners Club page lands on
+   the screen, because its two options route the same way but are recorded differently). A draft opens the journey on
+   the first screen that still needs an answer. A preview build sends nothing: the closing screen's Send renders the
+   received state under its label (showSuccess). */
+function bindJourney(wrap, form, api){
+  var J = D.journeys, screensEl = form.querySelector('[data-screens]'), chooserEl = form.querySelector('.jp-chooser'), lineEl = form.querySelector('[data-path-line]');
+  if(!screensEl || !chooserEl) return;
+  var key = wrap.getAttribute('data-journey') || '', about0 = wrap.getAttribute('data-about') || '', via = wrap.getAttribute('data-via') || '', q = curQ || {};
+  var dr = api.dr || {}, jn = null, step = 0, stepEls = [], prog = [], keep = J.prefill.draft.keepOnSwitch;
+  function val(n){ return api.val(n); }
+  function hiddenOf(name){ return form.querySelector('input[type=hidden][name="'+name+'"]'); }
+  function aboutRadio(){ return form.querySelector('input[type=radio][name="about"]:checked'); }
+  function aboutValue(){ var r = aboutRadio(); if(r) return r.value; var h = hiddenOf('about'); return h ? h.value : ''; }
+  function firstName(){ return (val('name')||'').trim().split(' ')[0]; }
+  function setOn(box, on){
+    box.hidden = !on;
+    [].forEach.call(box.querySelectorAll('input,select,textarea'), function(f){ f.disabled = !on; if(!on){ var b = f.closest('.field'); if(b) b.classList.remove('err','ok'); f.setAttribute('aria-invalid','false'); } });
+    if(!on) box.classList.remove('err');
+  }
+  /* conditions: a field's "when" (the division chosen, or another answer) and the variant of a screen (the first answer's key) */
+  function applyWhen(){
+    var ab = aboutValue(), r = aboutRadio(), vk = r ? (r.getAttribute('data-key') || '') : '';
+    [].forEach.call(screensEl.querySelectorAll('[data-when]'), function(box){
+      var w = {}; try{ w = JSON.parse(box.getAttribute('data-when')); }catch(e){}
+      setOn(box, Object.keys(w).every(function(k){ return w[k].indexOf(k==='about' ? ab : val(k)) > -1; }));
+    });
+    /* the variants of a screen ask different questions, so a variant put away loses its answers */
+    [].forEach.call(screensEl.querySelectorAll('.jp-variant'), function(box){ var on = box.getAttribute('data-variant')===vk; setOn(box, on); if(!on){ [].forEach.call(box.querySelectorAll('input[type=radio],input[type=checkbox]'), function(c){ c.checked = false; }); [].forEach.call(box.querySelectorAll('[data-type="multi"]'), syncMulti); } });
+    [].forEach.call(screensEl.querySelectorAll('[data-offer-for]'), function(o){ var x = o.parentNode.querySelector('input[data-offer][value="'+o.getAttribute('data-offer-for')+'"]'); o.hidden = !(x && x.checked); });
+  }
+  function applySet(radio){
+    var s = null; try{ s = JSON.parse(radio.getAttribute('data-set')||'null'); }catch(e){}
+    if(!s) return;
+    Object.keys(s).forEach(function(k){ var f = form.elements.namedItem(k); if(f) f.value = s[k]; });
+  }
+  function routing(){
+    [].forEach.call(screensEl.querySelectorAll('[data-routing]'), function(r){
+      var c = aboutRadio(), card = r.querySelector('.routing-card');
+      if(c){ card.innerHTML = routingLine(c.value, r.getAttribute('data-line')); r.classList.add('show'); } else r.classList.remove('show');
+    });
+  }
+  /* the hidden inputs behind a multi choice (the chosen labels, after any finder goals) and a choice-or-text (the label, or the free text) */
+  function syncMulti(box){
+    var h = hiddenOf(box.getAttribute('data-field')); if(!h) return;
+    var cs = [].slice.call(box.querySelectorAll('input[data-multi]')), opts = cs.map(function(c){ return c.value; });
+    var kept = (h.value ? h.value.split(', ') : []).filter(function(x){ return opts.indexOf(x) < 0; });
+    h.value = kept.concat(cs.filter(function(c){ return c.checked; }).map(function(c){ return c.value; })).join(', ');
+    if(h.value) box.classList.remove('err');
+  }
+  function otherBox(box){ var r = box.querySelector('input[data-choice]:checked'), lab = box.querySelector('.jp-other'), ot = box.querySelector('input[data-other]'); if(lab) lab.hidden = !(r && r.hasAttribute('data-text')); if(ot) ot.disabled = !lab || lab.hidden; }
+  function syncChoiceText(box){
+    var h = hiddenOf(box.getAttribute('data-field')), r = box.querySelector('input[data-choice]:checked'), ot = box.querySelector('input[data-other]');
+    otherBox(box); if(!h) return;
+    h.value = r ? ((r.hasAttribute('data-text') && ot && ot.value.trim()) || r.value) : '';
+    if(h.value) box.classList.remove('err');
+  }
+  function syncFromHidden(){
+    [].forEach.call(screensEl.querySelectorAll('[data-type="multi"]'), function(box){ var h = hiddenOf(box.getAttribute('data-field')), list = h && h.value ? h.value.split(', ') : []; [].forEach.call(box.querySelectorAll('input[data-multi]'), function(c){ c.checked = list.indexOf(c.value) > -1; }); });
+    [].forEach.call(screensEl.querySelectorAll('[data-type="choice-or-text"]'), function(box){
+      var h = hiddenOf(box.getAttribute('data-field')), v = h ? h.value : '', hit = false, ot = box.querySelector('input[data-other]');
+      [].forEach.call(box.querySelectorAll('input[data-choice]'), function(r){ r.checked = r.value===v; if(r.checked) hit = true; });
+      if(v && !hit){ var o = box.querySelector('input[data-choice][data-text]'); if(o) o.checked = true; if(ot) ot.value = v; }
+      otherBox(box);
+    });
+  }
+  /* the draft's answers into the path's screens: the first answer first (its variant follows for_whom), then the rest, enabled fields only */
+  function restore(d){
+    if(!jn) return;
+    if(d.about){
+      var cands = [].slice.call(screensEl.querySelectorAll('input[type=radio][name="about"][value="'+d.about+'"]'));
+      if(cands.length>1){ var k = d.for_whom==='client' ? 'introduce' : 'join'; cands.forEach(function(r){ if(r.getAttribute('data-key')===k) r.checked = true; }); }
+      else if(cands.length===1) cands[0].checked = true;
+      var ar = aboutRadio(); if(ar) applySet(ar);
+    }
+    applyWhen();
+    draftFields(form).forEach(function(f){ if(f.name==='about' || f.name==='audience' || f.disabled || d[f.name]==null) return; if(f.type==='radio'){ if(f.value===d[f.name]) f.checked = true; return; } f.value = d[f.name]; });
+    syncFromHidden(); applyWhen(); routing();
+  }
+  function wire(){
+    wireFields(form, api.kind, screensEl); ensurePrivacyLink(form); fixLinks(screensEl);
+    if(D.config.turnstileSiteKey && form._ts != null){ form._ts = null; turnstileBind(form); }
+  }
+  /* choose or switch the path: the screens are rendered afresh; the closing screen's own answers are kept */
+  function setPath(k){
+    var kept = {}; keep.forEach(function(n){ kept[n] = val(n); });
+    if(key && key!==k){ [].forEach.call(screensEl.querySelectorAll('[data-type="multi"]'), function(box){ [].forEach.call(box.querySelectorAll('input[data-multi]'), function(c){ c.checked = false; }); syncMulti(box); }); }
+    key = k; jn = journeyOf(k);
+    form.elements.namedItem('audience').value = k;
+    screensEl.innerHTML = jScreens(k);
+    stepEls = [].slice.call(screensEl.querySelectorAll('.cf-step')); prog = [].slice.call(screensEl.querySelectorAll('[data-prog] li'));
+    wire();
+    keep.forEach(function(n){ var f = form.elements.namedItem(n); if(f && kept[n]) f.value = kept[n]; });
+    lineEl.querySelector('[data-path-name]').textContent = jn.name;
+    applyWhen(); routing();
+  }
+  function titleOf(el){ var h = el.querySelector('.jp-variant:not([hidden]) h2') || el.querySelector('h2'); return h ? h.textContent : ''; }
+  function summary(){
+    var el = screensEl.querySelector('[data-summary]'); if(!el || !jn) return;
+    var parts = [jn.name], ab = aboutValue(), fw = val('for_whom'), tl = val('timeline');
+    if(ab) parts.push(ab==='group' ? 'the Group' : divisionName(ab));
+    if(fw && key==='clients'){ var fl = labelOf(FOR_WHOM, fw); parts.push('For '+fl.charAt(0).toLowerCase()+fl.slice(1)); }
+    if(tl) parts.push(labelOf(TIMELINES, tl));
+    el.innerHTML = parts.map(function(p,i){ return (i?'<i aria-hidden="true">\u00b7</i>':'')+'<b>'+esc(p)+'</b>'; }).join('')+'<button class="tlink" type="button" data-edit>'+esc(J.closing.summary.change)+'</button>';
+    el.hidden = false;
+    el.querySelector('[data-edit]').addEventListener('click', function(){ show(1, true); });
+  }
+  /* quiet: the screen the page opens on (nothing to announce, no focus to move, no scroll) */
+  function show(n, back, quiet){
+    step = n;
+    chooserEl.classList.toggle('on', n===0); chooserEl.classList.toggle('back', !!back && n===0);
+    lineEl.hidden = n===0 || !jn;
+    stepEls.forEach(function(s){ var on = +s.getAttribute('data-step')===n; s.classList.toggle('on', on); s.classList.toggle('back', !!back && on); });
+    prog.forEach(function(li,i){ li.classList.toggle('done', i<n-1); li.classList.toggle('cur', i===n-1); if(i===n-1) li.setAttribute('aria-current','step'); else li.removeAttribute('aria-current'); });
+    var cur = n===0 ? chooserEl : stepEls[n-1]; if(!cur) return;
+    if(n>0 && cur.getAttribute('data-screen')===J.closing.id) summary();
+    if(n>0) track('journey_step', {journey:key, step:cur.getAttribute('data-screen')});
+    if(quiet) return;
+    var h = cur.querySelector('.jp-variant:not([hidden]) h2') || cur.querySelector('h2'); if(h) h.focus({preventScroll:true});
+    announce(n>0 ? 'Step '+n+' of '+stepEls.length+': '+titleOf(cur) : J.chooser.prompt);
+    var top = wrap.getBoundingClientRect().top; if(top < 70 || top > window.innerHeight*0.6) window.scrollTo({top: top + window.pageYOffset - 110, behavior: reduced?'auto':'smooth'});
+  }
+  form._showStep = show;
+  /* a screen is complete when every required answer on it, that its conditions show, is there (silent: no marks) */
+  function complete(n){
+    var sc = stepEls[n-1], ok = true;
+    [].forEach.call(sc.querySelectorAll('[data-required]'), function(box){ if(box.hidden || box.closest('[hidden]')) return; if(box.getAttribute('data-type')==='choice'){ if(!box.querySelector('input[type=radio]:checked')) ok = false; } else { var h = hiddenOf(box.getAttribute('data-field')); if(!h || !h.value.trim()) ok = false; } });
+    [].forEach.call(sc.querySelectorAll('[required]'), function(f){ if(f.disabled || f.type==='radio') return; if(!valid(f)) ok = false; });
+    return ok;
+  }
+  function check(n){
+    var sc = stepEls[n-1], bad = null;
+    [].forEach.call(sc.querySelectorAll('[data-required]'), function(box){
+      if(box.hidden || box.closest('[hidden]')) return;
+      var ok = box.getAttribute('data-type')==='choice' ? !!box.querySelector('input[type=radio]:checked') : !!(hiddenOf(box.getAttribute('data-field')) || {value:''}).value.trim();
+      box.classList.toggle('err', !ok);
+      if(!ok && !bad) bad = box.querySelector('input');
+    });
+    [].forEach.call(sc.querySelectorAll('[required]'), function(f){ if(f.disabled || f.type==='radio') return; f._tried = true; if(!mark(f,true) && !bad) bad = f; });
+    return bad;
+  }
+  /* where to open: the first answer from ?about where the screen allows, then the first screen that still needs an answer */
+  function start(){
+    var from = 1, first = jn.screens[0];
+    if(about0 && first.skipWhenPrefilled==='about'){
+      var cands = [].slice.call(screensEl.querySelectorAll('input[type=radio][name="about"][value="'+about0+'"]'));
+      if(cands.length===1){ cands[0].checked = true; applySet(cands[0]); applyWhen(); routing(); from = 2; }
+      else if(cands.length>1) return 1;   /* two options route to this division: the person chooses which */
+    }
+    for(var n = from; n < stepEls.length; n++){ if(!complete(n)) break; }
+    return n;
+  }
+  function previewSend(){
+    var ab = aboutValue();
+    showSuccess(wrap, {kind:'contact', preview:true, name:firstName(), fullName:val('name'), email:val('email'), phone:val('phone'), division:ab, divisionName:divisionName(ab), lead_source:val('lead_source')||'website', journey:key, entry:via, via:'forms', ref:''}, api.anchor);
+  }
+  form.addEventListener('click', function(e){
+    var b = e.target.closest('[data-path]');
+    if(b){
+      var k = b.getAttribute('data-path'), from = key;
+      if(k===key){ show(1); return; }
+      setPath(k); show(1); saveDraft(form, 'contact');
+      if(from) track('journey_switched', {from:from, to:k}); else track('journey_started', {journey:k, via:via});
+      return;
+    }
+    if(e.target.closest('[data-choose]')){ show(0, true); return; }
+    if(e.target.closest('[data-back]')) show(Math.max(1, step-1), true);
+  });
+  form.addEventListener('change', function(e){
+    var t = e.target, w = t.closest('.routes-wrap');
+    if(t.type==='radio' && t.name==='about'){ applySet(t); applyWhen(); routing(); }
+    else if(t.type==='radio' && t.name) applyWhen();
+    if(w && t.type==='radio') w.classList.remove('err');
+    if(t.hasAttribute('data-multi')) syncMulti(t.closest('[data-type="multi"]'));
+    if(t.hasAttribute('data-choice') || t.hasAttribute('data-other')) syncChoiceText(t.closest('[data-type="choice-or-text"]'));
+    saveDraft(form, 'contact');
+  });
+  form.addEventListener('input', function(e){ if(e.target.hasAttribute('data-other')){ syncChoiceText(e.target.closest('[data-type="choice-or-text"]')); saveDraft(form, 'contact'); } });
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(step===0 || !stepEls.length) return;
+    var bad = check(step);
+    if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); var r = bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
+    if(step < stepEls.length){ show(step+1); return; }
+    if(PREVIEW){ previewSend(); return; }
+    api.finish(divisionName(aboutValue()) || 'Imperial Holdings Group', firstName());
+  });
+  /* which path to open: the query's own path; otherwise the draft's; the fit check's draft chooses the path it wrote */
+  var dk = dr.audience && journeyOf(dr.audience) ? dr.audience : '';
+  if(dk && (!key || (via==='fit' && !q.journey && !q.audience))) key = dk;
+  /* a link to another path than the draft's is a switch: the other path's answers go, the closing screen's stay */
+  if(dk && dk!==key){ var pruned = {}; keep.forEach(function(n){ if(dr[n]!=null) pruned[n] = dr[n]; }); dr = pruned; }
+  var typed = !!(dr.name || dr.email || dr.msg), dn = form.querySelector('.draft');
+  if(key){
+    setPath(key); restore(dr);
+    if(dn && typed) dn.hidden = false;
+    if(dr.lead_source==='programme-fit' && !form.querySelector('.from-finder')) chooserEl.insertAdjacentHTML('beforebegin', '<p class="from-finder"><span>From the programme fit check</span>'+[labelOf(TIMELINES, dr.timeline), labelOf(BUDGETS, dr.budget), dr.country].filter(Boolean).map(function(x){ return '<b>'+esc(x)+'</b>'; }).join('')+'</p>');
+    show(start(), false, true);
+    track('journey_started', {journey:key, via:via});
+  }
+  else show(0, false, true);
 }
 
 
