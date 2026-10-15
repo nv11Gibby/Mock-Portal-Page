@@ -32,7 +32,9 @@ var TRK = (function(){
   var host = ''; try{ host = o.referrer ? new URL(o.referrer).hostname.replace(/^www\./,'') : ''; }catch(e){}
   var own = host && location.hostname && host === location.hostname.replace(/^www\./,'');
   o.source = o.utm_source || (host && !own ? host : 'direct');
-  o.medium = o.utm_medium || (o.gclid ? 'cpc' : o.fbclid ? 'paid-social' : o.ttclid ? 'paid-social' : (host && !own) ? 'referral' : 'direct');
+  /* a search engine referrer is organic search, not a referral, so the note, GA4 and the Pipedrive Source Method agree */
+  var engine = /(^|\.)(google|bing|yahoo|duckduckgo|ecosia)\./.test(host);
+  o.medium = o.utm_medium || (o.gclid ? 'cpc' : o.fbclid ? 'paid-social' : o.ttclid ? 'paid-social' : (host && !own) ? (engine ? 'organic' : 'referral') : 'direct');
   o.campaign = o.utm_campaign || '';
   try{ sessionStorage.setItem(K, JSON.stringify(o)); }catch(e){}
   return o;
@@ -42,7 +44,9 @@ function trackFields(){ return TRK_KEYS.map(function(k){ return '<input type="hi
 
 /* ---------- helpers ---------- */
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function tbc(t){return '<span class="tbc" title="Placeholder: to be confirmed">'+esc(t)+'</span>';}
+/* Every placeholder carries the words "To confirm" (read by screen readers and found by the brief's search of the built
+   site, acceptance test 8) without changing how the amber chip looks. */
+function tbc(t){return '<span class="tbc" title="Placeholder: to be confirmed"><span class="vh">To confirm: </span>'+esc(t)+'</span>';}
 var AR = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var NE = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var BACK = '<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M14 8H3M7 4 3 8l4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
@@ -139,8 +143,16 @@ function extLink(d, cls, label){
   return '<a class="'+cls+'" href="#" data-tbc="'+esc(d.cta.tbc)+'"><span>'+esc(l)+'</span>'+NE+'</a>';
 }
 function siteLink(s, cls, inner){
+  if(s.home) return '<a class="'+(cls||'')+'" href="'+s.href+'">'+inner+'</a>';
   if(s.real) return '<a class="'+(cls||'')+'" href="'+s.href+'" target="_blank" rel="noopener">'+inner+'</a>';
   return '<a class="'+(cls||'')+'" href="#" data-tbc="'+esc(s.tbc)+'">'+inner+'</a>';
+}
+/* The short text for a site in the ecosystem lists (mega menu, footer): this site by name, a live site by its domain
+   (with the external arrow where asked), the rest by name with a TBC mark. */
+function siteText(s, arrow){
+  if(s.home) return esc(s.name);
+  if(s.real) return esc(s.label)+(arrow?NE:'');
+  return esc(s.name.replace('Imperial ',''))+' <small>TBC</small>';
 }
 function eyebrow(t){return '<div class="eyebrow" data-r>'+t+'</div>';}
 function mask(lines, tag, cls, base){
@@ -152,8 +164,13 @@ function announce(t){var a=document.getElementById('announce'); a.textContent=''
 function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:tz}).format(new Date());}catch(e){return '--:--';}}
 
 /* ---------- shared blocks ---------- */
+/* The hero photograph: the desktop file as one <img> and, where a mobile crop exists, a <picture> source for narrow
+   screens, as on the home hero. Every site photograph has a -m file (a 3:4 centre crop of the same frame, so nothing
+   changes visually); event photographs and portraits have none. Brief section 4: responsive sizes, LCP on mobile. */
+function heroVariant(k){ return k.indexOf('events/')===0 || k.indexOf('people/')===0 ? '' : '-m'; }
 function pageHero(o){
-  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(safePhoto(o.img, o.fb), null, '', '', true)+'</div></div>' : '';
+  var k = o.img ? safePhoto(o.img, o.fb) : '', v = k ? heroVariant(k) : '';
+  var bg = k ? '<div class="ph-bg"><div class="px">'+(v ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+v+'.webp" sizes="100vw">' : '')+img(k, null, '', '', true)+(v ? '</picture>' : '')+'</div></div>' : '';
   var crumb = o.crumb ? '<nav class="crumb" aria-label="Breadcrumb" data-r><a href="#/">Home</a>'+o.crumb.map(function(c){return '<i aria-hidden="true">/</i>'+(c[1]?'<a href="'+c[1]+'">'+esc(c[0])+'</a>':'<span aria-current="page">'+esc(c[0])+'</span>');}).join('')+'</nav>' : '';
   return '<section class="ph'+(o.cls?' '+o.cls:'')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
 }
@@ -181,8 +198,8 @@ function figures(){
 function houses(){
   return '<div class="houses" id="houses">'+D.divisions.map(function(d,i){
     var cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
-    return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'" aria-label="'+esc(d.name)+': '+esc(d.line)+'">'+
-      '<figure>'+img(d.img,'', '', '-c')+'</figure><span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl" aria-hidden="true">'+esc(d.short)+'</span>'+
+    return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'">'+
+      '<figure>'+img(d.img,'', '', '-c')+'</figure><span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
       '<div class="hc"><span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span><h3>'+esc(d.name)+'</h3><p>'+esc(d.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
   }).join('')+'</div>';
 }
@@ -209,7 +226,7 @@ function story(){
   return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
     '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
     '<div class="story-text"><div class="eyebrow">How we work</div><div class="story-num" aria-hidden="true"><span id="storyNum">01</span></div>'+
-    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img)+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
+    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img,'')+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
     '<div class="story-dots" aria-hidden="true">'+ch.map(function(){return '<i></i>';}).join('')+'</div></div></div></section>';
 }
 
@@ -297,7 +314,7 @@ V.divisions = function(){
   }).join('')+'</div></div></section>'+finderSec()+compare()+
   '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('How we work')+mask(['Come for one thing.','Find a whole house.'],'h2','d2')+'</div><p class="lead" data-r>One shared team works across every division. You never have to explain your family twice.</p></div>'+steps(D.steps)+'</div></section>'+
   '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('The houses online')+mask(['Visit a house','directly.'],'h2','d2')+'</div><p class="lead" data-r>Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch.</p></div>'+
-   '<div class="sites">'+D.sites.map(function(s,i){return siteLink(s,'site', '<b>'+esc(s.name)+'</b><span>'+esc(s.label)+'</span>'+NE).replace('class="site"','class="site" data-r style="--d:'+(i*0.07).toFixed(2)+'s"');}).join('')+'</div></div></section>'+closing();
+   '<div class="sites">'+D.sites.filter(function(s){return !s.home && !s.soon;}).map(function(s,i){return siteLink(s,'site', '<b>'+esc(s.name)+'</b><span>'+esc(s.label)+'</span>'+NE).replace('class="site"','class="site" data-r style="--d:'+(i*0.07).toFixed(2)+'s"');}).join('')+'</div></div></section>'+closing();
 };
 
 function heroTitle(d){return {citizenship:['Second residency','and citizenship.'],'private-office':['One lasting','relationship.'],'partners-club':['Introduce with','confidence.'],academy:['One standard,','learned by everyone.']}[d.key];}
@@ -345,7 +362,7 @@ function registerForm(){
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    '<label class="field"><span>I am interested in</span><select name="interest" required><option value="">Choose one</option><option>A family home in Dubai</option><option>Property linked to UAE residency</option><option>An investment property</option><option>Not sure yet</option></select><em class="em">Please choose an option.</em></label>'+
    '<label class="field full"><span>Anything else <i>(optional)</i></span><textarea name="msg" rows="3"></textarea></label></div>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group contacting me about Imperial Real Estate. See our <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group contacting me about Imperial Real Estate, as described in the {privacy}.')+
    '<div class="form-foot"><button class="btn" type="submit"><span class="lbl">Register interest</span><span class="spin"></span></button><span class="xs">We use these details only to contact you about Imperial Real Estate.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
 }
 
@@ -377,12 +394,12 @@ function splitTitle(t){
 function evWhen(e){ return e.date ? esc(e.date) : ''; }
 function eventCard(e,i){
   var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+(ok ? img(k, e.title) : img(eventSafe(e), null))+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img(ok ? k : eventSafe(e), '')+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Gallery to follow')+AR+'</span></div></a>';
 }
 function journalRow(j,i){
   var ok = photoAllowed(j.img), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null, k = ok ? j.img : (ev ? eventSafe(ev) : 'about'), v = ok ? (j.own?'':'-c') : variantOf(k);
   var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, ok?'':null, '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, '', '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 V.journal = function(){
   var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
@@ -397,7 +414,8 @@ V.event = function(slug){
   var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
   var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01');
   var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
-  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']);
+  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)]);
+  if(ok) facts.push(['Photographs', e.n+', Imperial']);   /* counted only while the gallery is shown */
   var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
   var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
   return pageHero({img:'events/'+e.slug+'/cover', fb:eventSafe(e), crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
@@ -467,8 +485,9 @@ function bindCond(form){
 function ensureHidden(form, name, value){ var f = form.elements.namedItem(name); if(f) return f; f = document.createElement('input'); f.type = 'hidden'; f.name = name; f.value = value; form.appendChild(f); return f; }
 /* consent (brief 8): every consent box links the privacy notice next to it. Templates use consentBox(); bindForms adds the link
    to any consent box that still lacks one. */
-var PRIVACY_LINK = '<a class="ul" href="#/privacy">privacy notice</a>';
-function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span></label>'; }
+/* It opens in a new tab, so the consent box never navigates a half-typed form away. */
+var PRIVACY_LINK = '<a class="ul" href="#/privacy" target="_blank" rel="noopener">privacy notice</a>';
+function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span><em class="em">Please tick the box so that we can reply.</em></label>'; }
 function ensurePrivacyLink(form){
   [].forEach.call(form.querySelectorAll('.consent'), function(c){ if(c.querySelector('a[href$="/privacy"]')) return; var s = c.querySelector('span') || c; s.insertAdjacentHTML('beforeend', ' See our '+PRIVACY_LINK+'.'); });
   fixLinks(form);
@@ -513,7 +532,7 @@ V.contact = function(q){
    '<div class="cf-step" data-step="2"><h2 tabindex="-1">About you</h2><p>So the right person can reply. We only use these details to respond.</p>'+
    '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label>'+
-   '<label class="field"><span>Phone <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
+   '<label class="field"><span>Phone, with country code <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel" inputmode="tel"></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    qualWho()+
    '<label class="field full"><span>Preferred way to reach you</span><select name="pref"><option>Email</option><option>Phone call</option><option>Either</option></select></label></div>'+
@@ -525,8 +544,9 @@ V.contact = function(q){
    '<label class="field"><span>How can we help?</span><textarea name="msg" required placeholder="A few lines about your family, your plans or your practice."></textarea><em class="em">Please tell us a little about your enquiry.</em></label>'+
    consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
    '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-send><span class="lbl">Send enquiry</span><span class="spin"></span></button></div>'+
-   '<div class="form-err" role="alert" hidden></div>'+
    '<p class="xs" style="margin-top:16px">We use these details only to respond. Nothing is shared beyond what a service needs.</p></div>'+
+   /* one error box for the three steps, outside them so it stays in view when a step is shown again (a refused address sends the person back to step 2) */
+   '<div class="form-err" role="alert" hidden></div>'+
    '</form></div></div>'+
    '<div data-r style="--d:.15s" class="cf-side">'+
     D.contact.offices.map(function(o,i){return '<div class="side-card">'+(i===0?'<div class="eyebrow">Offices</div>':'')+'<h3 class="h3">'+esc(o.city)+' <span class="muted small" style="font-weight:400">'+esc(o.role)+'</span></h3><p class="clock" data-tz="'+o.tz+'" data-fmt="long">--:--</p><div class="kv"><div><span>Address</span>'+o.lines.map(esc).join('<br>')+'</div><div><span>Phone</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div></div>'+waSide(o)+'</div>';}).join('')+
@@ -536,20 +556,47 @@ V.contact = function(q){
   '<section class="sec light alt" id="faq"><div class="wrap split"><div>'+eyebrow('Questions')+mask(['Before you','get in touch.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s;margin-top:26px">Short answers to what people ask most. Anything else, ask us directly.</p></div>'+faqList(D.faq,'c')+'</div></section>';
 };
 
+/* Legal pages (brief section 8). The copy lives in D.legal; this only renders it. In the copy, [[text]] becomes the amber
+   TO CONFIRM placeholder, {email} the group mailbox and {offices:true} both office addresses. The amber notice at the top
+   stays until counsel has approved the page. */
+function legalText(s){
+  return String(s).split(/(\[\[[^\]]+\]\]|\{email\})/).map(function(part){
+    if(part==='{email}') return '<a class="ul" href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a>';
+    var m = /^\[\[([^\]]+)\]\]$/.exec(part); return m ? tbc(m[1]) : esc(part);
+  }).join('');
+}
+function legalOffices(){
+  return '<div class="legal-offices">'+D.contact.offices.map(function(o){ return '<div><b>'+esc(o.city)+'</b>'+o.lines.map(esc).join('<br>')+'<br><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'</div>';
+}
 function legal(kind){
-  var isP = kind==='privacy';
-  return pageHero({cls:'plain', crumb:[[isP?'Privacy':'Terms',null]], eyebrow:'Legal', title:[isP?'Privacy notice':'Terms of use'], lead:null})+
-  '<section class="sec light"><div class="wrap legal"><div class="notice" data-r><span class="tbc">Placeholder</span><div><b>Awaiting legal review.</b> This page is a placeholder. The final '+(isP?'privacy notice':'terms of use')+' will be drafted and approved by counsel before launch. Legal entity, licence number and registered address: '+tbc('to confirm')+'</div></div>'+
-  (isP?
-   '<h2>Who we are</h2><p>Imperial Holdings Group and its divisions. '+tbc('Legal entity, registered address and data controller details')+'</p><h2>What we collect</h2><p>Section to be drafted: the information you share with us through enquiries, and how it is used to respond.</p><h2>How we use it</h2><p>Section to be drafted. Our standing commitment: private matters stay private, and information is shared only where a service requires it.</p><h2>Your rights</h2><p>Section to be drafted.</p><h2>Contact</h2><p>'+tbc('Privacy contact email')+'</p>'
-  :
-   '<h2>About this website</h2><p>This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.</p><h2>No guarantees</h2><p>Imperial does not guarantee government decisions or outcomes. Final approval of any citizenship or residency application rests with the relevant government.</p><h2>Use of this site</h2><p>Section to be drafted.</p><h2>Governing law</h2><p>'+tbc('Jurisdiction to confirm')+'</p>')+
-  '</div></section>';
+  var L = D.legal[kind], isP = kind==='privacy';
+  var body = L.sections.map(function(s){
+    return '<h2>'+esc(s.h)+'</h2>'+s.body.map(function(b){
+      if(typeof b==='string') return '<p>'+legalText(b)+'</p>';
+      if(b.offices) return legalOffices();
+      return (b.lead ? '<p>'+legalText(b.lead)+'</p>' : '')+'<ul>'+b.ul.map(function(li){ return '<li>'+legalText(li)+'</li>'; }).join('')+'</ul>';
+    }).join('');
+  }).join('');
+  return pageHero({cls:'plain', crumb:[[isP?'Privacy':'Terms',null]], eyebrow:'Legal', title:[esc(L.title)], lead:L.lead ? esc(L.lead) : null})+
+  '<section class="sec light"><div class="wrap legal"><div class="notice" data-r><span class="tbc">Placeholder</span><div><b>Awaiting legal review.</b> '+
+   (isP ? 'This notice describes what the site does today and is complete in substance. Counsel reviews and approves it before launch.' : 'This page is a placeholder. The final terms of use will be drafted and approved by counsel before launch.')+
+   ' Legal entity, licence number and registered address: '+tbc('to confirm')+'</div></div>'+
+  '<p class="small muted legal-updated">Last updated: '+(D.legal.updated ? esc(D.legal.updated) : tbc('Date of the version approved by counsel'))+'</p>'+
+  body+'</div></section>';
 }
 V.privacy = function(){return legal('privacy');};
 V.terms = function(){return legal('terms');};
+/* 404 and error pages (brief 8): the same design, with both offices (telephone links) and the group email from D.contact. */
+function nfContacts(){
+  var C = D.contact;
+  return '<div class="kv nf-kv" data-r style="--d:.4s">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div></div>';
+}
 V.notFound = function(){
-  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
+  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
+};
+/* Shown by render() when a view throws (the error is logged), and written to error.html by the build. */
+V.error = function(){
+  return '<section class="nf err"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Error')+mask(['Something went wrong','on our side.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Please try again in a moment. If it happens again, call or email us and we will take it from there.</p><div class="nf-links" data-r style="--d:.3s"><button class="btn gold" type="button" data-reload><span>Try again</span>'+AR+'</button><a class="tlink" href="#/">Home'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
@@ -558,7 +605,7 @@ function buildChrome(){
     '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
     '<ul class="mega-list" id="megaList">'+D.divisions.map(function(d,i){return '<li><a class="mega-item'+(i===0?' on':'')+'" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-i="'+i+'"><span class="n">'+pad2(i+1)+'</span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></a></li>';}).join('')+'</ul>'+
     '<div class="mega-prev" aria-hidden="true">'+D.divisions.map(function(d,i){return '<figure class="'+(i===0?'on':'')+'" data-i="'+i+'">'+img(d.img,'','','-c')+'<figcaption><b>'+esc(d.short)+'</b>'+esc(d.line)+'</figcaption></figure>';}).join('')+'</div>'+
-    '<div class="mega-sites"><span>The houses online:</span>'+D.sites.map(function(s){return siteLink(s,'', esc(s.real?s.label:s.name.replace('Imperial ',''))+(s.real?NE:' <small>TBC</small>'));}).join('')+'</div>';
+    '<div class="mega-sites"><span>The houses online:</span>'+D.sites.map(function(s){return siteLink(s,'', siteText(s, true));}).join('')+'</div>';
   document.getElementById('mmIn').innerHTML = '<button class="mm-search" type="button" data-palette><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="m13 13 4.5 4.5" stroke="currentColor" stroke-width="1.4"/></svg><span>Search the site</span></button><ul class="mm-links">'+
     '<li style="--i:0"><a href="#/"><span>Home</span><span class="ix">01</span></a></li>'+
     '<li style="--i:1"><a href="#/about"><span>About</span><span class="ix">02</span></a></li>'+
@@ -575,17 +622,20 @@ function buildChrome(){
     '<div><h2 class="fh">Divisions</h2><ul>'+D.divisions.map(function(d){return '<li><a href="#/divisions/'+d.key+'">'+esc(d.name)+(d.soon?' <small>Soon</small>':'')+'</a></li>';}).join('')+'</ul></div>'+
     '<div><h2 class="fh">The Group</h2><ul><li><a href="#/about">About</a></li><li><a href="#/divisions">Our ecosystem</a></li><li><a href="#/" data-goto="network">Our Network</a></li><li><a href="#/journal">Events and Journal</a></li><li><a href="#/contact">Contact</a></li><li><a href="#/contact?faq=0">Questions</a></li><li><button class="flink" type="button" data-palette>Search <kbd class="kb">'+KBD+'</kbd></button></li></ul></div>'+
     '<div><h2 class="fh">Offices</h2>'+D.contact.offices.map(function(o){return '<div class="off"><b>'+esc(o.city)+'</b>'+esc(o.role)+'<br>'+o.lines.map(esc).join('<br>')+'<br><a href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>';}).join('')+'<div class="off"><a href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a></div></div>'+
-    '<div><h2 class="fh">Websites</h2><ul>'+D.sites.map(function(s){return '<li>'+siteLink(s,'', esc(s.real?s.label:s.name.replace('Imperial ',''))+(s.real?'':' <small>TBC</small>'))+'</li>';}).join('')+'</ul></div>'+
+    '<div><h2 class="fh">Websites</h2><ul>'+D.sites.map(function(s){return '<li>'+siteLink(s,'', siteText(s, false))+'</li>';}).join('')+'</ul></div>'+
     '</div><div class="ftr-mid"><p>This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists. Imperial does not guarantee government decisions or outcomes. '+tbc('Legal entity, licence number and registered address')+'</p>'+
     '<details class="credits"><summary>Photography: Imperial events and leadership (own), plus Unsplash licence</summary><ul>'+credits+'</ul></details></div>'+
     '<div class="ftr-bot"><span>\u00a9 '+new Date().getFullYear()+' Imperial Holdings Group.</span><span><a href="#/privacy">Privacy</a> &nbsp;\u00b7&nbsp; <a href="#/terms">Terms</a></span></div></div>';
 }
 
 /* ---------- router (view transitions with a shared division image) ---------- */
-var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered');
+/* data-prerendered carries the route the served file was built for (build/build.js), so the app can tell whether the
+   markup on screen is the page the address now names. */
+var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered'), PRE = root.getAttribute('data-prerendered') || '';
 if(HIST && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
 function parse(){
-  var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
+  /* /about/, /about/index.html and the about.html copy the build writes all resolve to /about */
+  var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\.html?$/,'$1').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
   if(h==='' || h==='/') return {path:'/', parts:[], q:{}};
   if(h.charAt(0)!=='/') return null;
   var qs = h.split('?'), q = {};
@@ -596,10 +646,10 @@ function parse(){
 function resolve0(r){
   if(!r) return {html:V.notFound(), title:'Page not found', nav:null, nf:true};
   var p = r.parts;
-  if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Two cities. One horizon. Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos: Citizenship, Partners Club, Private Office, Real Estate and Academy.'};
+  if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Imperial Holdings Group: five specialist divisions, led from Dubai and Lagos. Citizenship, Private Office, Partners Club, Academy and Real Estate.'};
   if(p[0]==='about' && p.length===1) return {html:V.about(), title:'About', nav:'about', view:'about', desc:'Imperial began as a citizenship and residency specialist and has grown into a group of five specialist divisions, run by one team to one standard.'};
   if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'Citizenship, Private Office, Partners Club, Academy and Real Estate: five specialist houses at one table, with one Relationship Manager across all five.'};
-  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.line+' '+d.card}; }
+  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.line}; }
   if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Genuine company developments, insights, partnerships and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
@@ -649,6 +699,7 @@ function heroImage(html){
 function pageMeta(out, r){
   var p = r ? r.parts : [], path = r ? r.path : null, ld = [orgLD()], crumbs = null, x = null;
   out.path = path;
+  if(out.desc) out.desc = metaDesc(out.desc);
   out.canonical = (!out.nf && path) ? (path === '/' ? SITE + '/' : SITE + path) : null;
   out.image = heroImage(out.html);
   out.type = (out.view === 'article' || out.view === 'event') ? 'article' : 'website';
@@ -659,12 +710,15 @@ function pageMeta(out, r){
   else if(out.view === 'event'){
     D.events.forEach(function(e){ if(e.slug === p[2]) x = e; });
     crumbs = [['Journal', '/journal'], [x.short, path]];
-    /* only what data.js records: a start date needs a full date, a venue is named only when known */
-    var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
-    if(x.venue) ev.location.name = x.venue;
-    var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
-    if(fullDate(x.iso)) ev.startDate = x.iso;
-    ld.push(ev);
+    /* Only what data.js records, and only where the block can be valid: Google requires name, startDate and location on
+       an Event, so it is written for events with a full date and left out otherwise (a date is never invented). The
+       venue is named only when known (recommended, not required). */
+    if(fullDate(x.iso)){
+      var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, startDate: x.iso, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
+      if(x.venue) ev.location.name = x.venue;
+      var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
+      ld.push(ev);
+    }
   }
   else if(out.view === 'insights') crumbs = [['Insights', '/insights']];
   else if(out.view === 'article'){
@@ -685,23 +739,52 @@ function pageMeta(out, r){
   return out;
 }
 function resolve(r){ return pageMeta(resolve0(r), r); }
+/* Titles and descriptions sized for a search result: the brand suffix is shortened, then dropped, so the whole title
+   stays within about 60 characters; a description over 160 characters is cut at a clause boundary, never reworded. */
+function pageTitle(t){ if(!t) return 'Imperial Holdings Group · Two Cities. One Horizon.'; return t + (t.length <= 34 ? ' · Imperial Holdings Group' : t.length <= 49 ? ' · Imperial' : ''); }
+function metaDesc(s){
+  s = String(s || '').replace(/\s+/g, ' ').trim(); if(s.length <= 160) return s;
+  var cut = s.slice(0, 160), i = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(', '), cut.lastIndexOf('; '));
+  if(i > 60) return cut.slice(0, i) + '.';
+  i = cut.lastIndexOf(' '); return cut.slice(0, i > 60 ? i : 157) + '…';
+}
 /* The first-touch values in a prerendered page's hidden form fields belong to the build, not the visitor: refresh them
    from TRK when the server markup is kept. The names mirror trackFields(). */
 var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'];
 var TRK_QUERY = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','ttclid'];
 function refreshTracking(scope){ [].forEach.call(scope.querySelectorAll('input[type="hidden"]'), function(i){ if(TRK_KEYS.indexOf(i.name) > -1) i.value = TRK[i.name] || ''; }); }
 function onlyTracking(q){ for(var k in q){ if(Object.prototype.hasOwnProperty.call(q, k) && TRK_QUERY.indexOf(k) < 0) return false; } return true; }
+/* v5 trust (brief 8): a view that throws shows the error page instead of a blank screen. The error is logged, the
+   chrome stays, so every other page and both offices remain one click away. The build calls showError() for error.html. */
 function render(){
+  try{ renderView(); }
+  catch(err){ showError(err); }
+}
+function showError(err){
+  if(err){ try{ console.error('Page render failed', err); }catch(e){} }
+  app.innerHTML = V.error(); fixLinks(app);
+  curView = 'error'; curQ = {};
+  document.title = 'Something went wrong \u00b7 Imperial Holdings Group';
+  setMeta({nf:true, desc:'Something went wrong on our side. Please try again in a moment, or call or email Imperial Holdings Group.', ld:[]});
+  [].forEach.call(document.querySelectorAll('[data-nav]'), function(a){ if(a.tagName==='A') a.removeAttribute('aria-current'); else a.classList.remove('cur'); });
+  body.classList.add('is-nf'); body.classList.remove('solid-hdr');
+  var b = app.querySelector('[data-reload]'); if(b) b.addEventListener('click', function(){ location.reload(); });
+  try{ enhance(); }catch(e){}
+  prerendered = false;
+}
+function renderView(){
   var r = parse(), out = resolve(r);
   /* First render of a prerendered page: the browser has already painted this same markup (built by the same code), so
-     it is kept, together with its largest contentful paint, and only behaviour is bound. A query that changes the view
-     (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from what was
-     served (404.html on a path the app knows), gets a full render. */
-  if(prerendered && r && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
+     it is kept, together with its largest contentful paint, and only behaviour is bound. That holds only when the file
+     was built for the route now in the address (data-prerendered): an old /#/contact link lands on the prerendered home
+     page and is rewritten to /contact before the app runs, so the home markup must be replaced. A query that changes
+     the view (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from
+     what was served (404.html on a path the app knows), gets a full render too. */
+  if(prerendered && r && (r.path === PRE || out.nf) && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
   else app.innerHTML = out.html;
   fixLinks(app);
   curView = out.view; curQ = r ? r.q : {};
-  document.title = out.title ? out.title+' · Imperial Holdings Group' : 'Imperial Holdings Group · Two Cities. One Horizon.';
+  document.title = pageTitle(out.title);
   setMeta(out);
   /* analytics (shared/analytics.js): one page view per route change, none for a same-path re-render */
   if(window.ihgPageView && (r ? r.path : null) !== lastPath){ try{ window.ihgPageView(out.path || location.pathname, document.title); }catch(e){} }
@@ -753,13 +836,16 @@ function go(url, scrollTo){
 }
 function setMeta(out){
   var H = document.head, d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
-  var t = document.title, url = out.canonical || location.href.split('#')[0], im = out.image || abs('assets/img/og.jpg'), isOg = /\/og\.jpg$/.test(im);
-  /* a null value removes the tag: the width and height are known for og.jpg only */
-  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['property','og:image',im],['property','og:image:width',isOg?'1200':null],['property','og:image:height',isOg?'630':null],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
+  var t = document.title, url = out.canonical || location.href.split('#')[0], og = abs('assets/img/og.jpg'), im = out.image || og;
+  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
     var el = H.querySelector('meta['+m[0]+'="'+m[1]+'"]');
-    if(m[2]==null){ if(el) el.parentNode.removeChild(el); return; }
     if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); H.appendChild(el); } el.setAttribute('content', m[2]);
   });
+  /* Social images: the JPEG card first, with its size, because WhatsApp and LinkedIn do not reliably show a WebP
+     preview; the page's own photograph second, for the services that do. TO CONFIRM: per-page JPEG cards (build/README.md). */
+  [].forEach.call(H.querySelectorAll('meta[property="og:image"], meta[property="og:image:width"], meta[property="og:image:height"]'), function(el){ el.parentNode.removeChild(el); });
+  var ogm = [['og:image', og], ['og:image:width', '1200'], ['og:image:height', '630']]; if(im !== og) ogm.push(['og:image', im]);
+  ogm.forEach(function(m){ var el = document.createElement('meta'); el.setAttribute('property', m[0]); el.setAttribute('content', m[1]); H.appendChild(el); });
   var can = H.querySelector('link[rel="canonical"]');
   if(out.canonical){ if(!can){ can=document.createElement('link'); can.setAttribute('rel','canonical'); H.appendChild(can); } can.setAttribute('href', out.canonical); }
   else if(can) can.parentNode.removeChild(can);
@@ -1052,19 +1138,57 @@ function routingHTML(v){
   var go = d.soon ? '<a class="tlink" href="#/divisions/real-estate">Register interest instead'+AR+'</a>' : extLink(d,'tlink', d.cta.real?'Or go direct: imperialcitizenship.com':'Visit the website');
   return '<div>'+logoImg(d,'Black','rlogo')+'<p>Your enquiry will be routed to <strong>'+esc(d.name)+'</strong>'+(d.soon?', which has not yet launched. We will register your interest.':'.')+'</p></div>'+go;
 }
+/* Disposable addresses (brief 3.3): the list the function uses (shared/disposable-domains.json), fetched once, so the
+   person is told before the enquiry is sent instead of thanked for a lead the backend then drops. Without the list
+   (file://, or the fetch failing) the check passes here and the function's own check still applies. */
+var DISPOSABLE = {list:null, p:null}, DISPOSABLE_MSG = 'Please use an email address you check regularly.';
+function disposableList(){
+  if(DISPOSABLE.p) return DISPOSABLE.p;
+  if(!HIST || typeof window.fetch!=='function'){ DISPOSABLE.list = []; DISPOSABLE.p = Promise.resolve(DISPOSABLE.list); return DISPOSABLE.p; }
+  DISPOSABLE.p = fetch('/shared/disposable-domains.json').then(function(res){ return res.ok ? res.json() : {}; }).then(function(j){ DISPOSABLE.list = (j && j.domains) || []; return DISPOSABLE.list; }, function(){ DISPOSABLE.list = []; return DISPOSABLE.list; });
+  return DISPOSABLE.p;
+}
+function disposableEmail(v){
+  var list = DISPOSABLE.list, d = String(v||'').trim().toLowerCase().split('@')[1] || '';
+  if(!list || !d) return false;
+  for(var i=0;i<list.length;i++){ var x = list[i]; if(d===x || d.slice(-(x.length+1))==='.'+x) return true; }
+  return false;
+}
+/* the email field's error text: the disposable message while that is the problem, its own text otherwise */
+function emailMessage(box, f, disposable){ var em = box.querySelector('.em'); if(!em) return; if(em._dflt==null) em._dflt = em.textContent; em.textContent = disposable ? DISPOSABLE_MSG : em._dflt; }
 function valid(f){
   if(f.type==='checkbox') return f.checked;
   var v = (f.value||'').trim(); if(!v) return !f.required;
-  if(f.type==='email') return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+  if(f.type==='email') return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) && !disposableEmail(v);
   return true;
 }
 function mark(f, show){
   var good = valid(f), box = f.type==='checkbox' ? f.closest('.consent') : f.closest('.field');
   if(!box) return good;
+  if(f.type==='email') emailMessage(box, f, disposableEmail(f.value));
   box.classList.toggle('err', !good && show);
   if(f.type!=='checkbox') box.classList.toggle('ok', good && !!f.value.trim());
   f.setAttribute('aria-invalid', (!good && show) ? 'true' : 'false');
   return good;
+}
+/* v5 trust (brief 8): screen readers hear what needs attention. Every field's error text is linked through
+   aria-describedby in bindForms and the error box has role="alert"; this names the first invalid field, and how many
+   there are, in the live region whenever a step or a form is sent with something missing. */
+function fieldLabel(f){
+  if(f.type==='checkbox') return 'Consent';
+  if(f.type==='radio') return 'What we can help with';
+  var box = f.closest('.field'), s = box && box.querySelector('span');
+  return s ? s.textContent.replace(/\s+/g,' ').trim() : (f.name || 'This field');
+}
+function errorText(f){
+  var box = f.closest('.field,.consent'), em = box && box.querySelector('.em');
+  if(em) return em.textContent;
+  var re = f.type==='radio' ? document.getElementById('routeErr') : null;
+  return re ? re.textContent : 'Please check this field.';
+}
+function announceInvalid(form, bad){
+  var n = form.querySelectorAll('[aria-invalid="true"]').length;
+  announce((n>1 ? n+' fields need attention. ' : '')+fieldLabel(bad)+': '+errorText(bad));
 }
 /* v5: every form's key value pairs, as one object (the same data goes urlencoded to Netlify Forms and as JSON to our own function) */
 function leadData(form, extra){
@@ -1078,16 +1202,24 @@ function toQuery(o){ var p = new URLSearchParams(); Object.keys(o).forEach(funct
 function track(name, params){ if(typeof window.ihgTrack==='function'){ try{ window.ihgTrack(name, params||{}); }catch(e){} } }
 /* Submission (BUILD-CONTRACT 4.3). Primary: urlencoded POST to "/" for Netlify Forms, which then runs
    submission-created. Fallback: the same data as JSON {form, data} to config.leadEndpoint (netlify/functions/lead.js).
-   Both failing rejects, and the caller shows the office telephones and the email; the draft stays in localStorage. */
+   Both failing rejects, and the caller shows the office telephones and the email; the draft stays in localStorage.
+   A stalled connection must not hold the button for minutes: each post is abandoned after SEND_TIMEOUT and the next
+   route is tried (every browser with fetch has AbortController). */
+var SEND_TIMEOUT = 15000;
+function fetchT(url, init){
+  var ctl = window.AbortController ? new AbortController() : null, t = null;
+  if(ctl){ init.signal = ctl.signal; t = setTimeout(function(){ ctl.abort(); }, SEND_TIMEOUT); }
+  return fetch(url, init).then(function(res){ clearTimeout(t); return res; }, function(err){ clearTimeout(t); throw err; });
+}
 function submitLead(form, extra){
   if(!HIST) return Promise.reject(new Error('local'));
   var t0 = Date.now(), data = leadData(form, extra), name = form.getAttribute('name') || data['form-name'] || '';
   function settle(r){ return new Promise(function(ok){ setTimeout(function(){ ok(r); }, Math.max(0, (reduced?0:700) - (Date.now()-t0))); }); }
-  return fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: toQuery(data)})
+  return fetchT('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: toQuery(data)})
     .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return {ok:true, via:'forms'}; })
     .then(null, function(err){
       var ep = D.config.leadEndpoint; if(!ep) throw err;
-      return fetch(ep, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({form:name, data:data})})
+      return fetchT(ep, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({form:name, data:data})})
         .then(function(res){ return res.json().then(function(j){ return j || {}; }, function(){ return {}; }).then(function(j){ if(!res.ok || !j.ok) throw new Error(j.reason || ('HTTP '+res.status)); j.via = 'lead'; return j; }); });
     })
     .then(settle);
@@ -1099,9 +1231,12 @@ function fallbackHTML(){
 }
 /* drafts: what someone typed survives a reload or a wander round the site, for every form (key ihg-draft-<form>) */
 var DRAFT_SKIP = {'form-name':1, company_url:1, consent:1, 'cf-turnstile-response':1};
+/* the hidden fields worth keeping: what the programme fit check wrote (brief 3.4), so a wander round the site does not
+   turn a programme-fit lead back into a plain website lead */
+var DRAFT_HIDDEN = {lead_source:1, quiz_answers:1};
 function draftKey(kind){ return 'ihg-draft-'+kind; }
 function readDraft(kind){ var d = store.get(draftKey(kind)); if(!d && kind==='contact') d = store.get('ihg-contact-draft'); return d; }
-function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && f.type!=='hidden' && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
+function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && (f.type!=='hidden' || DRAFT_HIDDEN[f.name]) && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
 function saveDraft(form, kind){ var o = {}; draftFields(form).forEach(function(f){ if(f.type==='radio'){ if(f.checked) o[f.name] = f.value; return; } o[f.name] = f.value; }); store.set(draftKey(kind), o); }
 function restoreDraft(form, dr){ draftFields(form).forEach(function(f){ if(dr[f.name]==null) return; if(f.type==='radio'){ if(f.value===dr[f.name] && !form.querySelector('input[name="'+f.name+'"]:checked')) f.checked = true; return; } f.value = dr[f.name]; }); }
 function draftNote(form){
@@ -1131,48 +1266,68 @@ function nextSteps(wrap, info){
   if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
   verifyStep(el, info, booking);
 }
-/* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first (the person can ask for SMS instead); when Twilio
-   is not configured the endpoint answers enabled:false and the step is skipped. Skipping keeps the lead, marked unverified. */
+/* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first; when WhatsApp cannot deliver (the number is
+   not on WhatsApp, or the WhatsApp sender is not yet approved) the page tries SMS itself, and the person can switch
+   channel or ask for the code again. When Twilio is not configured the endpoint answers enabled:false and the step is
+   skipped without a word. A number without a country code, or a rate limit, is said plainly and the enquiry continues
+   unverified. The code length is a Twilio Verify service setting (TO CONFIRM), so the page accepts 4 to 10 digits.
+   An approved code is never checked twice: Twilio discards it, so a second check would read as a wrong code; when the
+   backend could not record the result yet (verified:true, recorded:false) the step still finishes, with softer wording,
+   and the team marks the person by hand from the function log. */
+function byName(ch){ return ch==='sms' ? 'SMS' : 'WhatsApp'; }
 function verifyHTML(phone, channel){
-  var by = channel==='sms' ? 'SMS' : 'WhatsApp', other = channel==='sms' ? 'whatsapp' : 'sms';
+  var other = channel==='sms' ? 'whatsapp' : 'sms';
   return '<div class="verify" data-verify><div class="eyebrow">Verify your phone</div>'+
-    '<p>We have sent a six-digit code by '+by+' to <b>'+esc(phone)+'</b>. Enter it to confirm the number is yours. It takes a moment and helps us reply faster.</p>'+
-    '<form class="verify-f" novalidate><label class="field"><span class="vh">Six-digit code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digits" aria-label="Six-digit code"></label><button class="btn gold sm" type="submit" data-verify-send><span class="lbl">Verify</span><span class="spin"></span></button></form>'+
+    '<p>We have sent a code by '+byName(channel)+' to <b>'+esc(phone)+'</b>. Enter it to confirm the number is yours. It takes a moment and helps us reply faster.</p>'+
+    '<form class="verify-f" novalidate><label class="field"><span class="vh">Verification code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code" aria-label="Verification code"></label><button class="btn gold sm" type="submit" data-verify-send><span class="lbl">Verify</span><span class="spin"></span></button></form>'+
     '<div class="form-err" role="alert" hidden></div>'+
-    '<p class="xs verify-alt"><button class="tlink" type="button" data-channel="'+other+'">Send it by '+(other==='sms'?'SMS':'WhatsApp')+' instead</button><button class="tlink" type="button" data-verify-skip>Skip for now</button></p></div>';
+    '<p class="xs verify-alt"><button class="tlink" type="button" data-resend>Send it again</button><button class="tlink" type="button" data-channel="'+other+'">Send it by '+byName(other)+' instead</button><button class="tlink" type="button" data-verify-skip>Skip for now</button></p></div>';
 }
+function verifyNote(t){ return '<p class="xs verify-note">'+esc(t)+'</p>'; }
 function verifyStep(el, info, done){
   var ref = '', channel = 'whatsapp';
   function post(body){ return fetch(D.config.verifyEndpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }); }
-  function start(ch){ return post({action:'start', phone:info.phone, email:info.email, channel:ch}).then(function(r){ if(!r || r.ok===false || !r.enabled) throw new Error('off'); ref = r.ref || ''; channel = ch; return r; }); }
+  /* a refusal rejects with the answer attached (err.r), so the caller can tell "not enabled" from "could not send" */
+  function start(ch){ return post({action:'start', phone:info.phone, email:info.email, channel:ch}).then(function(r){ if(!r || r.ok===false || !r.enabled){ var e = new Error('off'); e.r = r || null; throw e; } ref = r.ref || ''; channel = ch; return r; }); }
+  function giveUp(text){ el.innerHTML = verifyNote(text); announce(text); done(false); }
   function draw(focus){
     el.innerHTML = verifyHTML(info.phone, channel);
     var f = el.querySelector('form'), inp = f.querySelector('input[name=code]'), btn = f.querySelector('[data-verify-send]'), err = el.querySelector('.form-err');
     f._b = true;
     function fail(msg){ err.innerHTML = msg; err.hidden = false; btn.classList.remove('loading'); btn.disabled = false; }
+    function resend(ch){ err.hidden = true; start(ch).then(function(){ draw(true); announce('A new code has been sent by '+byName(ch)+'.'); }, function(){ fail('<b>We could not send the code by '+byName(ch)+' just now.</b> Please try the other way, or skip for now.'); }); }
     f.addEventListener('submit', function(e){
       e.preventDefault(); var code = (inp.value||'').replace(/\D/g,'');
-      if(code.length!==6){ fail('<b>Please enter the six-digit code.</b>'); inp.focus(); return; }
+      if(code.length<4 || code.length>10){ fail('<b>Please enter the code we sent.</b>'); inp.focus(); return; }
       err.hidden = true; btn.classList.add('loading'); btn.disabled = true;
       post({action:'check', ref:ref, phone:info.phone, code:code, email:info.email}).then(function(r){
-        if(r && r.verified){ track('phone_verified', {form:info.kind, division:info.division}); el.innerHTML = '<p class="verified">'+TICK+'<span>Phone verified. Thank you.</span></p>'; announce('Phone verified.'); done(true); }
-        else fail('<b>That code did not match.</b> Please check it and try again, or ask for a new one.');
+        if(r && r.verified){
+          var noted = r.recorded !== false;
+          track('phone_verified', {form:info.kind, division:info.division, recorded:noted});
+          el.innerHTML = '<p class="verified">'+TICK+'<span>'+(noted ? 'Phone verified. Thank you.' : 'Code accepted. Thank you. We will note it on your enquiry shortly.')+'</span></p>';
+          announce(noted ? 'Phone verified.' : 'Code accepted.'); done(true);
+        }
+        else if(r && r.reason==='expired') fail('<b>That code has expired.</b> Send it again by WhatsApp or SMS below.');
+        else fail('<b>That code did not match.</b> Please check it and try again, or send it again below.');
       }, function(){ fail('<b>We could not check the code just now.</b> Please try again, or skip for now.'); });
     });
     el.querySelector('[data-verify-skip]').addEventListener('click', function(){ el.innerHTML = ''; announce('Verification skipped.'); done(false); });
-    el.querySelector('[data-channel]').addEventListener('click', function(){
-      var ch = this.getAttribute('data-channel'), by = ch==='sms' ? 'SMS' : 'WhatsApp'; err.hidden = true;
-      start(ch).then(function(){ draw(true); announce('A new code has been sent by '+by+'.'); }, function(){ fail('<b>We could not send the code by '+by+' just now.</b> Please try the other way, or skip for now.'); });
-    });
+    el.querySelector('[data-resend]').addEventListener('click', function(){ resend(channel); });
+    el.querySelector('[data-channel]').addEventListener('click', function(){ resend(this.getAttribute('data-channel')); });
     if(focus) inp.focus({preventScroll:true});
-    else announce('Verify your phone: a six-digit code has been sent by '+(channel==='sms'?'SMS':'WhatsApp')+'.');
+    else announce('Verify your phone: a code has been sent by '+byName(channel)+'.');
   }
-  start('whatsapp').then(function(){ draw(false); }, function(){ done(false); });
+  start('whatsapp').then(function(){ draw(false); }, function(err){
+    var r = err && err.r;
+    if(!r || !r.enabled){ done(false); return; }   /* not configured, or no answer at all: nothing to say */
+    if(r.reason==='provider'){ start('sms').then(function(){ draw(false); }, function(){ giveUp('We could not send a verification code to this number, so we will continue without it.'); }); return; }
+    giveUp(r.reason==='phone' ? 'We could not send a verification code: the number needs its country code (for example +971 or +234). We will continue without it.' : 'We could not send a verification code just now, so we will continue without it.');
+  });
 }
 /* Booking (brief 3.4): one button per office from config.booking, with name, email and a1 (division) appended (Calendly style;
    the same parameters are added to any other URL). An empty url shows the tbc text in the same spot. */
 function bookingURL(url, info){
-  var q = 'name='+encodeURIComponent(info.fullName||'')+'&email='+encodeURIComponent(info.email||'')+'&a1='+encodeURIComponent(info.division||'');
+  var q = 'name='+encodeURIComponent(info.fullName||'')+'&email='+encodeURIComponent(info.email||'')+'&a1='+encodeURIComponent(info.divisionName||info.division||'');
   return url+(url.indexOf('?')>-1 ? '&' : '?')+q;
 }
 function bookingHTML(info){
@@ -1181,7 +1336,7 @@ function bookingHTML(info){
     var b = B[o.city.toLowerCase()]; if(!b) return '';
     return b.url ? '<a class="btn sm mag" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
   }).join('');
-  return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Your name, email and enquiry are passed along, so there is nothing to type again.</p><div class="btns">'+rows+'</div></div>';
+  return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Where the booking page allows it, your name and email are filled in for you.</p><div class="btns">'+rows+'</div></div>';
 }
 function bookingSide(){
   var B = D.config.booking || {};
@@ -1322,12 +1477,13 @@ function bindForms(){
     if(kind==='interest') ensureHidden(form, 'audience', 'clients');
     ensureHidden(form, 'site', D.config.site); ensureHidden(form, 'lead_source', 'website');
     ensurePrivacyLink(form);
+    disposableList();
     turnstileBind(form);
     var applyCond = bindCond(form);
     /* draft (every form): restore what was typed, keep saving, and offer a clean start */
     draftNote(form);
     var dr = readDraft(kind);
-    if(dr && (dr.name || dr.email || dr.msg)){ restoreDraft(form, dr); applyCond(); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
+    if(dr && (dr.name || dr.email || dr.msg || dr.quiz_answers)){ restoreDraft(form, dr); applyCond(); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
     form.addEventListener('input', function(){ saveDraft(form, kind); }); form.addEventListener('change', function(){ saveDraft(form, kind); });
     var clr = form.querySelector('[data-clear-draft]');
     if(clr) clr.addEventListener('click', function(){ store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft'); render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
@@ -1339,34 +1495,55 @@ function bindForms(){
       var r = 'clients'; D.enquiry.forEach(function(x){ if(x.v===v && x.aud) r = x.aud; }); return r;
     }
     function val(n){ var f = form.elements.namedItem(n); return f && !f.disabled ? (f.value||'').trim() : ''; }
+    /* the control that sends: [data-send] on the three step form (its first submit button is the hidden step 1 Continue), otherwise the form's last submit button */
+    function sendButton(){ return form.querySelector('[data-send]') || [].slice.call(form.querySelectorAll('button[type=submit]')).pop(); }
+    function busy(btn, on){ btn.classList.toggle('loading', !!on); btn.disabled = !!on; if(on) btn.setAttribute('aria-busy','true'); else btn.removeAttribute('aria-busy'); }
+    function showErr(html){ if(!errBox) return; errBox.innerHTML = html; errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
+    /* an email the backend would refuse: the field is marked with the reason, the step that holds it is shown again */
+    function emailProblem(em, disposable){
+      var box = em.closest('.field'); if(box){ emailMessage(box, em, disposable); box.classList.add('err'); box.classList.remove('ok'); }
+      em.setAttribute('aria-invalid','true');
+      var st = em.closest('.cf-step'); if(st && form._showStep && !st.classList.contains('on')) form._showStep(+st.getAttribute('data-step'), true);
+      announceInvalid(form, em); em.focus({preventScroll:true});
+    }
     function finish(dest, name){
-      var btn = form.querySelector('[data-send], button[type=submit]'); btn.classList.add('loading'); btn.disabled = true; btn.setAttribute('aria-busy','true');
+      var btn = sendButton(); busy(btn, true);
       if(errBox) errBox.hidden = true;
-      if(form.company_url && form.company_url.value){ return; }
+      /* honeypot (brief 3.3): nothing is posted. A person whose browser filled the hidden field sees the office contacts, not a spinner. */
+      if(form.company_url && form.company_url.value){ busy(btn, false); showErr(fallbackHTML()); return; }
       var extra = {page: location.href, audience_resolved: audOf()};
       if(kind!=='interest') extra.routed_to = dest || 'Imperial Holdings Group';
       var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || (kind==='interest' ? 'real-estate' : ''));
-      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, lead_source:val('lead_source') || 'website'};
-      turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
-        store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
-        track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
-        if(kind==='guide'){
-          var G = D.guideCopy, GC = D.config.guide;
-          info.msg = esc(GC.file ? G.ready : G.soon);
-          info.inner = GC.file ? '<div class="btns" style="justify-content:center;margin-top:22px"><a class="btn gold" href="'+esc(GC.file)+'" download data-guide><span>Download the guide</span>'+AR+'</a></div>' : '<p>'+tbc(GC.tbc)+'</p>';
-        }
-        else info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
-        showSuccess(wrap, info, anchor);
-      }, function(err){
-        btn.classList.remove('loading'); btn.disabled = false; btn.removeAttribute('aria-busy');
-        if(errBox){ errBox.innerHTML = err && err.message==='local' ? '<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.' : fallbackHTML(); errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
+      var dn = division==='group' ? 'Imperial Holdings Group' : ((div(division)||{}).name || '');
+      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, divisionName:dn, lead_source:val('lead_source') || 'website'};
+      var em = form.elements.namedItem('email');
+      disposableList().then(function(){
+        if(em && !mark(em, true)){ busy(btn, false); emailProblem(em, disposableEmail(em.value)); return; }
+        return turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
+          store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
+          track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
+          if(kind==='guide'){
+            var G = D.guideCopy, GC = D.config.guide;
+            info.msg = esc(GC.file ? G.ready : G.soon);
+            info.inner = GC.file ? '<div class="btns" style="justify-content:center;margin-top:22px"><a class="btn gold" href="'+esc(GC.file)+'" download data-guide><span>Download the guide</span>'+AR+'</a></div>' : '<p>'+tbc(GC.tbc)+'</p>';
+          }
+          else info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
+          showSuccess(wrap, info, anchor);
+        }, function(err){
+          busy(btn, false);
+          var why = err && err.message;
+          if(why==='local'){ showErr('<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.'); return; }
+          /* the fallback endpoint names the reason; a refused address is a correction, not an outage */
+          if((why==='disposable' || why==='email') && em){ showErr('<b>'+(why==='disposable' ? DISPOSABLE_MSG : 'Please check the email address.')+'</b> Nothing has been sent yet.'); emailProblem(em, why==='disposable'); return; }
+          showErr(fallbackHTML());
+        });
       });
     }
     if(kind==='interest' || kind==='enquiry' || kind==='guide'){
       form.addEventListener('submit', function(e){
         e.preventDefault(); var bad=null;
         [].forEach.call(form.querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
-        if(bad){ bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
+        if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
         var dest = kind==='guide' ? 'Imperial Citizenship' : null;
         if(kind==='enquiry'){ var dv = form.elements.namedItem('division').value; dest = 'the Group team'; D.enquiry.forEach(function(x){ if(x.v===dv){ var d = div(x.to); dest = d ? d.name : 'the Group team'; } }); }
         finish(dest, (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
@@ -1400,6 +1577,7 @@ function bindForms(){
       announce('Step '+n+' of 3: '+titles[n-1]);
       var top = wrap.getBoundingClientRect().top; if(top < 70 || top > window.innerHeight*0.6) window.scrollTo({top: top + window.pageYOffset - 110, behavior: reduced?'auto':'smooth'});
     }
+    form._showStep = show;
     function check(n){
       if(n===1){ if(!chosen()){ form.querySelector('.routes-wrap').classList.add('err'); return radios[0]; } return null; }
       var bad = null;
@@ -1409,7 +1587,7 @@ function bindForms(){
     form.addEventListener('submit', function(e){
       e.preventDefault();
       var bad = check(step);
-      if(bad){ bad.focus({preventScroll:true}); var r=bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
+      if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); var r=bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
       if(step<3){ show(step+1); return; }
       finish(destName(), (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
     });
@@ -1503,7 +1681,7 @@ function compare(){
     row('For', function(d){ return esc(d.who[0]); })+
     row('Covers', function(d){ return '<ul>'+d.bullets.map(function(b){ return '<li>'+esc(b)+'</li>'; }).join('')+'</ul>'; })+
     row('How it starts', function(d){ return d.how ? esc(d.how[0][0])+': '+esc(d.how[0][1]) : 'Register interest ahead of launch.'; })+
-    row('Online', function(d){ var s=site[d.name]; return s ? (s.real ? '<a class="ul" href="'+s.href+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>' : tbc('Link to confirm')) : '<span class="muted">At launch</span>'; })+
+    row('Online', function(d){ var s=site[d.name]; return s && !s.soon ? (s.real ? '<a class="ul" href="'+s.href+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>' : tbc('Link to confirm')) : '<span class="muted">At launch</span>'; })+
     '</tbody></table></div><p class="xs cmp-hint" aria-hidden="true">Swipe sideways to compare</p></div></section>';
 }
 
@@ -1515,9 +1693,9 @@ function shareBar(a, what){
   return '<div class="share" data-share data-title="'+esc(a.title)+'"><span class="share-l">Share</span>'+
     '<button type="button" data-sh="copy" aria-label="Copy link to this '+what+'">'+LINK+'<span>Copy link</span></button>'+
     '<button type="button" data-sh="native" aria-label="Share this '+what+'" hidden>'+SHARE+'<span>Share</span></button>'+
-    '<a data-sh="li" target="_blank" rel="noopener" aria-label="Share on LinkedIn" href="#">in</a>'+
-    '<a data-sh="wa" target="_blank" rel="noopener" aria-label="Share on WhatsApp" href="#">WA</a>'+
-    '<a data-sh="mail" aria-label="Share by email" href="#">@</a></div>';
+    '<a data-sh="li" target="_blank" rel="noopener" aria-label="in, share on LinkedIn" href="#">in</a>'+
+    '<a data-sh="wa" target="_blank" rel="noopener" aria-label="WA, share on WhatsApp" href="#">WA</a>'+
+    '<a data-sh="mail" aria-label="@, share by email" href="#">@</a></div>';
 }
 function bindShare(){
   [].forEach.call(app.querySelectorAll('[data-share]'), function(s){
@@ -1619,13 +1797,13 @@ palIn.addEventListener('keydown', function(e){
 palList.addEventListener('click', function(e){ var o = e.target.closest('[role=option]'); if(o) palOpenItem(+o.getAttribute('data-i')); });
 palList.addEventListener('mousemove', function(e){ var o = e.target.closest('[role=option]'); if(!o) return; var i=+o.getAttribute('data-i'); if(i!==palSel){ palSel=i-0; palMove(0); } });
 pal.addEventListener('click', function(e){ if(e.target.closest('[data-pal-close]')){ closePal(); } if(e.target.closest('#palEmpty a')){ closePal(true); } });
-pal.addEventListener('keydown', function(e){ if(e.key==='Tab'){ var f=[palIn, pal.querySelector('.pal-esc')]; var i=f.indexOf(document.activeElement); e.preventDefault(); f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus(); } });
+pal.addEventListener('keydown', function(e){ if(e.key==='Tab'){ var f=[palIn, pal.querySelector('.pal-body'), pal.querySelector('.pal-esc')]; var i=f.indexOf(document.activeElement); e.preventDefault(); f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus(); } });
 document.addEventListener('keydown', function(e){
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'') || (document.activeElement && document.activeElement.isContentEditable);
   if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){ e.preventDefault(); if(pal.hidden) openPal(); else closePal(); }
   else if(e.key==='/' && !typing && pal.hidden){ e.preventDefault(); openPal(); }
 });
-(function(){ var k=document.getElementById('kbdHint'); if(k) k.textContent=KBD; })();
+(function(){ var k=document.getElementById('kbdHint'); if(!k) return; k.textContent=KBD; var b=k.closest('button'); if(b) b.setAttribute('aria-label', 'Search the site, '+KBD); })();
 
 /* ---------- back to top, intro veil ---------- */
 document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduced?'auto':'smooth'}); var m=document.getElementById('main'); m.focus({preventScroll:true}); });
@@ -1663,5 +1841,5 @@ function routes(){
   out.push('/contact', '/privacy', '/terms');
   return out;
 }
-window.IHG_APP = {routes: routes, resolve: resolve, parse: parse};
+window.IHG_APP = {routes: routes, resolve: resolve, parse: parse, showError: function(){ showError(null); }};
 })();

@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "note": "The six Imperial sites, in the order the ecosystem menu and the footer list them. This file is the source: assets/js/data.js (sites) copies these values by hand (data.js is a plain script and cannot fetch), and shared/chrome/header.html and footer.html carry the same links. One entry per site: key (the site key in shared/lead-schema.json), name, short, role (from docs/BUILD-CONTRACT.md and the site copy), tagline, url, real (true only where the URL is live), tbc (what is still to confirm), logo (file names under assets/logos, null where none exists; logoTbc says what is missing, and the footer uses the horizontal file where stacked is null), journalFeed (IHG only: the RSS feed every division site links to). See docs/ECOSYSTEM.md and shared/chrome/README.md.",
+  "parent": "ihg",
+  "sites": [
+    {
+      "key": "ihg",
+      "name": "Imperial Holdings Group",
+      "short": "Holdings Group",
+      "role": "The parent of five specialist divisions, led from Dubai and Lagos",
+      "tagline": "Two cities. One horizon.",
+      "url": "https://www.imperialholdingsgroup.com",
+      "real": false,
+      "tbc": "TO CONFIRM: final production domain (imperialholdingsgroup.com)",
+      "logo": {"horizontal": "IHG-Horizontal-Gold.svg", "stacked": "IHG-Stacked-Gold.svg", "crown": "Imperial-Crown-Gold.svg"},
+      "journalFeed": "/journal/feed.xml"
+    },
+    {
+      "key": "citizenship",
+      "name": "Imperial Citizenship",
+      "short": "Citizenship",
+      "role": "The flagship: second residency and citizenship by investment, from first conversation to completed application",
+      "tagline": "Global mobility. Greater possibilities.",
+      "url": "https://imperialcitizenship.com",
+      "real": true,
+      "logo": null,
+      "logoTbc": "TO CONFIRM: Imperial Citizenship wordmark file (the site uses the crown and the name set in type)"
+    },
+    {
+      "key": "partners-club",
+      "name": "Imperial Partners Club",
+      "short": "Partners Club",
+      "role": "For professionals: the network of lawyers, bankers, wealth advisers and family offices who introduce families to us",
+      "tagline": "A global network for growth. Together further.",
+      "url": "",
+      "real": false,
+      "tbc": "TO CONFIRM: Imperial Partners Club website link",
+      "logo": {"horizontal": "IPC-Horizontal-Gold.svg", "stacked": null, "crown": "Imperial-Crown-Gold.svg"},
+      "logoTbc": "TO CONFIRM: Imperial Partners Club stacked wordmark (IPC-Stacked-Gold.svg was removed as unused in the housekeeping round; the footer uses the horizontal file until one is supplied)"
+    },
+    {
+      "key": "private-office",
+      "name": "Imperial Private Office",
+      "short": "Private Office",
+      "role": "For existing Clients: one lasting relationship for families with multi-country lives",
+      "tagline": "Personalised solutions for exceptional clients.",
+      "url": "",
+      "real": false,
+      "tbc": "TO CONFIRM: Imperial Private Office website link",
+      "logo": {"horizontal": "IPO-Horizontal-Gold.svg", "stacked": null, "crown": "Imperial-Crown-Gold.svg"}
+    },
+    {
+      "key": "real-estate",
+      "name": "Imperial Real Estate",
+      "short": "Real Estate",
+      "role": "Coming soon: licensed property advisory, starting with Dubai",
+      "tagline": "Curated properties. Enduring value.",
+      "url": "",
+      "real": false,
+      "soon": true,
+      "tbc": "TO CONFIRM: Imperial Real Estate website link (at launch)",
+      "logo": {"horizontal": "IR-Horizontal-Gold.svg", "stacked": null, "crown": "Imperial-Crown-Gold.svg"}
+    },
+    {
+      "key": "academy",
+      "name": "Imperial Academy",
+      "short": "Academy",
+      "role": "Learning and standards: training and certification for the people who do this work",
+      "tagline": "Education. Talent. Leadership. A stronger tomorrow.",
+      "url": "",
+      "real": false,
+      "tbc": "TO CONFIRM: Imperial Academy website link",
+      "logo": {"horizontal": "IA-Horizontal-Gold.svg", "stacked": null, "crown": "Imperial-Crown-Gold.svg"}
+    }
+  ]
+}
