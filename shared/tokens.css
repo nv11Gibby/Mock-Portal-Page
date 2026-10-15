@@ -21,7 +21,7 @@
   /* gold: the primary button, hairlines and the crown */
   --gold:#C4A574; --gold-l:#DCC49B; --gold-ink:#7A5F36; --gold-d:#9C7F52;
   /* text on dark */
-  --text:#F1ECE3; --soft:rgba(241,236,227,.76); --dim:rgba(241,236,227,.62); --faint:rgba(241,236,227,.4);
+  --text:#F1ECE3; --soft:rgba(241,236,227,.76); --dim:rgba(241,236,227,.62); --faint:rgba(241,236,227,.52);
   --line:rgba(241,236,227,.12); --line-2:rgba(241,236,227,.24);
   /* text and hairlines on light */
   --l-text:#1A1815; --l-body:#45413B; --l-muted:#655F56; --l-line:rgba(26,24,21,.13); --l-line-2:rgba(26,24,21,.26);

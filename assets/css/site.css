@@ -1,9 +1,6 @@
 /* ===== Imperial Holdings Group v2 · "The evening house" =====
    One motion system: --e-out for entrances, --e-io for state changes, durations --t1..--t5.
    Everything animates transform / opacity / clip-path only. prefers-reduced-motion removes it all. */
-@font-face{font-family:'Manrope';src:url(../fonts/manrope-400.woff2) format('woff2');font-weight:300 400;font-display:swap}
-@font-face{font-family:'Manrope';src:url(../fonts/manrope-500.woff2) format('woff2');font-weight:500;font-display:swap}
-@font-face{font-family:'Manrope';src:url(../fonts/manrope-600.woff2) format('woff2');font-weight:600;font-display:swap}
 @font-face{font-family:'Inter';src:url(../fonts/inter-latin-400-normal.woff2) format('woff2');font-weight:400;font-display:swap}
 @font-face{font-family:'Inter';src:url(../fonts/inter-latin-500-normal.woff2) format('woff2');font-weight:500;font-display:swap}
 @font-face{font-family:'Inter';src:url(../fonts/inter-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:swap}
@@ -1013,7 +1010,6 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 @font-face{font-family:'Cormorant Garamond';src:url(../fonts/cormorant-garamond-latin-500-normal.woff2) format('woff2');font-weight:500;font-display:swap}
 @font-face{font-family:'Cormorant Garamond';src:url(../fonts/cormorant-garamond-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:swap}
 @font-face{font-family:'Cormorant Garamond';src:url(../fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2');font-weight:500;font-style:italic;font-display:swap}
-@font-face{font-family:'Cinzel';src:url(../fonts/cinzel-latin-400-normal.woff2) format('woff2');font-weight:400;font-display:swap}
 /* v4 set --head to Cormorant Garamond and widened --sec; both values now live in shared/tokens.css. */
 .d1{font-weight:500;font-size:clamp(56px,9.8vw,160px);line-height:.94;letter-spacing:-.02em}
 .d2{font-weight:500;font-size:clamp(40px,5.8vw,92px);line-height:1;letter-spacing:-.015em}
@@ -1211,7 +1207,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 /* guide */
 #guide .form-card{background:#fff}
 #guide .small b{font-weight:500;color:var(--l-text)}
-=======
+
 /* === v5 media === */
 /* Home hero: the silent loop sits over the still photograph and is only rendered when motion and data allow it.
    The small TO CONFIRM line under the clock marks the hero photograph as provisional until the shoot. */
@@ -1251,3 +1247,24 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .hh-cred{margin-top:14px}
 }
 .founder-film .vid-stage img{object-position:50% 18%}
+
+/* === v5 trust === */
+/* Legal pages: lists, the "last updated" line and the two office addresses in the privacy notice */
+.legal ul{margin:0 0 1em;padding-left:1.25em;color:var(--l-body)}
+.legal li{margin:4px 0;max-width:44em}
+.legal-updated{margin:-4px 0 8px}
+.legal-offices{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;margin:4px 0 1em;font-size:15px;color:var(--l-body);line-height:1.6}
+.legal-offices b{display:block;color:var(--l-text);font-weight:500;margin-bottom:2px}
+@media (max-width:640px){ .legal-offices{grid-template-columns:1fr} }
+/* Keyboard focus (brief 8, acceptance test 9.7). The global :focus-visible ring is gold (gold-l on dark, gold-ink on
+   light) and every control keeps it; the search box removes its own outline, so the box shows focus through a gold
+   rule instead. The consent box carries error text like every other field, so screen readers can read it. */
+.pal-top:focus-within{border-bottom-color:var(--gold);box-shadow:inset 0 -1px 0 var(--gold)}
+.consent .em{grid-column:2;display:none;font-style:normal;font-size:13px;color:#9A3B2A}
+.consent.err .em{display:block}
+.pal-body:focus-visible{outline-offset:-4px}
+/* 404 and error pages (brief 8): both offices and the email under the links; the error page's watermark reads Error. */
+.nf-kv{margin-top:38px;grid-template-columns:repeat(3,auto);justify-content:start;gap:16px 40px}
+.nf-kv .ul{font-weight:500;white-space:nowrap}
+.nf.err::after{content:"Error";font-size:28vw}
+@media (max-width:640px){ .nf-kv{grid-template-columns:1fr} .nf.err::after{font-size:44vw} }

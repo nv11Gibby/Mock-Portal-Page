@@ -5,6 +5,8 @@
    - one HTML file per route, prerendered through the real app inside jsdom (build/prerender.js), written twice
      (about.html and about/index.html) so every static host serves /about;
    - 404.html from the app's not-found view, never indexed;
+   - error.html from the app's error view (V.error, "Something went wrong on our side", with the office contacts),
+     for the host to serve on a server error, never indexed;
    - robots.txt, sitemap.xml and journal/feed.xml (RSS 2.0 of journal entries and insights);
    - _headers from build/headers.template, with the sha256 of every inline script and the CSP origins GA4 and
      Turnstile need only when those keys are configured in data.js.
@@ -116,6 +118,14 @@ if(nf.errors.length) problems.push('404: ' + nf.errors.join(' | '));
 write('404.html', finish(nf, {notFound: true}));
 nf.close();
 
+/* error.html (brief section 8): rendered on a path the app does not know (so the intro veil stays off), then switched
+   to the error view through the app's own showError(). Same treatment as 404.html: noindex, no canonical. */
+const er = render('/error');
+er.window.IHG_APP.showError();
+if(er.errors.length) problems.push('error.html: ' + er.errors.join(' | '));
+write('error.html', finish(er, {notFound: true}));
+er.close();
+
 /* 3. robots.txt and sitemap.xml. */
 write('robots.txt', [
   LAUNCH ? '# Imperial Holdings Group' : '# Imperial Holdings Group. Pre-launch: the X-Robots-Tag header and the robots meta tag keep every page out of the index until the build runs with LAUNCH=1.',
@@ -199,7 +209,7 @@ distIndex.replace(/<link rel="preload" as="image" href="([^"]+)"/g, function(m, 
 /* 7. Report. */
 const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
-console.log('build: ' + pages.length + ' pages + 404.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
+console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
 console.log('hero: ' + heroes.map(function(h){ return h.href + ' ' + (h.size < 0 ? 'missing' : Math.round(h.size / 1024) + ' KB'); }).join(', '));
 console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
