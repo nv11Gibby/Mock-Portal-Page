@@ -114,7 +114,8 @@ division entry in `data.js`) are written to be lifted as they are.
 * The IHG production domain (`imperialholdingsgroup.com` is assumed in `config.siteUrl` and `ecosystem.json`).
 * The Partners Club, Private Office, Real Estate and Academy website addresses, and when each goes live on the
   shared core.
-* A wordmark file for Imperial Citizenship (the site sets its name in type next to the crown today).
+* A wordmark file for Imperial Citizenship (the site sets its name in type next to the crown today), and a stacked
+  wordmark for Imperial Partners Club (the horizontal file stands in for the footer; `logoTbc` in `ecosystem.json`).
 * GA4 measurement ids and Search Console tokens, per site (Gilbert).
 * Pipedrive owner user ids per division in `shared/lead-routing.json`, and whether Academy enquiries belong in the
   Introducer Pipeline.

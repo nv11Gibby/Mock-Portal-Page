@@ -47,7 +47,7 @@ the cross-link rules, the switches, what is still TO CONFIRM) is in `docs/ECOSYS
    | `{{HOME_URL}}` | The site's home, usually `/` |
    | `{{CONTACT_URL}}` | The site's contact page, for the Enquire now buttons |
    | `{{IHG_URL}}` | `https://www.imperialholdingsgroup.com` (TO CONFIRM: final domain), no trailing slash |
-   | `{{LOGO_HORIZONTAL}}`, `{{LOGO_STACKED}}`, `{{LOGO_CROWN}}` | Files under `assets/logos/`, named per site in `shared/ecosystem.json` |
+   | `{{LOGO_HORIZONTAL}}`, `{{LOGO_STACKED}}`, `{{LOGO_CROWN}}` | Files under `assets/logos/`, named per site in `shared/ecosystem.json`. Where `stacked` is `null` there (Partners Club, Private Office, Real Estate, Academy today), put the horizontal file in `{{LOGO_STACKED}}` too: the footer brand image is sized by height (`.ftr-brand img`), so the horizontal wordmark fits; `logoTbc` says what is still to come |
    | `{{PRIVACY_URL}}`, `{{TERMS_URL}}`, `{{YEAR}}` | The site's own legal pages and the current year |
    | `{{ACTIVE:item}}` | Replace with `aria-current="page"` on the current nav item or site; delete the rest |
 

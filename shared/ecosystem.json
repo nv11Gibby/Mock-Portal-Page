@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "The six Imperial sites, in the order the ecosystem menu and the footer list them. This file is the source: assets/js/data.js (sites) copies these values by hand (data.js is a plain script and cannot fetch), and shared/chrome/header.html and footer.html carry the same links. One entry per site: key (the site key in shared/lead-schema.json), name, short, role (from docs/BUILD-CONTRACT.md and the site copy), tagline, url, real (true only where the URL is live), tbc (what is still to confirm), logo (file names under assets/logos, null where none exists), journalFeed (IHG only: the RSS feed every division site links to). See docs/ECOSYSTEM.md and shared/chrome/README.md.",
+  "note": "The six Imperial sites, in the order the ecosystem menu and the footer list them. This file is the source: assets/js/data.js (sites) copies these values by hand (data.js is a plain script and cannot fetch), and shared/chrome/header.html and footer.html carry the same links. One entry per site: key (the site key in shared/lead-schema.json), name, short, role (from docs/BUILD-CONTRACT.md and the site copy), tagline, url, real (true only where the URL is live), tbc (what is still to confirm), logo (file names under assets/logos, null where none exists; logoTbc says what is missing, and the footer uses the horizontal file where stacked is null), journalFeed (IHG only: the RSS feed every division site links to). See docs/ECOSYSTEM.md and shared/chrome/README.md.",
   "parent": "ihg",
   "sites": [
     {
@@ -35,7 +35,8 @@
       "url": "",
       "real": false,
       "tbc": "TO CONFIRM: Imperial Partners Club website link",
-      "logo": {"horizontal": "IPC-Horizontal-Gold.svg", "stacked": "IPC-Stacked-Gold.svg", "crown": "Imperial-Crown-Gold.svg"}
+      "logo": {"horizontal": "IPC-Horizontal-Gold.svg", "stacked": null, "crown": "Imperial-Crown-Gold.svg"},
+      "logoTbc": "TO CONFIRM: Imperial Partners Club stacked wordmark (IPC-Stacked-Gold.svg was removed as unused in the housekeeping round; the footer uses the horizontal file until one is supplied)"
     },
     {
       "key": "private-office",

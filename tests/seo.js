@@ -2,7 +2,8 @@
    every route and asserts: 200, prerendered, exactly one title, description and canonical, an absolute og:image,
    unique titles and descriptions across pages, valid JSON-LD of the expected types; robots.txt and sitemap.xml
    answer 200 and the sitemap lists every route; the RSS feed exists; 404.html is noindex and carries the office
-   contacts; _headers holds the inline script hashes; the hero preloads are under 200 KB.
+   contacts; every logo file named in shared/ecosystem.json is in the build; _headers holds the inline script hashes;
+   the hero preloads are under 200 KB.
    Usage: node tests/seo.js [dist dir] [port]   (defaults: dist, 8776). Run `npm run build` first.
    The route list is built here from data.js on purpose, independently of app.js, so a page missing from the build is
    caught rather than copied. */
@@ -99,6 +100,11 @@ function startServer(){
     const nf = await get(BASE + '/404.html');
     const tels = D.contact.offices.map(function(o){ return o.tel; });
     ok(nf.status === 200 && /<meta name="robots" content="noindex/.test(nf.body) && !/rel="canonical"/.test(nf.body) && /data-prerendered/.test(nf.body) && tels.every(function(t){ return nf.body.indexOf(t) > -1; }) && nf.body.indexOf(D.contact.email) > -1, '404.html: noindex, no canonical, office contacts present', 'status ' + nf.status);
+    /* the ecosystem package: every logo file it names must exist (a null entry means the site has no such file) */
+    const eco = JSON.parse(fs.readFileSync(path.join(ROOT, 'shared/ecosystem.json'), 'utf8'));
+    const logos = [], lost = [];
+    eco.sites.forEach(function(s){ Object.keys(s.logo || {}).forEach(function(k){ const f = s.logo[k]; if(!f) return; logos.push(f); if(!fs.existsSync(path.join(DIR, 'assets/logos', f))) lost.push(s.key + '.' + k + ' ' + f); }); });
+    ok(logos.length > 0 && !lost.length, 'ecosystem.json names only logo files that exist (' + logos.length + ')', lost.join(', '));
     /* headers, redirects, hero weight */
     const headers = fs.readFileSync(path.join(DIR, '_headers'), 'utf8'), index = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8');
     const hashes = []; index.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, function(m, a, b){ if(!/\ssrc=/.test(a) && !/ld\+json/.test(a) && b.trim()) hashes.push('sha256-' + crypto.createHash('sha256').update(b, 'utf8').digest('base64')); return m; });
