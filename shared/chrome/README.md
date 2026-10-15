@@ -9,7 +9,7 @@ the cross-link rules, the switches, what is still TO CONFIRM) is in `docs/ECOSYS
 |---|---|
 | `shared/tokens.css` | The design tokens: colours, type families, page rhythm, header height, motion |
 | `shared/chrome/chrome.css` | The header, mega menu, mobile menu and footer rules, copied from `assets/css/site.css` |
-| `shared/chrome/header.html` | The header and the mobile menu, with the "Our ecosystem" menu linking the six sites |
+| `shared/chrome/header.html` | The header and the mobile menu, with the "Our ecosystem" menu: the five divisions, their photographs and the strip of six sites |
 | `shared/chrome/footer.html` | The footer: divisions, the Group, offices, websites, legal line |
 | `shared/ecosystem.json` | The six sites: key, name, role, tagline, url, what is TO CONFIRM, logo files, the Journal feed |
 | `shared/analytics.js` | GA4 cookie-free setup and `window.ihgTrack` for the six conversion events |
@@ -47,25 +47,42 @@ the cross-link rules, the switches, what is still TO CONFIRM) is in `docs/ECOSYS
    | `{{HOME_URL}}` | The site's home, usually `/` |
    | `{{CONTACT_URL}}` | The site's contact page, for the Enquire now buttons |
    | `{{IHG_URL}}` | `https://www.imperialholdingsgroup.com` (TO CONFIRM: final domain), no trailing slash |
-   | `{{LOGO_HORIZONTAL}}`, `{{LOGO_STACKED}}`, `{{LOGO_CROWN}}` | Files under `assets/logos/`, named per site in `shared/ecosystem.json` |
+   | `{{IMG_DIR}}` | The folder with the five division photographs the ecosystem menu shows, for example `assets/img` (step 4) |
+   | `{{LOGO_HORIZONTAL}}`, `{{LOGO_STACKED}}`, `{{LOGO_CROWN}}` | Files under `assets/logos/`, named per site in `shared/ecosystem.json`. Where `stacked` is `null` there (Partners Club, Private Office, Real Estate, Academy today), put the horizontal file in `{{LOGO_STACKED}}` too: the footer brand image is sized by height (`.ftr-brand img`), so the horizontal wordmark fits; `logoTbc` says what is still to come |
    | `{{PRIVACY_URL}}`, `{{TERMS_URL}}`, `{{YEAR}}` | The site's own legal pages and the current year |
-   | `{{ACTIVE:item}}` | Replace with `aria-current="page"` on the current nav item or site; delete the rest |
+   | `{{ACTIVE:item}}` | Replace with `aria-current="page"` on the current nav item; delete the rest |
 
-4. Put the site's own pages in the `nav`. The items in the file are IHG's, as the example. Keep the "Our ecosystem"
+4. Fill the ecosystem menu's third column. The menu is IHG's, as `buildChrome()` in `assets/js/app.js` renders it
+   (after `npm run build`, `#megaIn` and `#mmSub` in `dist/index.html` are the reference): the intro, the list of
+   the five divisions linking the Group site's division pages, the photograph column `.mega-prev` with one figure per
+   division (short name and one line, from `divisions` in `data.js`), and the strip `.mega-sites` with the six sites
+   from `shared/ecosystem.json`. `chrome.css` lays the menu out on three columns (`.mega-in`), so the photograph
+   column must be filled: copy IHG's five crops from `assets/img/` (`citizenship-c.webp`, `partners-c.webp`,
+   `private-office-c.webp`, `real-estate-c.webp`, `academy-c.webp`, each 600px wide) next to the logos and point
+   `{{IMG_DIR}}` at the folder, or put the site's own photograph of each division in the same five slots. The
+   `real-estate` crop is an Unsplash photograph, credited in IHG's footer credits: carry the credit with the file.
+   The mobile accordion `#mmSub` uses the same five files as 56px thumbnails. A site that wants no photographs removes
+   `.mega-prev` and the thumbnails and adds one rule to its own stylesheet, after `chrome.css`, so the grid has two
+   columns instead of an empty third: `.mega-in{grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr)}` (and the
+   same under `chrome.css`'s 1180px breakpoint, where `.mega-intro` spans the row: `minmax(0,1fr)`). Do not edit
+   `chrome.css` for it: that file stays a verbatim copy of the IHG rules.
+5. Put the site's own pages in the `nav`. The items in the file are IHG's, as the example. Keep the "Our ecosystem"
    button and its menu: that is the piece the brief asks every site to share.
-5. Add the small script the chrome needs. On IHG it is part of `assets/js/app.js`; the hooks are plain classes, so a
+6. Add the small script the chrome needs. On IHG it is part of `assets/js/app.js`; the hooks are plain classes, so a
    short script does the same elsewhere:
    * `body.scrolled` once the page has scrolled 40px (solid header); `body.hdr-hide` when scrolling down past the
      first screen, removed on the way up; `body.solid-hdr` on pages without a dark hero.
    * The ecosystem button toggles `hidden` on `#mega`, `body.mega-open` and its own `aria-expanded`; Esc and a click
-     outside close it.
+     outside close it. Moving over or focusing a `.mega-item` sets `.on` on it and on the `.mega-prev figure` with
+     the same `data-i`, and removes it from the others (the first pair starts with `.on`, as in the file).
    * The burger toggles `hidden` on `#mmenu`, `body.mm-open`, `aria-expanded` and `body.style.overflow`; inside the
      menu, the accordion button toggles `.open` on its `li.mm-acc` and `aria-expanded`.
    * The WhatsApp button toggles `hidden` on `#waPop` and `aria-expanded`.
    * A link with `data-tbc` is a site that is not online yet: show its text (IHG shows a toast "Link to confirm") and
      do not navigate. Replace the link with the real URL once it is confirmed in `shared/ecosystem.json`.
-6. The six site links in both files, and the `sites` list in IHG's `assets/js/data.js`, are copies of
-   `shared/ecosystem.json`. When a URL is confirmed, change the JSON first, then the three copies.
+7. The six site links in both files (the `.mega-sites` strip in the header, the Websites column in the footer), and
+   the `sites` list in IHG's `assets/js/data.js`, are copies of `shared/ecosystem.json`. When a URL is confirmed,
+   change the JSON first, then the three copies.
 
 ## 3. The lead function
 
@@ -93,7 +110,8 @@ notice is needed. Send the six conversion events through `window.ihgTrack(name, 
 ## 5. Checklist for the next site
 
 * `shared/` copied as it is; tokens linked before the site CSS; fonts and base rules copied.
-* Header and footer pasted, placeholders filled, the chrome script in place.
+* Header and footer pasted, placeholders filled, the five division photographs in `{{IMG_DIR}}`, the chrome script
+  in place.
 * Links back to the Group site and to `/journal/feed.xml` present (the footer carries both).
 * `config.site`, `config.defaultDivision`, `config.ga4`, `config.siteUrl` set; owner set in `lead-routing.json`.
 * `npm run check` passes (no em dashes, ES5 syntax) and the forms post every field in the schema.

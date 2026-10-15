@@ -1,8 +1,10 @@
 /* Imperial ecosystem: design tokens (brief section 7, docs/ECOSYSTEM.md).
    One file for every Imperial site. These are the custom properties that define the look: colours, type families,
    the page rhythm (gutter, measure, section spacing, header height) and the motion system. They were moved here
-   from assets/css/site.css without changing a value; site.css keeps every rule that uses them. Link this file
-   before the site's own stylesheet:
+   from assets/css/site.css; the one value changed since the move is --faint, raised from .4 to .52 so the search
+   result kind label (.pal-k) reaches 4.5:1 on the palette background (commit 353f37e; tests/contrast.js checks it).
+   Every other value is the v4 site.css value. site.css keeps every rule that uses them. Link this file before the
+   site's own stylesheet:
      <link rel="stylesheet" href="shared/tokens.css?v=5">
      <link rel="stylesheet" href="assets/css/site.css?v=5">
 
@@ -20,7 +22,7 @@
   --paper:#F1ECE3; --paper-2:#E8E1D4; --stone:#D9D0BF;
   /* gold: the primary button, hairlines and the crown */
   --gold:#C4A574; --gold-l:#DCC49B; --gold-ink:#7A5F36; --gold-d:#9C7F52;
-  /* text on dark */
+  /* text on dark (--faint: .52, raised from .4 for contrast; see the note above) */
   --text:#F1ECE3; --soft:rgba(241,236,227,.76); --dim:rgba(241,236,227,.62); --faint:rgba(241,236,227,.52);
   --line:rgba(241,236,227,.12); --line-2:rgba(241,236,227,.24);
   /* text and hairlines on light */

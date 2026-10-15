@@ -30,15 +30,15 @@ and `shared/chrome/footer.html`. When a URL is confirmed, change the JSON first,
 
 | Piece | File | Who reads it |
 |---|---|---|
-| Design tokens | `shared/tokens.css` | Every page, linked before the site stylesheet. Colours, type families, page rhythm (`--pad`, `--max`, `--sec`, `--hdrH`), motion (`--e-*`, `--t1` to `--t5`). The values are the IHG design and do not change per site. |
-| Chrome | `shared/chrome/chrome.css`, `header.html`, `footer.html` | A new site pastes the two HTML files, fills the placeholders and links the CSS. IHG renders the same chrome from `index.html` and `buildChrome()` in `assets/js/app.js`, and links `site.css` only. The CSS is a verbatim copy of the chrome rules in `site.css`, kept in sync by hand (the command in its header shows any drift). |
+| Design tokens | `shared/tokens.css` | Every page, linked before the site stylesheet. Colours, type families, page rhythm (`--pad`, `--max`, `--sec`, `--hdrH`), motion (`--e-*`, `--t1` to `--t5`). The values are the IHG design and do not change per site. One value differs from the v4 `site.css`: `--faint` was raised from .4 to .52 so the search result kind label reaches 4.5:1 (`tests/contrast.js`); the next site starts from .52. |
+| Chrome | `shared/chrome/chrome.css`, `header.html`, `footer.html` | A new site pastes the two HTML files, fills the placeholders (including the five division photographs for the menu's third column, `shared/chrome/README.md` section 2 step 4) and links the CSS. IHG renders the same chrome from `index.html` and `buildChrome()` in `assets/js/app.js` (two IHG-only items aside, the search button and Our Network, which need `app.js`), and links `site.css` only. The CSS is a verbatim copy of the chrome rules in `site.css`, kept in sync by hand (the command in its header shows any drift). |
 | Site list | `shared/ecosystem.json` | Section 1. |
 | Lead schema | `shared/lead-schema.json` | Every form and `netlify/functions/lib/core.js`. The field names, allowed values, the four form names, the thirteen tracking fields, the score weights and the `sites` map with each site's default division. |
 | Lead routing | `shared/lead-routing.json` | The functions: per division the owner (TO CONFIRM: user ids), lead or deal, pipeline and stage, Pipedrive field keys and option ids. Change this file, not the code. |
 | Lead functions | `netlify/functions/submission-created.js`, `lead.js`, `verify.js`, `lib/` | Netlify Forms calls the first; the page falls back to the second; the third verifies a phone. One core for every site: a site sets `site` and its default division and nothing else (`docs/LEADS.md` section 9). |
 | Analytics | `shared/analytics.js` | Every page, after the data file. Reads `IHG.config.ga4`; cookie-free GA4 with consent defaults denied, so no cookie notice; `window.ihgTrack` for the six conversion events; `window.ihgPageView` per route. Search Console is a meta tag the build writes from `config.searchConsole`. |
 | Consent and preview | `data.js` photo registry, `build/build.js` | Every photograph carries `consent:true|false`; production builds hide photographs of guests without recorded consent and fall back to an own photo. `BUILD_PREVIEW=1` sets `data-preview` on `html` so a review build shows them. Never set it on the production site. |
-| Build and launch switches | `build/build.js`, `build/README.md` | `npm run build` prerenders every route into `dist/` with its own meta, structured data, `robots.txt`, `sitemap.xml`, `journal/feed.xml`, `404.html` and `_headers` (CSP hashes). `LAUNCH=1` drops the pre-launch `noindex`; until then every build stays out of search engines. |
+| Build and launch switches | `build/build.js`, `build/README.md` | `npm run build` prerenders every route into `dist/` with its own meta, structured data, `robots.txt`, `sitemap.xml`, `journal/feed.xml`, `404.html`, `error.html` (the error view with the office contacts, for a host or an edge rule to return on a server error; nothing serves it automatically) and `_headers` (CSP hashes). `LAUNCH=1` drops the pre-launch `noindex`; until then every build stays out of search engines. |
 
 ### What a page includes, in order
 
@@ -114,7 +114,8 @@ division entry in `data.js`) are written to be lifted as they are.
 * The IHG production domain (`imperialholdingsgroup.com` is assumed in `config.siteUrl` and `ecosystem.json`).
 * The Partners Club, Private Office, Real Estate and Academy website addresses, and when each goes live on the
   shared core.
-* A wordmark file for Imperial Citizenship (the site sets its name in type next to the crown today).
+* A wordmark file for Imperial Citizenship (the site sets its name in type next to the crown today), and a stacked
+  wordmark for Imperial Partners Club (the horizontal file stands in for the footer; `logoTbc` in `ecosystem.json`).
 * GA4 measurement ids and Search Console tokens, per site (Gilbert).
 * Pipedrive owner user ids per division in `shared/lead-routing.json`, and whether Academy enquiries belong in the
   Introducer Pipeline.

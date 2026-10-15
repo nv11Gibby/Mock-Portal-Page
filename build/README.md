@@ -16,6 +16,9 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
   `/contact?about=citizenship` are served by the `/contact` page; the app reads the query on load.
 * `404.html` from the app's not-found view, with the footer and its office contacts, marked `noindex` and without
   a canonical. With no catch-all rewrite in `_redirects`, Netlify serves it with a real 404 status.
+* `error.html` from the app's error view (`V.error`: "Something went wrong on our side", a Try again button that
+  reloads, the office contacts), marked `noindex` and without a canonical. Nothing serves it automatically: neither
+  `netlify.toml` nor `_redirects` names it. It is there for a host or an edge rule to return on a server error.
 * `robots.txt` (disallows only `/.netlify/`, points at the sitemap), `sitemap.xml` (every route, absolute URLs) and
   `journal/feed.xml` (RSS 2.0 of the journal entries and the insights, absolute links, a `pubDate` only where
   data.js records a full date).
@@ -90,8 +93,10 @@ node tests/serve.js dist 8776 &   # then: node tests/smoke.js http://127.0.0.1:8
 `tests/seo.js` asserts, for every route: HTTP 200, `data-prerendered`, exactly one title, one description and one
 canonical, an absolute `og:image`, the Open Graph and Twitter tags, an `h1`, no hash links or relative asset URLs left,
 the robots state matching `LAUNCH`, valid JSON-LD of the expected types, and unique titles and descriptions across
-pages. It also checks `robots.txt`, that `sitemap.xml` lists every route and nothing else, the RSS feed, `404.html`,
-the inline script hashes in `_headers`, the absence of a catch-all rewrite, and that each hero preload is under 200 KB.
+pages. It also checks `robots.txt`, that `sitemap.xml` lists every route and nothing else, the RSS feed, `404.html`
+and `error.html` (noindex, no canonical, both office numbers, the email, the reload button), that every logo file
+named in `shared/ecosystem.json` is in the build, the inline script hashes in `_headers`, the absence of a catch-all
+rewrite, and that each hero preload is under 200 KB.
 
 Lighthouse, mobile, against the dist server (Chromium from the Playwright install):
 
