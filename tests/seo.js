@@ -1,8 +1,8 @@
 /* SEO build check (brief acceptance test 5, docs/BUILD-CONTRACT.md 4.6). Starts the test server on dist/, fetches
    every route and asserts: 200, prerendered, exactly one title, description and canonical, an absolute og:image,
    unique titles and descriptions across pages, valid JSON-LD of the expected types; robots.txt and sitemap.xml
-   answer 200 and the sitemap lists every route; the RSS feed exists; 404.html is noindex and carries the office
-   contacts; every logo file named in shared/ecosystem.json is in the build; _headers holds the inline script hashes;
+   answer 200 and the sitemap lists every route; the RSS feed exists; 404.html and error.html are noindex, without a
+   canonical, and carry the office contacts (error.html also the reload button); every logo file named in shared/ecosystem.json is in the build; _headers holds the inline script hashes;
    the hero preloads are under 200 KB.
    Usage: node tests/seo.js [dist dir] [port]   (defaults: dist, 8776). Run `npm run build` first.
    The route list is built here from data.js on purpose, independently of app.js, so a page missing from the build is
@@ -100,6 +100,9 @@ function startServer(){
     const nf = await get(BASE + '/404.html');
     const tels = D.contact.offices.map(function(o){ return o.tel; });
     ok(nf.status === 200 && /<meta name="robots" content="noindex/.test(nf.body) && !/rel="canonical"/.test(nf.body) && /data-prerendered/.test(nf.body) && tels.every(function(t){ return nf.body.indexOf(t) > -1; }) && nf.body.indexOf(D.contact.email) > -1, '404.html: noindex, no canonical, office contacts present', 'status ' + nf.status);
+    /* error.html: the error view for a host or an edge rule to return on a server error (build/README.md); same rules as 404.html plus the Try again button */
+    const er = await get(BASE + '/error.html');
+    ok(er.status === 200 && /<meta name="robots" content="noindex/.test(er.body) && !/rel="canonical"/.test(er.body) && /data-prerendered/.test(er.body) && /<h1[\s>]/.test(er.body) && tels.every(function(t){ return er.body.indexOf(t) > -1; }) && er.body.indexOf(D.contact.email) > -1 && /<button[^>]*\sdata-reload/.test(er.body), 'error.html: noindex, no canonical, office contacts and the reload button present', 'status ' + er.status);
     /* the ecosystem package: every logo file it names must exist (a null entry means the site has no such file) */
     const eco = JSON.parse(fs.readFileSync(path.join(ROOT, 'shared/ecosystem.json'), 'utf8'));
     const logos = [], lost = [];
