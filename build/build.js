@@ -4,6 +4,7 @@
    - the site copied as it is (assets, shared, site.webmanifest, _redirects);
    - one HTML file per route, prerendered through the real app inside jsdom (build/prerender.js), written twice
      (about.html and about/index.html) so every static host serves /about;
+   - 404.html from the app's not-found view, never indexed;
    - robots.txt, sitemap.xml and journal/feed.xml (RSS 2.0 of journal entries and insights);
    - _headers from build/headers.template, with the sha256 of every inline script and the CSP origins GA4 and
      Turnstile need only when those keys are configured in data.js.
@@ -78,6 +79,10 @@ function finish(page, opts){
     const desc = doc.querySelector('meta[name="description"]'); desc.parentNode.insertBefore(m, desc.nextSibling);
   }
   if(LAUNCH) Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"]'), function(el){ el.parentNode.removeChild(el); });
+  if(opts.notFound){
+    Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"], link[rel="canonical"]'), function(el){ el.parentNode.removeChild(el); });
+    const m = doc.createElement('meta'); m.setAttribute('name', 'robots'); m.setAttribute('content', 'noindex, follow'); doc.head.appendChild(m);
+  }
   const feed = doc.querySelector('link[rel="alternate"][type="application/rss+xml"]');
   if(feed) feed.setAttribute('href', abs('journal/feed.xml'));
   let html = page.serialize();
@@ -106,6 +111,10 @@ routes.forEach(function(route){
   else { write(route.slice(1) + '.html', html); write(route.slice(1) + '/index.html', html); }
 });
 
+const nf = render('/this-page-does-not-exist');
+if(nf.errors.length) problems.push('404: ' + nf.errors.join(' | '));
+write('404.html', finish(nf, {notFound: true}));
+nf.close();
 
 /* 3. robots.txt and sitemap.xml. */
 write('robots.txt', [
@@ -176,7 +185,7 @@ distIndex.replace(/<link rel="preload" as="image" href="([^"]+)"/g, function(m, 
 /* 7. Report. */
 const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
-console.log('build: ' + pages.length + ' pages in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
+console.log('build: ' + pages.length + ' pages + 404.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length);
 console.log('hero: ' + heroes.map(function(h){ return h.href + ' ' + (h.size < 0 ? 'missing' : Math.round(h.size / 1024) + ' KB'); }).join(', '));
 console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');

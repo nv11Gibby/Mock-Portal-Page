@@ -1,7 +1,8 @@
 /* SEO build check (brief acceptance test 5, docs/BUILD-CONTRACT.md 4.6). Starts the test server on dist/, fetches
    every route and asserts: 200, prerendered, exactly one title, description and canonical, an absolute og:image,
    unique titles and descriptions across pages, valid JSON-LD of the expected types; robots.txt and sitemap.xml
-   answer 200 and the sitemap lists every route; the RSS feed exists; _headers holds the inline script hashes; the hero preloads are under 200 KB.
+   answer 200 and the sitemap lists every route; the RSS feed exists; 404.html is noindex and carries the office
+   contacts; _headers holds the inline script hashes; the hero preloads are under 200 KB.
    Usage: node tests/seo.js [dist dir] [port]   (defaults: dist, 8776). Run `npm run build` first.
    The route list is built here from data.js on purpose, independently of app.js, so a page missing from the build is
    caught rather than copied. */
@@ -95,6 +96,9 @@ function startServer(){
     const feed = await get(BASE + '/journal/feed.xml');
     const links = []; feed.body.replace(/<item>[\s\S]*?<link>([^<]+)<\/link>/g, function(m, l){ links.push(l); return m; });
     ok(feed.status === 200 && /<rss version="2.0"/.test(feed.body) && links.length > 0 && links.every(function(l){ return l.indexOf(SITE + '/') === 0; }), 'journal/feed.xml (' + links.length + ' items, absolute links)', 'status ' + feed.status);
+    const nf = await get(BASE + '/404.html');
+    const tels = D.contact.offices.map(function(o){ return o.tel; });
+    ok(nf.status === 200 && /<meta name="robots" content="noindex/.test(nf.body) && !/rel="canonical"/.test(nf.body) && /data-prerendered/.test(nf.body) && tels.every(function(t){ return nf.body.indexOf(t) > -1; }) && nf.body.indexOf(D.contact.email) > -1, '404.html: noindex, no canonical, office contacts present', 'status ' + nf.status);
     /* headers, redirects, hero weight */
     const headers = fs.readFileSync(path.join(DIR, '_headers'), 'utf8'), index = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8');
     const hashes = []; index.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, function(m, a, b){ if(!/\ssrc=/.test(a) && !/ld\+json/.test(a) && b.trim()) hashes.push('sha256-' + crypto.createHash('sha256').update(b, 'utf8').digest('base64')); return m; });
