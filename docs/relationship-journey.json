@@ -1,0 +1,426 @@
+{
+  "version": "v6-journey-1",
+  "note": "The Start a Relationship journey as data (docs/BRAND-BRIEF.md section 5, deliverable 6). The implementer pastes this object into assets/js/data.js as the key journeys (plain JSON is valid ES5) and renders it from V.contact. Every field name is a field of shared/lead-schema.json; the only new field is org_type (Institutions path). The form posted is contact, so the Netlify Forms copy, the function core, the dedupe, the score and the Pipedrive routing stay as built. Copy is final: British English, no em dash in any form, nothing invented; every placeholder is marked To confirm. Strings with {division} are filled at run time from the routing name of the chosen division.",
+  "form": "contact",
+  "route": "/contact",
+  "title": "Start a relationship",
+  "description": "Start a relationship with Imperial Holdings Group. Three paths: private clients, professional partners, institutions. One person reads your message and replies personally.",
+  "query": {
+    "journey": {"values": ["clients", "partners", "institutions"], "note": "Chooses the path and skips the chooser. Maps to the audience field."},
+    "audience": {"note": "Alias of journey, kept for existing links (event pages link ?about=group&audience=institutions today)."},
+    "about": {"values": ["citizenship", "private-office", "partners-club", "academy", "real-estate", "group"], "note": "Prefills the division and skips the first screen of the path; also selects the path when journey is absent (see prefill.byDivision)."},
+    "via": {"note": "The entry point, free text from the entries list below. It is not a form field: it stays in the page URL, which the page field carries into the Pipedrive note (page: .../contact?about=citizenship&via=division-hero)."},
+    "goals": {"note": "Kept from the house finder: comma separated goal keys, written into interests as today."}
+  },
+  "chooser": {
+    "id": "path",
+    "eyebrow": "Start a relationship",
+    "title": ["Start a relationship."],
+    "lead": "Tell us a little about yourself and what you have in mind. One person at Imperial will read it and reply personally. Three paths; choose the one that describes you.",
+    "question": "I am",
+    "field": "audience",
+    "paths": [
+      {"key": "clients", "audience": "clients", "title": "Private Clients", "text": "Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.", "cta": "Continue as a private client", "divisions": ["citizenship", "private-office", "real-estate", "group"]},
+      {"key": "partners", "audience": "partners", "title": "Professional Partners", "text": "Lawyers, bankers, wealth advisers and family offices who introduce clients, and teams who train with Imperial Academy.", "cta": "Continue as a professional partner", "divisions": ["partners-club", "academy"]},
+      {"key": "institutions", "audience": "institutions", "title": "Institutions and Strategic Relationships", "text": "Governments, missions, institutions and organisations exploring a relationship with the Group.", "cta": "Continue as an institution", "divisions": ["group"]}
+    ],
+    "footnote": "Not sure which? Begin as a private client and we will take it from there.",
+    "why": "The path is the audience: it sets the Contact Type in Pipedrive (Client, Partner or none for institutions), which screens follow, and which questions are never asked."
+  },
+  "journeys": [
+    {
+      "key": "clients",
+      "audience": "clients",
+      "name": "Private Clients",
+      "opening": "Tell us what you have in mind. We will bring in the right house, and one person will be your point of contact throughout.",
+      "defaultDivision": null,
+      "screens": [
+        {
+          "id": "need",
+          "title": "What brings you to Imperial?",
+          "lead": "Choose the closest. It decides which house reads your message.",
+          "skipWhenPrefilled": "about",
+          "fields": [
+            {
+              "name": "about", "type": "choice", "required": true, "label": "It concerns",
+              "options": [
+                {"v": "citizenship", "l": "A second residency or citizenship", "s": "For me, or for my family", "routes": "Imperial Citizenship"},
+                {"v": "private-office", "l": "Continuing support as an existing Imperial Client", "s": "Imperial Private Office", "routes": "Imperial Private Office"},
+                {"v": "real-estate", "l": "A home or property in Dubai", "s": "Imperial Real Estate, launching soon", "routes": "Imperial Real Estate"},
+                {"v": "group", "l": "Something broader, or I am not yet sure", "s": "The Group brings in the right house", "routes": "the Group"}
+              ],
+              "routingLine": "This goes to {division}.",
+              "why": "The one answer that routes. It chooses the division, its owner in Pipedrive, the record type (lead or deal) and the pipeline. Nothing else on the path routes."
+            }
+          ]
+        },
+        {
+          "id": "who",
+          "title": "Who is this for, and where do you live?",
+          "lead": "So the right office replies, and the conversation starts in the right place.",
+          "fields": [
+            {
+              "name": "for_whom", "type": "choice", "required": true, "label": "This is for",
+              "options": [
+                {"v": "myself", "l": "Myself"},
+                {"v": "family", "l": "My family"},
+                {"v": "client", "l": "A client I am introducing", "s": "If you introduce clients professionally, the Professional Partners path is the one for you.", "offerSwitch": "partners"}
+              ],
+              "why": "Who it is for shapes the first conversation and, for a client being introduced, the path: the page offers the Partners path, where the introduction is recorded as a referral. The field is kept either way."
+            },
+            {"name": "country", "type": "text", "required": true, "label": "Country of residence", "autocomplete": "country-name", "why": "Residence decides which office replies (Dubai or Lagos) and which routes are open. It is written to the Pipedrive person when it matches a country option, otherwise kept in the note."},
+            {"name": "nationality", "type": "text", "required": false, "label": "Nationality, or nationalities (optional)", "hint": "It helps us prepare, and you may leave it for the conversation.", "when": {"about": ["citizenship", "private-office"]}, "why": "The one personal detail that changes what can be prepared for a residency or citizenship conversation. Asked only on those two routes, never required."}
+          ]
+        },
+        {
+          "id": "timing",
+          "title": "Timing",
+          "lead": "A rough sense is enough. Nothing here commits you to anything.",
+          "fields": [
+            {
+              "name": "timeline", "type": "choice", "required": true, "label": "When would you like to begin?",
+              "options": [
+                {"v": "3m", "l": "Within 3 months"},
+                {"v": "3-12m", "l": "3 to 12 months"},
+                {"v": "exploring", "l": "Just exploring for now"}
+              ],
+              "why": "The strongest signal in the lead score, and it sets Urgency and the expected close date in Pipedrive. The labels are the schema labels, so the page and the note say the same thing."
+            },
+            {
+              "name": "budget", "type": "choice", "required": false, "label": "Is there a budget in mind? (optional)",
+              "hint": "A broad band is enough. It only helps us prepare the right options, and you may leave it for the conversation.",
+              "when": {"about": ["citizenship", "real-estate"]},
+              "options": [
+                {"v": "under-250k", "l": "Under US$250,000"},
+                {"v": "250k-500k", "l": "US$250,000 to 500,000"},
+                {"v": "500k-1m", "l": "US$500,000 to 1 million"},
+                {"v": "over-1m", "l": "Over US$1 million"},
+                {"v": "undisclosed", "l": "I would rather not say yet"}
+              ],
+              "tbc": "Bands and currency come from docs/BUILD-CONTRACT.md 4.2, not from the brief (To confirm, Founder).",
+              "why": "The only question about money on the site. A band, optional, and asked only where it helps a route (citizenship programmes and property), never for the Private Office or the Group. It feeds the score and nothing else."
+            },
+            {"name": "re_intent", "type": "choice", "required": false, "label": "I am looking to", "when": {"about": ["real-estate"]}, "options": [{"v": "buy", "l": "Buy"}, {"v": "rent", "l": "Rent"}], "why": "Buy or rent changes who at Real Estate replies and what is prepared. Kept optional because the division has not launched."},
+            {"name": "re_area", "type": "text", "required": false, "label": "Area, if you have one in mind (optional)", "when": {"about": ["real-estate"]}, "why": "Written into Service Requested so the team sees it at a glance."}
+          ]
+        },
+        {"use": "closing"}
+      ]
+    },
+    {
+      "key": "partners",
+      "audience": "partners",
+      "name": "Professional Partners",
+      "opening": "Your client stays your client. Tell us how you would like to work with Imperial, and one person who knows Partner practices will reply.",
+      "defaultDivision": "partners-club",
+      "screens": [
+        {
+          "id": "how",
+          "title": "How would you like to work with Imperial?",
+          "lead": "Choose the closest.",
+          "skipWhenPrefilled": "about",
+          "fields": [
+            {
+              "name": "about", "type": "choice", "required": true, "label": "I would like to",
+              "options": [
+                {"v": "partners-club", "key": "introduce", "l": "Introduce a client", "s": "With their permission, and on written terms", "set": {"for_whom": "client"}, "routes": "Imperial Partners Club"},
+                {"v": "partners-club", "key": "join", "l": "Become an Imperial Partner", "s": "Join the network of introducers and advisers", "set": {"for_whom": ""}, "routes": "Imperial Partners Club"},
+                {"v": "academy", "key": "learn", "l": "Train or certify my team", "s": "Imperial Academy", "set": {"for_whom": ""}, "routes": "Imperial Academy"}
+              ],
+              "routingLine": "This goes to {division}.",
+              "why": "Routes to Partners Club or Academy. An introduction sets for_whom to client, which the core records as Request Type Referral and scores as a referral; a request to join does not. The prefill from the Partners Club page lands on this screen with nothing chosen, because the two Partners Club options route the same way but are recorded differently."
+            }
+          ]
+        },
+        {
+          "id": "practice",
+          "title": "About your practice",
+          "lead": "So the right person replies, and so written terms can follow if it comes to that.",
+          "fields": [
+            {
+              "name": "profession", "type": "choice-or-text", "required": true, "label": "Your profession",
+              "options": [
+                {"v": "Lawyer", "l": "Lawyer"},
+                {"v": "Private banker", "l": "Private banker"},
+                {"v": "Wealth adviser", "l": "Wealth adviser"},
+                {"v": "Family office", "l": "Family office"},
+                {"v": "Accountant or tax adviser", "l": "Accountant or tax adviser"},
+                {"v": "Immigration or relocation adviser", "l": "Immigration or relocation adviser"},
+                {"v": "Property professional", "l": "Property professional"},
+                {"v": "Other", "l": "Other", "text": {"label": "Your profession, in a word or two", "required": false}}
+              ],
+              "posts": "The option label, or the free text when Other is chosen and filled.",
+              "why": "Tells the Partners team who they are speaking to. Posted as text, so the existing profession field and the Service Requested line carry it unchanged."
+            },
+            {"name": "firm", "type": "text", "required": true, "label": "Firm or organisation", "autocomplete": "organization", "why": "Becomes the organisation record in Pipedrive (found by name or created) and is linked to the person and the deal, as the core does today."},
+            {"name": "country", "type": "text", "required": true, "label": "Where you practise", "hint": "Country", "autocomplete": "country-name", "why": "Decides the office that replies."}
+          ]
+        },
+        {
+          "id": "scope",
+          "variants": {
+            "introduce": {
+              "title": "About the introduction",
+              "lead": "Nothing about your client yet. We ask for their details only once you have their permission and written terms are in place.",
+              "fields": [
+                {"name": "interests", "type": "multi", "required": false, "label": "What your client is considering", "options": [
+                  {"v": "A second residency or citizenship", "l": "A second residency or citizenship"},
+                  {"v": "A home or property in Dubai", "l": "A home or property in Dubai"},
+                  {"v": "Continuing support from the Private Office", "l": "Continuing support from the Private Office"},
+                  {"v": "Not sure yet", "l": "They are not sure yet"}
+                ], "posts": "The chosen labels, comma separated (the finder writes interests the same way)."},
+                {"name": "timeline", "type": "choice", "required": true, "label": "When would your client like to begin?", "options": [{"v": "3m", "l": "Within 3 months"}, {"v": "3-12m", "l": "3 to 12 months"}, {"v": "exploring", "l": "Just exploring for now"}]}
+              ],
+              "why": "Interests tell the team what to prepare; the timeline is the strongest signal in the score. Neither asks anything about a third party: no client name, no client details."
+            },
+            "join": {
+              "title": "What you have in mind",
+              "lead": "So the first conversation is a useful one.",
+              "fields": [
+                {"name": "interests", "type": "multi", "required": false, "label": "I am interested in", "options": [
+                  {"v": "Introducing clients", "l": "Introducing clients"},
+                  {"v": "Approved materials for my team", "l": "Approved materials for my team"},
+                  {"v": "Training with Imperial Academy", "l": "Training with Imperial Academy"},
+                  {"v": "Co-hosting an event", "l": "Co-hosting an event"}
+                ]},
+                {"name": "timeline", "type": "choice", "required": false, "label": "How soon? (optional)", "options": [{"v": "3m", "l": "Within 3 months"}, {"v": "3-12m", "l": "3 to 12 months"}, {"v": "exploring", "l": "Just exploring for now"}]}
+              ],
+              "why": "What the Partner wants from the relationship, in their words, without a form about their practice."
+            },
+            "learn": {
+              "title": "What you would like to learn",
+              "lead": "Imperial Academy trains Partner teams to explain the options accurately.",
+              "fields": [
+                {"name": "interests", "type": "multi", "required": false, "label": "I am interested in", "options": [
+                  {"v": "Explaining residency and citizenship options accurately", "l": "Explaining residency and citizenship options accurately"},
+                  {"v": "Approved materials and the claims list", "l": "Approved materials and the claims list"},
+                  {"v": "Certification for my team", "l": "Certification for my team"},
+                  {"v": "Something else", "l": "Something else"}
+                ]},
+                {"name": "timeline", "type": "choice", "required": false, "label": "How soon? (optional)", "options": [{"v": "3m", "l": "Within 3 months"}, {"v": "3-12m", "l": "3 to 12 months"}, {"v": "exploring", "l": "Just exploring for now"}]}
+              ],
+              "why": "Enough for the Academy to prepare; no head count, no budget, nothing about the firm beyond its name."
+            }
+          }
+        },
+        {"use": "closing"}
+      ]
+    },
+    {
+      "key": "institutions",
+      "audience": "institutions",
+      "name": "Institutions and Strategic Relationships",
+      "opening": "For organisations exploring a relationship with the Group. One person at Group level will read your message and reply personally.",
+      "defaultDivision": "group",
+      "fixedDivision": "group",
+      "screens": [
+        {
+          "id": "explore",
+          "title": "What would you like to explore?",
+          "lead": "Choose any that apply.",
+          "fields": [
+            {"name": "interests", "type": "multi", "required": true, "label": "We are exploring", "options": [
+              {"v": "A strategic partnership", "l": "A strategic partnership"},
+              {"v": "An event or diplomatic collaboration", "l": "An event or diplomatic collaboration"},
+              {"v": "Media, speaking or editorial", "l": "Media, speaking or editorial"},
+              {"v": "A service or supplier proposal", "l": "A service or supplier proposal"},
+              {"v": "Something else", "l": "Something else"}
+            ], "posts": "The chosen labels, comma separated.", "why": "The Group owner triages Opportunity Requests by the nature of the relationship; it is the one question that frames the conversation."}
+          ]
+        },
+        {
+          "id": "organisation",
+          "title": "About your organisation",
+          "lead": "So the message reaches the right person at Group level.",
+          "fields": [
+            {"name": "firm", "type": "text", "required": true, "label": "Organisation", "autocomplete": "organization", "why": "Becomes the organisation record in Pipedrive, deduplicated by name, and the deal is linked to it."},
+            {"name": "org_type", "type": "choice", "required": true, "label": "Which best describes it?", "new": true, "options": [
+              {"v": "government", "l": "Government or public body"},
+              {"v": "mission", "l": "Embassy, consulate or mission"},
+              {"v": "financial", "l": "Bank or financial institution"},
+              {"v": "professional", "l": "Law, advisory or professional services firm"},
+              {"v": "property", "l": "Developer or property group"},
+              {"v": "media", "l": "Media, events or hospitality"},
+              {"v": "other", "l": "Other"}
+            ], "why": "The only new field. No existing field holds the kind of organisation without ambiguity, and the Group owner triages a mission differently from a supplier. Enum, so Imperial OS can count it."},
+            {"name": "profession", "type": "text", "required": false, "label": "Your role (optional)", "autocomplete": "organization-title", "why": "Who is writing. Posted in the existing profession field; the note labels it Role for institutions."},
+            {"name": "country", "type": "text", "required": true, "label": "Country", "autocomplete": "country-name", "why": "Decides the office."},
+            {"name": "timeline", "type": "choice", "required": false, "label": "Is there a date that matters? (optional)", "options": [{"v": "3m", "l": "Within 3 months"}, {"v": "3-12m", "l": "3 to 12 months"}, {"v": "exploring", "l": "Just exploring for now"}], "why": "Priority only. Institutions are never asked about budget."}
+          ]
+        },
+        {"use": "closing"}
+      ]
+    }
+  ],
+  "closing": {
+    "id": "you",
+    "title": "How shall we reply?",
+    "lead": "One person will read this and reply personally.",
+    "summary": {"show": true, "change": "Change", "note": "A quiet line of the answers so far (path, division, who, timing), with one Change link back to the first screen; it replaces the review table of the v5 step 3."},
+    "fields": [
+      {"name": "name", "type": "text", "required": true, "label": "Full name", "autocomplete": "name"},
+      {"name": "email", "type": "email", "required": true, "label": "Email", "autocomplete": "email", "note": "Format checked on the page; disposable domains refused on the page (shared/disposable-domains.json) and by the function."},
+      {"name": "phone", "type": "tel", "required": false, "label": "Phone, with country code (optional)", "hint": "If you give a number, we can confirm it by WhatsApp or SMS after you send.", "autocomplete": "tel"},
+      {"name": "pref", "type": "choice", "required": false, "label": "Reply by", "default": "Email", "options": [{"v": "Email", "l": "Email"}, {"v": "Phone call", "l": "Phone call"}, {"v": "Either", "l": "Either"}], "why": "Sets the follow-up channel; the note prints it as Reply by. Values unchanged from v5."},
+      {"name": "msg", "type": "textarea", "required": false, "label": "Anything you would like us to know (optional)", "rows": 3, "why": "Optional in v6: the structured answers already give the team what the first conversation needs, and a required essay is the opposite of discreet."},
+      {"name": "consent", "type": "checkbox", "required": true, "label": "I agree to Imperial Holdings Group using these details to reply to me, as described in the {privacy}.", "posts": "yes", "privacyLink": "/privacy", "tbc": "Wording for counsel (docs/PRIVACY-NOTES.md section 4 item 2 lists the v5 wording it replaces)."}
+    ],
+    "cta": "Send to Imperial",
+    "sending": "Sending",
+    "foot": "Nothing is shared beyond the people who need it to reply.",
+    "why": "The same closing screen on every path: the three contact fields, the channel, an optional note and consent. Name and email are the minimum a reply needs; the phone is optional and verified only if given."
+  },
+  "neverAskedUpFront": [
+    "Asset values, net worth or income",
+    "Exact budget figures (only a band, only on the citizenship and property routes, always optional)",
+    "Passport or identity numbers",
+    "Dates of birth",
+    "Home addresses",
+    "Names or details of family members",
+    "Anything about a client a Partner is introducing",
+    "Source of funds",
+    "Documents or uploads",
+    "Health, religion, political exposure or any other special category of data",
+    "Nationality as a requirement (asked only on two routes, and optional)"
+  ],
+  "hidden": {
+    "audience": "The chosen path (clients, partners, institutions); also readable by the core as audience_resolved.",
+    "audience_resolved": "Same value, set at send as today.",
+    "about": "The division key (the contact form's division field).",
+    "routed_to": "The division name, set at send as today.",
+    "site": "ihg, from config.site.",
+    "lead_source": "website, or programme-fit when the fit check handed over, or guide (unchanged values).",
+    "quiz_answers": "The five fit check answers as JSON when lead_source is programme-fit; otherwise empty. New in the hidden contact form of index.html.",
+    "page": "location.href at send, which carries about, journey and via.",
+    "cf-turnstile-response": "Only when Turnstile is on.",
+    "company_url": "Honeypot, stays empty.",
+    "tracking": ["source", "medium", "campaign", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "gclid", "fbclid", "landing", "referrer"]
+  },
+  "mapping": {
+    "audience": {"from": "chooser, or ?journey / ?audience", "pipedrive": "Contact Type: Client (230) for clients, Partner/Introducer (231) for partners, none for institutions; the note line Audience and the new Journey line"},
+    "about": {"from": "first screen, or ?about", "pipedrive": "Owner, lead or deal, pipeline and stage, Division field (shared/lead-routing.json)"},
+    "for_whom": {"from": "clients screen who; partners introduce option", "pipedrive": "Service Requested (For ...), Request Type Referral (1126) when partners-club and client, score source referral"},
+    "country": {"from": "every path", "pipedrive": "Person Country of Residence when it matches an option, otherwise the note"},
+    "nationality": {"from": "clients, citizenship and private-office routes, optional", "pipedrive": "Person Nationality when it matches an option, otherwise the note"},
+    "timeline": {"from": "every path (required for clients and introductions)", "pipedrive": "Score, Urgency, expected close date, note"},
+    "budget": {"from": "clients, citizenship and real-estate routes, optional", "pipedrive": "Score, note"},
+    "re_intent": {"from": "clients, real-estate route", "pipedrive": "Service Requested, note"},
+    "re_area": {"from": "clients, real-estate route", "pipedrive": "Service Requested, note"},
+    "profession": {"from": "partners (required) and institutions (role, optional)", "pipedrive": "Service Requested (Partner: profession, firm), note (labelled Role for institutions)"},
+    "firm": {"from": "partners and institutions, required", "pipedrive": "Organisation, found by name or created, linked to person and deal"},
+    "interests": {"from": "partners scope screen, institutions explore screen, the house finder goals", "pipedrive": "Note line Interests; for institutions also Service Requested (core change)"},
+    "org_type": {"from": "institutions, required", "pipedrive": "Note line Organisation type (core change); no custom field is created", "new": true},
+    "name": {"from": "closing", "pipedrive": "Person name, record title"},
+    "email": {"from": "closing", "pipedrive": "Person email (dedupe key 1)"},
+    "phone": {"from": "closing, optional", "pipedrive": "Person phone in E.164 (dedupe key 2), Verification Status"},
+    "pref": {"from": "closing", "pipedrive": "Note line Reply by"},
+    "msg": {"from": "closing, optional", "pipedrive": "Note Message, Urgency when it says urgent"},
+    "consent": {"from": "closing", "pipedrive": "Note line Consent: yes"},
+    "lead_source": {"from": "hidden", "pipedrive": "Title suffix (programme fit, guide), note line Lead source"},
+    "quiz_answers": {"from": "hidden, fit check handover", "pipedrive": "Note line Programme fit answers"},
+    "tracking": {"from": "hidden, first touch of the visit (TRK in app.js)", "pipedrive": "Source Method, Source Platform Website, Campaign Name, the thirteen Tracking lines of the note, the score source"},
+    "page": {"from": "hidden, set at send", "pipedrive": "Tracking line page; the core reads via and journey from its query for the Journey line (core change)"},
+    "site": {"from": "hidden", "pipedrive": "Note line Site"}
+  },
+  "prefill": {
+    "byQuery": [
+      {"param": "journey", "effect": "Selects the path; the chooser is skipped and shown as a quiet line (Private client · Change)."},
+      {"param": "about", "effect": "Sets the division and skips the first screen of the path (skipWhenPrefilled), except the Partners Club page, which lands on the first screen because its two options route the same way but are recorded differently."},
+      {"param": "goals", "effect": "Written into interests as the finder does today, shown as a From the house finder line."},
+      {"param": "via", "effect": "Nothing on the page; it stays in the URL and therefore in the page field."}
+    ],
+    "byDivision": {
+      "citizenship": "clients", "private-office": "clients", "real-estate": "clients", "group": "clients",
+      "partners-club": "partners", "academy": "partners",
+      "note": "group with ?audience=institutions or ?journey=institutions selects the Institutions path (the event pages link that way today)."
+    },
+    "fromFitCheck": {
+      "note": "The programme fit check on the citizenship page no longer prefills an enquiry card on the same page. finish() in bindFit writes a draft under ihg-draft-contact with the mapped answers (about citizenship, audience clients or partners when who is client, for_whom, country, timeline, budget), lead_source programme-fit and quiz_answers, then navigates to /contact?about=citizenship&via=fit. The journey restores the draft and opens on the first screen that still needs an answer.",
+      "draftKey": "ihg-draft-contact",
+      "sets": ["about", "audience", "for_whom", "country", "timeline", "budget", "lead_source", "quiz_answers"]
+    },
+    "draft": {
+      "note": "Every answer is saved on change under ihg-draft-contact (as built). Switching path clears the other path's answers but keeps name, email, phone, pref and msg. Start afresh clears everything.",
+      "keepOnSwitch": ["name", "email", "phone", "pref", "msg"]
+    }
+  },
+  "entries": [
+    {"where": "Home hero, primary button", "label": "Start a relationship", "href": "/contact?via=hero"},
+    {"where": "Home hero, secondary button", "label": "Our divisions", "href": "/divisions"},
+    {"where": "Header, desktop button (replaces Enquire now)", "label": "Start a relationship", "href": "/contact?via=header"},
+    {"where": "Header, mobile quick action (index.html mcta, replaces Enquire now)", "label": "Start a relationship", "href": "/contact?via=header"},
+    {"where": "Mobile menu footer button", "label": "Start a relationship", "href": "/contact?via=menu"},
+    {"where": "Navigation and footer link", "label": "Contact", "href": "/contact", "note": "The page keeps its conventional name in menus; the button carries the journey name."},
+    {"where": "Home, Start a relationship section (replaces the enquiry card)", "label": "Three path cards", "href": "/contact?journey=clients&via=home-paths, /contact?journey=partners&via=home-paths, /contact?journey=institutions&via=home-paths"},
+    {"where": "Division page hero and closing band (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?about=<key>&via=division-hero and &via=division-close"},
+    {"where": "Division page, Start a relationship section (replaces the enquiry card)", "label": "Start a relationship with <division>", "href": "/contact?about=<key>&via=division"},
+    {"where": "Real Estate page", "label": "Register interest (unchanged form) and Start a relationship", "href": "/contact?about=real-estate&via=division"},
+    {"where": "Citizenship page, programme fit check done state", "label": "Continue to your message", "href": "/contact?about=citizenship&via=fit"},
+    {"where": "Event page glance panel (replaces Start a strategic conversation)", "label": "Start a relationship with the Group", "href": "/contact?journey=institutions&via=event"},
+    {"where": "House finder result", "label": "Start a relationship", "href": "/contact?about=<top>&goals=<goals>&via=finder"},
+    {"where": "Journal article end (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?via=article"},
+    {"where": "Closing band on inner pages (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?via=close"},
+    {"where": "Footer, brand column", "label": "Start a relationship", "href": "/contact?via=footer"},
+    {"where": "Search palette (replaces the six Enquire entries)", "label": "Start a relationship: Private Clients / Professional Partners / Institutions", "href": "/contact?journey=<key>&via=palette"},
+    {"where": "404 and error pages (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?via=notfound"}
+  ],
+  "states": {
+    "sending": {"button": "Sending", "note": "Button loading, disabled, aria-busy; the screen stays; the draft stays."},
+    "received": {
+      "note": "Shown only after submitLead resolves. The wording depends on which path confirmed it: the direct function answers ok:true only after Pipedrive took the record; a Netlify Forms acceptance means Netlify holds the submission and the function runs afterwards, so the page cannot say the record is with a person.",
+      "direct": {
+        "title": "Received, and with {division}.",
+        "text": "Reference {ref}. One person at {division} will be your point of contact and will reply personally.",
+        "announce": "Received."
+      },
+      "forms": {
+        "title": "Received by Imperial.",
+        "text": "Your message has been received and is being passed to {division}. One person will reply personally.",
+        "announce": "Received."
+      },
+      "variants": {
+        "group": {"division": "the Group", "text": "Your message has been received by the Group. One person will read it, bring in the right house if one is needed, and reply personally."},
+        "real-estate": {"append": "Imperial Real Estate has not yet launched. We will tell you plainly what is possible today."},
+        "institutions": {"division": "the Group"}
+      },
+      "replyTime": {"text": "", "tbc": "Reply time standard (for example one working day, Dubai or Lagos hours). Not printed until confirmed."},
+      "next": {
+        "verify": "As built: when a phone was given and the verify endpoint is enabled; skip allowed; a code accepted but not yet recorded is worded softly.",
+        "booking": "As built: one button per office with name, email and division; the To confirm chip while config.booking is empty.",
+        "whatsapp": "Both office numbers from config.whatsapp, each with its To confirm chip until confirmed WhatsApp enabled.",
+        "guide": {"when": {"about": ["citizenship"]}, "label": "Request the guide", "href": "/divisions/citizenship#guide", "note": "The guide form stays on the citizenship page; the link is offered, not a second form."},
+        "site": {"when": "the division site is real", "label": "Explore {division} online", "note": "From D.sites; placeholders stay hidden here rather than shown as a chip."},
+        "journal": {"label": "Read while you wait", "href": "/journal"},
+        "again": {"label": "Send another"}
+      }
+    },
+    "refusedAddress": {"note": "As built: a disposable or malformed address is a correction, not an outage. The closing screen is shown again with the email field marked and Nothing has been sent yet."},
+    "failed": {
+      "title": "We could not send this just now.",
+      "text": "Please call or email us and we will take it from there. What you typed is kept on this device, so you can also try again later.",
+      "note": "Both paths failed, or the function refused for a reason that is not the address (rate, turnstile, sync, unconfigured). The office telephones and the email are shown, focus moves to the message, the draft stays. As built."
+    },
+    "local": {"note": "As built: from a file on disk the page says forms only send from the live website."},
+    "preview": {
+      "when": "html[data-preview] (the BUILD_PREVIEW=1 build that the Render preview serves)",
+      "chip": "Preview build: nothing is sent from this preview",
+      "onSend": {
+        "label": "Preview of the confirmation. Nothing was sent.",
+        "note": "The received state is rendered with the Forms wording, under the amber label, without the tick animation and without the Received announcement; the next steps show their To confirm chips. No request leaves the page. This is the one place a mocked path is shown, and it is labelled."
+      }
+    }
+  },
+  "analytics": {
+    "note": "Through window.ihgTrack as built; nothing loads until config.ga4 is set.",
+    "events": [
+      {"name": "journey_started", "params": ["journey", "via"]},
+      {"name": "journey_step", "params": ["journey", "step"]},
+      {"name": "journey_switched", "params": ["from", "to"]},
+      {"name": "enquiry_submitted", "params": ["form", "division", "lead_source", "journey", "via"], "note": "Existing conversion event, two parameters added."},
+      {"name": "phone_verified", "params": ["form", "division", "recorded"], "note": "Unchanged."},
+      {"name": "booking_click", "params": ["office", "division"], "note": "Unchanged."},
+      {"name": "whatsapp_click", "params": ["office"], "note": "Unchanged."},
+      {"name": "guide_download", "params": ["division"], "note": "Unchanged."}
+    ]
+  }
+}
