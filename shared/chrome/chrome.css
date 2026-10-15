@@ -6,7 +6,7 @@
      grep -vxFf assets/css/site.css shared/chrome/chrome.css | grep -v '^/\*\|^   \|^@media\|^}\|^$'
    Needs shared/tokens.css before it, and these base rules from the site stylesheet: .wrap, .btn (with .line, .sm
    and .gold), .tlink, .eyebrow, .d3, .tbc, .vh, .ar, :focus-visible and the @font-face declarations.
-   Behaviour hooks the site script sets (README section 3): .scrolled, .solid-hdr, .hdr-hide, .mega-open and .mm-open
+   Behaviour hooks the site script sets (README section 2): .scrolled, .solid-hdr, .hdr-hide, .mega-open and .mm-open
    on body; aria-expanded on the ecosystem, burger and WhatsApp buttons; hidden on .mega, .mmenu and .wa-pop; .on on
    the current .mega-item and its .mega-prev figure; .open on .mm-acc. */
 
