@@ -912,9 +912,90 @@ function draftNote(form){
   dn.innerHTML = '<span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button>';
   grid.parentNode.insertBefore(dn, grid);
 }
-function successHTML(title, msg){
+function successHTML(title, msg, inner){
   var burst = ''; for(var i=0;i<8;i++){ var a=i*45*Math.PI/180; burst += '<line x1="'+(50+Math.cos(a)*58).toFixed(1)+'" y1="'+(50+Math.sin(a)*58).toFixed(1)+'" x2="'+(50+Math.cos(a)*66).toFixed(1)+'" y2="'+(50+Math.sin(a)*66).toFixed(1)+'"/>'; }
-  return '<div class="success" role="status" tabindex="-1"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p><div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>Read while you wait</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>Send another</span></button></div></div>';
+  return '<div class="success" role="status" tabindex="-1"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>Read while you wait</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>Send another</span></button></div></div>';
+}
+/* success state: thank you, then the next steps (verification when a phone was given and the endpoint is enabled, then booking) */
+function showSuccess(wrap, info, anchor){
+  var t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.';
+  wrap.innerHTML = successHTML(t, info.msg, (info.inner||'')+'<div class="next" data-next-steps></div>');
+  var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
+  wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
+  var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
+  announce('Sent. '+t);
+  nextSteps(wrap, info);
+}
+function nextSteps(wrap, info){
+  var el = wrap.querySelector('[data-next-steps]'); if(!el) return;
+  function booking(){ el.insertAdjacentHTML('beforeend', bookingHTML(info)); bindMagnetic(el); }
+  if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
+  verifyStep(el, info, booking);
+}
+/* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first (the person can ask for SMS instead); when Twilio
+   is not configured the endpoint answers enabled:false and the step is skipped. Skipping keeps the lead, marked unverified. */
+function verifyHTML(phone, channel){
+  var by = channel==='sms' ? 'SMS' : 'WhatsApp', other = channel==='sms' ? 'whatsapp' : 'sms';
+  return '<div class="verify" data-verify><div class="eyebrow">Verify your phone</div>'+
+    '<p>We have sent a six-digit code by '+by+' to <b>'+esc(phone)+'</b>. Enter it to confirm the number is yours. It takes a moment and helps us reply faster.</p>'+
+    '<form class="verify-f" novalidate><label class="field"><span class="vh">Six-digit code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digits" aria-label="Six-digit code"></label><button class="btn gold sm" type="submit" data-verify-send><span class="lbl">Verify</span><span class="spin"></span></button></form>'+
+    '<div class="form-err" role="alert" hidden></div>'+
+    '<p class="xs verify-alt"><button class="tlink" type="button" data-channel="'+other+'">Send it by '+(other==='sms'?'SMS':'WhatsApp')+' instead</button><button class="tlink" type="button" data-verify-skip>Skip for now</button></p></div>';
+}
+function verifyStep(el, info, done){
+  var ref = '', channel = 'whatsapp';
+  function post(body){ return fetch(D.config.verifyEndpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}).then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); }); }
+  function start(ch){ return post({action:'start', phone:info.phone, email:info.email, channel:ch}).then(function(r){ if(!r || r.ok===false || !r.enabled) throw new Error('off'); ref = r.ref || ''; channel = ch; return r; }); }
+  function draw(focus){
+    el.innerHTML = verifyHTML(info.phone, channel);
+    var f = el.querySelector('form'), inp = f.querySelector('input[name=code]'), btn = f.querySelector('[data-verify-send]'), err = el.querySelector('.form-err');
+    f._b = true;
+    function fail(msg){ err.innerHTML = msg; err.hidden = false; btn.classList.remove('loading'); btn.disabled = false; }
+    f.addEventListener('submit', function(e){
+      e.preventDefault(); var code = (inp.value||'').replace(/\D/g,'');
+      if(code.length!==6){ fail('<b>Please enter the six-digit code.</b>'); inp.focus(); return; }
+      err.hidden = true; btn.classList.add('loading'); btn.disabled = true;
+      post({action:'check', ref:ref, phone:info.phone, code:code, email:info.email}).then(function(r){
+        if(r && r.verified){ track('phone_verified', {form:info.kind, division:info.division}); el.innerHTML = '<p class="verified">'+TICK+'<span>Phone verified. Thank you.</span></p>'; announce('Phone verified.'); done(true); }
+        else fail('<b>That code did not match.</b> Please check it and try again, or ask for a new one.');
+      }, function(){ fail('<b>We could not check the code just now.</b> Please try again, or skip for now.'); });
+    });
+    el.querySelector('[data-verify-skip]').addEventListener('click', function(){ el.innerHTML = ''; announce('Verification skipped.'); done(false); });
+    el.querySelector('[data-channel]').addEventListener('click', function(){
+      var ch = this.getAttribute('data-channel'), by = ch==='sms' ? 'SMS' : 'WhatsApp'; err.hidden = true;
+      start(ch).then(function(){ draw(true); announce('A new code has been sent by '+by+'.'); }, function(){ fail('<b>We could not send the code by '+by+' just now.</b> Please try the other way, or skip for now.'); });
+    });
+    if(focus) inp.focus({preventScroll:true});
+    else announce('Verify your phone: a six-digit code has been sent by '+(channel==='sms'?'SMS':'WhatsApp')+'.');
+  }
+  start('whatsapp').then(function(){ draw(false); }, function(){ done(false); });
+}
+function bookingHTML(info){ return ''; }
+/* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
+   writes the token to a hidden cf-turnstile-response input inside the form. The company_url honeypot stays alongside it. */
+var TS = {loading:false, q:[]};
+function turnstileLoad(cb){
+  if(window.turnstile && window.turnstile.render){ cb(); return; }
+  TS.q.push(cb); if(TS.loading) return; TS.loading = true;
+  window.ihgTurnstileReady = function(){ var q = TS.q; TS.q = []; q.forEach(function(f){ f(); }); };
+  var s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=ihgTurnstileReady&render=explicit'; s.async = true; s.defer = true; document.head.appendChild(s);
+}
+function turnstileBind(form){
+  var key = D.config.turnstileSiteKey; if(!key) return;
+  var box = document.createElement('div'); box.className = 'ts';
+  var at = form.querySelector('.form-foot') || (form.querySelector('[data-send]') && form.querySelector('[data-send]').closest('.cf-nav'));
+  if(at) at.parentNode.insertBefore(box, at); else form.appendChild(box);
+  turnstileLoad(function(){
+    if(!document.contains(box) || form._ts != null) return;
+    try{ form._ts = window.turnstile.render(box, {sitekey:key, appearance:'interaction-only', theme:'light', action:form.getAttribute('name')||'form', callback:function(tok){ form._tsToken = tok; if(form._tsWait) form._tsWait(tok); }, 'expired-callback':function(){ form._tsToken = ''; try{ window.turnstile.reset(form._ts); }catch(e){} }, 'error-callback':function(){ form._tsToken = ''; if(form._tsWait) form._tsWait(''); }}); }catch(e){}
+  });
+}
+function turnstileToken(form){
+  if(!D.config.turnstileSiteKey || !window.turnstile || form._ts == null) return Promise.resolve('');
+  var t = ''; try{ t = window.turnstile.getResponse(form._ts) || ''; }catch(e){}
+  if(!t) t = form._tsToken || '';
+  if(t) return Promise.resolve(t);
+  return new Promise(function(ok){ var done = false; form._tsWait = function(tok){ if(done) return; done = true; form._tsWait = null; ok(tok||''); }; try{ window.turnstile.execute(form._ts); }catch(e){} setTimeout(function(){ if(form._tsWait) form._tsWait(''); }, 8000); });
 }
 function bindForms(){
   [].forEach.call(app.querySelectorAll('[data-form]'), function(wrap){
@@ -931,6 +1012,7 @@ function bindForms(){
     TRK_KEYS.forEach(function(k){ ensureHidden(form, k, TRK[k]||''); }); ensureHidden(form, 'page', ''); ensureHidden(form, 'audience_resolved', '');
     if(kind==='interest') ensureHidden(form, 'audience', 'clients');
     ensureHidden(form, 'site', D.config.site); ensureHidden(form, 'lead_source', 'website');
+    turnstileBind(form);
     var applyCond = bindCond(form);
     /* draft (every form): restore what was typed, keep saving, and offer a clean start */
     draftNote(form);
@@ -954,16 +1036,12 @@ function bindForms(){
       var extra = {page: location.href, audience_resolved: audOf()};
       if(kind!=='interest') extra.routed_to = dest || 'Imperial Holdings Group';
       var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || (kind==='interest' ? 'real-estate' : ''));
-      submitLead(form, extra).then(function(){
+      var info = {kind:kind, name:name, fullName:val('name'), email:val('email'), phone:val('phone'), division:division, lead_source:val('lead_source') || 'website'};
+      turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(){
         store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
-        track('enquiry_submitted', {form:kind, division:division, lead_source:val('lead_source') || 'website'});
-        var t = 'Thank you'+(name?', '+esc(name):'')+'.';
-        var m = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
-        wrap.innerHTML = successHTML(t, m);
-        var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
-        wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
-        var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
-        announce('Sent. '+t);
+        track('enquiry_submitted', {form:kind, division:division, lead_source:info.lead_source});
+        info.msg = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
+        showSuccess(wrap, info, anchor);
       }, function(err){
         btn.classList.remove('loading'); btn.disabled = false; btn.removeAttribute('aria-busy');
         if(errBox){ errBox.innerHTML = err && err.message==='local' ? '<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.' : fallbackHTML(); errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
