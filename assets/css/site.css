@@ -1332,6 +1332,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .success.preview>svg{display:none}
 .success .jp-preview{margin:0 0 18px}
 .jp-next{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 26px;margin-top:22px}
+.ftr-brand .tlink{margin-top:14px}
 /* path cards on the home page (three) and the division pages (one) */
 .paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--l-line);border:1px solid var(--l-line)}
 .paths.one{grid-template-columns:1fr}
