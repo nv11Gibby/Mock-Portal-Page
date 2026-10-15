@@ -26,4 +26,7 @@ http.createServer(function(req, res){
     res.writeHead(200, {'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-store'});
     res.end(data);
   });
+}).on('error', function(err){
+  if(err.code === 'EADDRINUSE'){ console.error('PORT ' + PORT + ' IS ALREADY IN USE. Another test server is running (possibly from another worktree). Stop it, or start this one on a different port and pass that base URL to tests/smoke.js.'); process.exit(3); }
+  throw err;
 }).listen(PORT, '127.0.0.1', function(){ console.log('serving ' + ROOT + ' on http://127.0.0.1:' + PORT); });
