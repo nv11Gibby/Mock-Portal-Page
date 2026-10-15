@@ -1271,3 +1271,22 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .nf-kv .ul{font-weight:500;white-space:nowrap}
 .nf.err::after{content:"Error";font-size:28vw}
 @media (max-width:640px){ .nf-kv{grid-template-columns:1fr} .nf.err::after{font-size:44vw} }
+
+/* === v5 content and design fixes === */
+/* The card that fills the third column of a What we do grid: a short gold rule in place of a numeral (no dash glyph) */
+.does .ix-rule{display:block;width:22px;height:18px;background:linear-gradient(var(--gold-ink),var(--gold-ink)) 0 50%/100% 1px no-repeat}
+/* Search palette: a page without a thumbnail shows a short gold rule in its icon box (no dash glyph) */
+.pal-ic.pal-rule::before{content:"";width:14px;height:1px;background:var(--gold-l)}
+/* Home hero while the consent-free fallback photograph shows (.hh.fallback): its own scrim, tuned so the headline, lead
+   and marker sit on a backdrop at least as dark as the approved dusk hero (design review, October 2026) */
+.hh.fallback .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,.72) 0,rgba(14,13,11,.50) 34%,rgba(14,13,11,.80) 60%,rgba(14,13,11,.98) 100%)}
+/* Event page: the facts still to confirm, as a row of placeholder chips rather than a note */
+.ev-tbc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+/* A placeholder chip inside a key-value list (the booking line on Contact) keeps the chip's sentence-case style
+   instead of the uppercase label style that .kv span gives every span */
+.kv .tbc{display:inline-block;font-size:12.5px;letter-spacing:0;text-transform:none;margin:0;color:var(--gold-l)}
+.light .kv .tbc{color:var(--gold-ink)}
+/* The TO CONFIRM pill on a video poster: centred with auto margins rather than left:50%, so it may use the whole stage
+   width on a phone and the dashed chip stays whole when its text wraps */
+.vid-tbc{left:0;right:0;width:max-content;max-width:calc(100% - 32px);margin:0 auto;transform:translateY(-50%)}
+.vid-tbc .tbc{white-space:normal;line-height:1.5}

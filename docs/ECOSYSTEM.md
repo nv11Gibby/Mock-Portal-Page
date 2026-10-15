@@ -108,6 +108,9 @@ division entry in `data.js`) are written to be lifted as they are.
   every page.
 * `shared/lead-schema.json` against the hidden Netlify forms in `index.html`: every field in the schema must be in
   the hidden static form, or Netlify drops it.
+* The division pages take their website copy from the site entry (`siteCta` in `data.js` passes `label` as the
+  domain shown and `name` as the site name), so marking a site `real:true` with its `href` and `label` needs no
+  change in `app.js`.
 
 ## 7. TO CONFIRM
 
