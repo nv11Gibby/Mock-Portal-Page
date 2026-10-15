@@ -1268,3 +1268,9 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .nf-kv .ul{font-weight:500;white-space:nowrap}
 .nf.err::after{content:"Error";font-size:28vw}
 @media (max-width:640px){ .nf-kv{grid-template-columns:1fr} .nf.err::after{font-size:44vw} }
+
+/* === v5 content and design fixes === */
+/* The card that fills the third column of a What we do grid: a short gold rule in place of a numeral (no dash glyph) */
+.does .ix-rule{display:block;width:22px;height:18px;background:linear-gradient(var(--gold-ink),var(--gold-ink)) 0 50%/100% 1px no-repeat}
+/* Search palette: a page without a thumbnail shows a short gold rule in its icon box (no dash glyph) */
+.pal-ic.pal-rule::before{content:"";width:14px;height:1px;background:var(--gold-l)}

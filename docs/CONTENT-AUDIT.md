@@ -381,7 +381,8 @@ application code was changed by this audit.
 2. **Medium. One em dash in rendered copy.** `assets/js/app.js` line 330 writes the U+2014 escape (backslash, u, 2014) as the index glyph of the
    "Not sure which applies?" card; it renders on `/divisions/citizenship` and `/divisions/academy`. Replace the glyph
    (for example the card's position number, or no index at all), and extend `tests/copy-rules.js` to catch the
-   backslash-u-2014 escape, `&mdash;` and `&#8212;` so an escape cannot pass the check again.
+   backslash-u-2014 escape and the HTML entities for the em dash (the named mdash entity and the numeric 8212 one) so an
+   escape cannot pass the check again.
 3. **Medium. Five event pages show "To confirm before launch:" with the missing facts to visitors**
    (`assets/js/data.js` `events[].tbc`; rendered by `V.event`, `app.js` line 414). Deliberate, but it is a launch
    blocker until Marketing supplies the dates, venues, occasions and guests of honour (from the SharePoint Events
@@ -440,7 +441,7 @@ grep -rl -F "TO CONFIRM" dist --include='*.html'; grep -rl -F "BOOKING LINK" dis
 grep -rl -F "Permissions to confirm" dist --include='*.html'; grep -rl -F "tbc(" dist --include='*.html'
 grep -rho '<span class="tbc" title="Placeholder: to be confirmed">[^<]*</span>' dist --include='*.html' | sort | uniq -c
 # em dashes, including the escape the check misses
-grep -rln $'\xe2\x80\x94' dist --include='*.html'; grep -n 'u2014\|&mdash;\|&#8212;' assets/js/app.js assets/js/data.js
+grep -rln $'\xe2\x80\x94' dist --include='*.html'; grep -n 'u2014\|mdash;\|#8212;' assets/js/app.js assets/js/data.js
 # accessibility
 node tests/serve.js . 8765 & NODE_PATH=$(npm root -g) npm run test:a11y; kill %1
 ```

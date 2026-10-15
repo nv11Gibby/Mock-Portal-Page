@@ -337,7 +337,7 @@ V.division = function(key){
     '<div class="btns">'+extLink(d,'btn')+'<a class="btn line" href="#/contact?about='+d.key+'"><span>Speak to us</span></a></div></div></div></section>';
   h += '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('What we do')+mask(whatTitle(d),'h2','d2')+'</div></div><div class="does">'+
     d.does.map(function(x,i){return '<div data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(x[0])+'</h3><p>'+esc(x[1])+'</p>'+(x[2]?tbc(x[2]):'')+'</div>';}).join('')+
-    (d.does.length%3===2?'<div data-r style="--d:.2s"><span class="ix">\u2014</span><h3 class="h3">Not sure which applies?</h3><p>That is what the first conversation is for.</p><a class="tlink" href="#/contact?about='+d.key+'">Speak to us'+AR+'</a></div>':'')+'</div></div></section>';
+    (d.does.length%3===2?'<div data-r style="--d:.2s"><span class="ix ix-rule" aria-hidden="true"></span><h3 class="h3">Not sure which applies?</h3><p>That is what the first conversation is for.</p><a class="tlink" href="#/contact?about='+d.key+'">Speak to us'+AR+'</a></div>':'')+'</div></div></section>';
   h += '<section class="sec"><div class="wrap split"><div>'+eyebrow('Who it is for')+mask(['Who we','work with.'],'h2','d2')+'</div><ul class="who">'+d.who.map(function(w,i){return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span>'+pad2(i+1)+'</span>'+esc(w)+'</li>';}).join('')+'</ul></div></section>';
   if(d.how) h += '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('How it works')+mask([d.howTitle],'h2','d2')+'</div></div>'+steps(d.how)+
     (d.includes?'<div style="margin-top:clamp(64px,7vw,100px)"><div class="eyebrow" data-r>Every plan includes</div><div class="includes">'+d.includes.map(function(x,i){return '<div data-r style="--d:'+(i%4*0.07).toFixed(2)+'s"><span>'+pad2(i+1)+'</span>'+esc(x)+'</div>';}).join('')+'</div></div>':'')+
@@ -1768,7 +1768,7 @@ function hl(t, q){
 function palDraw(){
   var q = palIn.value; palItems = palSearch(q); palSel = 0;
   palList.innerHTML = (q.trim()?'':'<li class="pal-grp" role="presentation">Suggested</li>')+palItems.map(function(x,i){
-    return '<li role="option" id="po-'+i+'" aria-selected="'+(i===0)+'" data-i="'+i+'">'+(x.img?'<img src="'+IMG+x.img+(x.v==null?'-c':x.v)+'.webp" alt="" loading="lazy">':'<span class="pal-ic" aria-hidden="true">'+({Question:'?',Enquire:'\u2192',Tool:'\u2726',Page:'\u2014'}[x.k]||'\u2014')+'</span>')+
+    return '<li role="option" id="po-'+i+'" aria-selected="'+(i===0)+'" data-i="'+i+'">'+(x.img?'<img src="'+IMG+x.img+(x.v==null?'-c':x.v)+'.webp" alt="" loading="lazy">':(function(g){ return '<span class="pal-ic'+(g?'':' pal-rule')+'" aria-hidden="true">'+(g||'')+'</span>'; })({Question:'?',Enquire:'\u2192',Tool:'\u2726'}[x.k]))+
       '<span class="pal-t"><b>'+hl(x.t,q)+'</b><small>'+esc(x.s.length>96?x.s.slice(0,94)+'\u2026':x.s)+'</small></span><span class="pal-k">'+x.k+'</span></li>';
   }).join('');
   palEmpty.hidden = palItems.length>0;
