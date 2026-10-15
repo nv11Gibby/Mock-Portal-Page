@@ -1277,3 +1277,5 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 /* Home hero while the consent-free fallback photograph shows (.hh.fallback): its own scrim, tuned so the headline, lead
    and marker sit on a backdrop at least as dark as the approved dusk hero (design review, October 2026) */
 .hh.fallback .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,.72) 0,rgba(14,13,11,.50) 34%,rgba(14,13,11,.80) 60%,rgba(14,13,11,.98) 100%)}
+/* Event page: the facts still to confirm, as a row of placeholder chips rather than a note */
+.ev-tbc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
