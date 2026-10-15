@@ -6,6 +6,11 @@
 const { schema } = require('./config');
 const S = schema.score;
 
+/* Search engines, as the page sends them: the referrer host without www. (google.com, google.co.uk, bing.com,
+   duckduckgo.com, search.yahoo.com, ecosia.org) or a utm_source of the same name. The page marks every external
+   referrer medium=referral, so the source is tested before the medium: an unpaid visit from a search engine is organic. */
+const SEARCH_RE = /(^|\.)(google|bing|yahoo|duckduckgo|ecosia)\b/;
+
 /* How the visit started, from the tracking fields. Used for the Pipedrive Source Method and for the score. */
 function sourceMethodKey(data) {
   const src = String(data.utm_source || data.source || '').toLowerCase();
@@ -15,7 +20,8 @@ function sourceMethodKey(data) {
   if ((/facebook|instagram|meta|fb\b/.test(src) && paid) || data.fbclid) return 'meta';
   if (/tiktok/.test(src)) return 'tiktok';
   if (paid) return 'paid';
-  if (/referral|partner|introduc/.test(med) || (src && src !== 'direct' && !/google|bing|yahoo|duckduckgo/.test(src))) return 'referral';
+  if (SEARCH_RE.test(src)) return 'organic';
+  if (/referral|partner|introduc/.test(med) || (src && src !== 'direct')) return 'referral';
   return 'organic';
 }
 

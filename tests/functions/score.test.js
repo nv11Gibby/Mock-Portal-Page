@@ -43,6 +43,20 @@ test('source method keys follow the tracking fields', () => {
   assert.equal(sourceMethodKey({}), 'organic');
 });
 
+test('a search engine referrer is organic although the page marks every external referrer medium=referral', () => {
+  /* the values app.js TRK sends for a visit from a results page: source is the referrer host without www. */
+  ['google.com', 'google.co.uk', 'bing.com', 'duckduckgo.com', 'search.yahoo.com', 'ecosia.org'].forEach((host) => {
+    assert.equal(sourceMethodKey({ source: host, medium: 'referral' }), 'organic', host);
+  });
+  assert.equal(sourceMethodKey({ source: 'google.com', medium: 'referral', gclid: 'x' }), 'google', 'a paid click stays Google Ads');
+  assert.equal(sourceMethodKey({ source: 'linkedin.com', medium: 'referral' }), 'referral', 'other sites stay referrals');
+  const s = scoreLead({ source: 'google.com', medium: 'referral', timeline: '3-12m' }, 'citizenship');
+  assert.equal(s.method, 'organic');
+  assert.equal(s.source, 'organic');
+  assert.equal(s.points, 4, 'organic +1, not referral +2: ' + s.reasons.join(', '));
+  assert.equal(s.band, 'warm');
+});
+
 test('title prefix only for hot and warm', () => {
   assert.equal(titlePrefix('hot'), '[HOT] ');
   assert.equal(titlePrefix('warm'), '[WARM] ');
