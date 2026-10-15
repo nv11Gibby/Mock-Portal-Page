@@ -1,7 +1,7 @@
-/* Imperial Holdings Group v4: clean-URL router (hash fallback on file://), views, one motion system, menus,
-   site search, house finder, Netlify forms with first-touch source tracking (see TRK) for the Pipedrive funnel
-   in netlify/functions/submission-created.js, Our Network, Journal and event galleries. Motion uses transform / opacity / clip-path only and switches off
-   under prefers-reduced-motion. */
+/* Imperial Holdings Group v5: clean-URL router (hash fallback on file://), views, one motion system, menus,
+   site search, house finder, forms with first-touch source tracking (see TRK) for the Pipedrive funnel
+   (Netlify Forms first, then our own function as a fallback: see submitLead), Our Network, Journal and event galleries.
+   Motion uses transform / opacity / clip-path only and switches off under prefers-reduced-motion. */
 (function(){
 'use strict';
 var D = window.IHG, app = document.getElementById('app'), body = document.body, root = document.documentElement;
@@ -819,17 +819,50 @@ function mark(f, show){
   f.setAttribute('aria-invalid', (!good && show) ? 'true' : 'false');
   return good;
 }
-function encodeForm(form, extra){
-  var p = new URLSearchParams();
-  [].forEach.call(form.elements, function(f){ if(!f.name || f.disabled) return; if((f.type==='radio'||f.type==='checkbox') && !f.checked) return; p.append(f.name, f.type==='checkbox' ? 'yes' : f.value); });
-  Object.keys(extra||{}).forEach(function(k){ p.set(k, extra[k]); });
-  return p.toString();
+/* v5: every form's key value pairs, as one object (the same data goes urlencoded to Netlify Forms and as JSON to our own function) */
+function leadData(form, extra){
+  var o = {};
+  [].forEach.call(form.elements, function(f){ if(!f.name || f.disabled) return; if((f.type==='radio'||f.type==='checkbox') && !f.checked) return; o[f.name] = f.type==='checkbox' ? 'yes' : f.value; });
+  Object.keys(extra||{}).forEach(function(k){ o[k] = extra[k]; });
+  return o;
 }
-function submitNetlify(form, extra){
+function toQuery(o){ var p = new URLSearchParams(); Object.keys(o).forEach(function(k){ p.append(k, o[k]); }); return p.toString(); }
+/* analytics: shared/analytics.js defines window.ihgTrack when GA4 is configured; without it nothing is sent */
+function track(name, params){ if(typeof window.ihgTrack==='function'){ try{ window.ihgTrack(name, params||{}); }catch(e){} } }
+/* Submission (BUILD-CONTRACT 4.3). Primary: urlencoded POST to "/" for Netlify Forms, which then runs
+   submission-created. Fallback: the same data as JSON {form, data} to config.leadEndpoint (netlify/functions/lead.js).
+   Both failing rejects, and the caller shows the office telephones and the email; the draft stays in localStorage. */
+function submitLead(form, extra){
   if(!HIST) return Promise.reject(new Error('local'));
-  var t0 = Date.now();
-  return fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: encodeForm(form, extra)})
-    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return new Promise(function(ok){ setTimeout(ok, Math.max(0, (reduced?0:700) - (Date.now()-t0))); }); });
+  var t0 = Date.now(), data = leadData(form, extra), name = form.getAttribute('name') || data['form-name'] || '';
+  function settle(r){ return new Promise(function(ok){ setTimeout(function(){ ok(r); }, Math.max(0, (reduced?0:700) - (Date.now()-t0))); }); }
+  return fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: toQuery(data)})
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); return {ok:true, via:'forms'}; })
+    .then(null, function(err){
+      var ep = D.config.leadEndpoint; if(!ep) throw err;
+      return fetch(ep, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({form:name, data:data})})
+        .then(function(res){ return res.json().then(function(j){ return j || {}; }, function(){ return {}; }).then(function(j){ if(!res.ok || !j.ok) throw new Error(j.reason || ('HTTP '+res.status)); j.via = 'lead'; return j; }); });
+    })
+    .then(settle);
+}
+function fallbackHTML(){
+  var C = D.contact;
+  return '<b>We could not send this just now.</b> Please call or email us and we will take it from there. What you typed is kept on this device, so you can also try again later.'+
+    '<div class="kv fb-kv">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div></div>';
+}
+/* drafts: what someone typed survives a reload or a wander round the site, for every form (key ihg-draft-<form>) */
+var DRAFT_SKIP = {'form-name':1, company_url:1, consent:1, 'cf-turnstile-response':1};
+function draftKey(kind){ return 'ihg-draft-'+kind; }
+function readDraft(kind){ var d = store.get(draftKey(kind)); if(!d && kind==='contact') d = store.get('ihg-contact-draft'); return d; }
+function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && f.type!=='hidden' && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
+function saveDraft(form, kind){ var o = {}; draftFields(form).forEach(function(f){ if(f.type==='radio'){ if(f.checked) o[f.name] = f.value; return; } o[f.name] = f.value; }); store.set(draftKey(kind), o); }
+function restoreDraft(form, dr){ draftFields(form).forEach(function(f){ if(dr[f.name]==null) return; if(f.type==='radio'){ if(f.value===dr[f.name] && !form.querySelector('input[name="'+f.name+'"]:checked')) f.checked = true; return; } f.value = dr[f.name]; }); }
+function draftNote(form){
+  if(form.querySelector('.draft')) return;
+  var grid = form.querySelector('.fgrid'); if(!grid) return;
+  var dn = document.createElement('div'); dn.className = 'draft'; dn.hidden = true;
+  dn.innerHTML = '<span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button>';
+  grid.parentNode.insertBefore(dn, grid);
 }
 function successHTML(title, msg){
   var burst = ''; for(var i=0;i<8;i++){ var a=i*45*Math.PI/180; burst += '<line x1="'+(50+Math.cos(a)*58).toFixed(1)+'" y1="'+(50+Math.sin(a)*58).toFixed(1)+'" x2="'+(50+Math.cos(a)*66).toFixed(1)+'" y2="'+(50+Math.sin(a)*66).toFixed(1)+'"/>'; }
@@ -845,7 +878,14 @@ function bindForms(){
       f.addEventListener('input', function(){ var b=f.closest('.field,.consent'); if(b && b.classList.contains('err')) mark(f, true); else if(f.type!=='checkbox' && f.type!=='radio') mark(f, false); });
       f.addEventListener('change', function(){ if(f.type==='checkbox') mark(f, f._tried); });
     });
-    var errBox = form.querySelector('.form-err');
+    var errBox = form.querySelector('.form-err'), anchor = wrap.id || (wrap.parentNode && wrap.parentNode.id) || '';
+    /* draft (every form): restore what was typed, keep saving, and offer a clean start */
+    draftNote(form);
+    var dr = readDraft(kind);
+    if(dr && (dr.name || dr.email || dr.msg)){ restoreDraft(form, dr); var dn = form.querySelector('.draft'); if(dn) dn.hidden = false; }
+    form.addEventListener('input', function(){ saveDraft(form, kind); }); form.addEventListener('change', function(){ saveDraft(form, kind); });
+    var clr = form.querySelector('[data-clear-draft]');
+    if(clr) clr.addEventListener('click', function(){ store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft'); render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
     /* qualification: which audience this enquiry belongs to (clients, partners, institutions) */
     function audOf(){
       var a = form.elements.namedItem('audience'); if(a && a.value) return a.value;
@@ -853,24 +893,27 @@ function bindForms(){
       var ab = form.querySelector('input[name="about"]:checked'), dv = form.elements.namedItem('division'), v = ab ? ab.value : (dv ? dv.value : '');
       var r = 'clients'; D.enquiry.forEach(function(x){ if(x.v===v && x.aud) r = x.aud; }); return r;
     }
+    function val(n){ var f = form.elements.namedItem(n); return f && !f.disabled ? (f.value||'').trim() : ''; }
     function finish(dest, name){
       var btn = form.querySelector('[data-send], button[type=submit]'); btn.classList.add('loading'); btn.disabled = true; btn.setAttribute('aria-busy','true');
       if(errBox) errBox.hidden = true;
       if(form.company_url && form.company_url.value){ return; }
       var extra = {page: location.href, audience_resolved: audOf()};
       if(kind!=='interest') extra.routed_to = dest || 'Imperial Holdings Group';
-      submitNetlify(form, extra).then(function(){
-        if(kind==='contact') store.del(DRAFT);
+      var ab = form.querySelector('input[name="about"]:checked'), division = ab ? ab.value : (val('division') || (kind==='interest' ? 'real-estate' : ''));
+      submitLead(form, extra).then(function(){
+        store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
+        track('enquiry_submitted', {form:kind, division:division, lead_source:val('lead_source') || 'website'});
         var t = 'Thank you'+(name?', '+esc(name):'')+'.';
         var m = kind==='interest' ? 'Your interest in Imperial Real Estate is noted. We will be in touch when it launches.' : 'Your enquiry is with '+esc(dest)+'. One person will be your point of contact, and will reply to arrange a first conversation.';
         wrap.innerHTML = successHTML(t, m);
         var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
-        wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c=document.getElementById('cf')||document.getElementById('register')||document.getElementById('enq'); if(c) c.scrollIntoView({block:'center'}); });
+        wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
         var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
         announce('Sent. '+t);
       }, function(err){
         btn.classList.remove('loading'); btn.disabled = false; btn.removeAttribute('aria-busy');
-        if(errBox){ errBox.innerHTML = '<b>We could not send this just now.</b> '+(err && err.message==='local' ? 'Forms only send from the live website, not from a file opened on this computer.' : 'Please check your connection and try again. Nothing you typed has been lost.'); errBox.hidden = false; errBox.focus && errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
+        if(errBox){ errBox.innerHTML = err && err.message==='local' ? '<b>We could not send this just now.</b> Forms only send from the live website, not from a file opened on this computer.' : fallbackHTML(); errBox.hidden = false; errBox.setAttribute('tabindex','-1'); errBox.focus({preventScroll:true}); }
       });
     }
     if(kind==='interest' || kind==='enquiry'){
@@ -891,16 +934,6 @@ function bindForms(){
     function chosen(){ return form.querySelector('input[name="about"]:checked'); }
     function upd(){ var c=chosen(), r=document.getElementById('routing'); if(c){ document.getElementById('routingCard').innerHTML = routingHTML(c.value); r.classList.add('show'); form.querySelector('.routes-wrap').classList.remove('err'); } else r.classList.remove('show'); }
     [].forEach.call(radios, function(r){ r.addEventListener('change', upd); });
-    /* draft: what someone typed survives a reload or a wander round the site */
-    var FIELDS = ['name','email','phone','country','pref','msg'], dr = store.get(DRAFT);
-    if(dr && (dr.name||dr.email||dr.msg)){
-      FIELDS.forEach(function(k){ if(dr[k] && form[k]) form[k].value = dr[k]; });
-      if(dr.about && !chosen()){ var rr = form.querySelector('input[name="about"][value="'+dr.about+'"]'); if(rr) rr.checked = true; }
-      document.getElementById('draft').hidden = false;
-    }
-    function saveDraft(){ var o={}; FIELDS.forEach(function(k){ o[k]=form[k].value; }); var c=chosen(); o.about=c?c.value:''; store.set(DRAFT, o); }
-    form.addEventListener('input', saveDraft); form.addEventListener('change', saveDraft);
-    form.querySelector('[data-clear-draft]').addEventListener('click', function(){ store.del(DRAFT); render(); var c=document.getElementById('cf'); if(c) c.scrollIntoView({block:'start'}); toast('<b>Cleared.</b> The form is empty again.'); });
     upd();
     function destName(){ var c=chosen(), dn='the Group team'; if(c) D.enquiry.forEach(function(x){ if(x.v===c.value){ var d=div(x.to); dn = d ? d.name : 'the Group team'; } }); return dn; }
     function review(){
@@ -940,7 +973,6 @@ function bindForms(){
 
 
 /* ---------- house finder (home) ---------- */
-var DRAFT = 'ihg-contact-draft';
 function finder(){
   var F = D.finder;
   return '<div class="finder" id="finder">'+
