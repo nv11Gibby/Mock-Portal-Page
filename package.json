@@ -7,6 +7,7 @@
     "serve": "node tests/serve.js . 8765",
     "smoke": "node tests/smoke.js",
     "test:functions": "node --test tests/functions/*.test.js",
+    "test:e2e": "node tests/e2e-leads.js",
     "check": "node --check assets/js/app.js && node --check assets/js/data.js && node tests/copy-rules.js",
     "build": "node build/build.js",
     "test:seo": "node tests/seo.js",
