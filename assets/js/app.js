@@ -483,7 +483,7 @@ function qualWho(){
 }
 /* your message: timing, and a budget band only if the person would like to say */
 function qualPlan(){
-  return selField('timeline', 'When would you like to begin?', TIMELINES, 'Choose one', true)+selField('budget', 'A budget in mind <i>(optional)</i>', BUDGETS, 'Only if you would like to say', false);
+  return selField('timeline', 'When would you like to begin?', TIMELINES, 'Choose one', true)+selField('budget', 'A budget in mind <i>(optional)</i>', BUDGETS, 'If you wish to say', false);
 }
 /* shown by the choice: Partners Club (or a partner audience) asks for firm and profession; Real Estate asks buy or rent and the area.
    Hidden fields are disabled, so they are neither validated nor sent. data-req="choice" is required only when the choice itself is Partners Club. */
@@ -1373,7 +1373,7 @@ function bookingHTML(info){
 }
 function bookingSide(){
   var B = D.config.booking || {};
-  return D.contact.offices.map(function(o){ var b = B[o.city.toLowerCase()]; if(!b) return ''; return '<div>'+(b.url ? '<a class="ul" href="'+esc(b.url)+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="">Book a conversation, '+esc(o.city)+'</a>' : tbc(b.tbc))+'</div>'; }).join('');
+  return D.contact.offices.map(function(o){ var b = B[o.city.toLowerCase()]; if(!b) return ''; return '<div>'+(b.url ? '<a class="ul" href="'+esc(b.url)+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="">Book a conversation, '+esc(o.city)+'</a>' : tbc(o.city+' booking page'))+'</div>'; }).join('');
 }
 /* WhatsApp (brief 3.4): https://wa.me/<digits> from config.whatsapp; a small button in the header on mobile that opens a sheet with
    both offices, and a button under each office on the Contact page. Clicks are tracked as whatsapp_click with the office name. */
