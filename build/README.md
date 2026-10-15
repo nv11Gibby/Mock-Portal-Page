@@ -71,6 +71,9 @@ Both are read by `build/build.js` and by `tests/seo.js` (which checks the matchi
 * `searchConsole`: the Search Console verification token. When set, the build writes the `google-site-verification`
   meta tag into every page. TO CONFIRM: token from Gilbert.
 * `turnstileSiteKey`: when set, the CSP in `_headers` allows `https://challenges.cloudflare.com` for scripts and frames.
+* Video ids in `data.js` (`video.hero`, `video.about`, the event and journal slots): when a slot has an id, the CSP allows
+  that provider's player (`https://player.vimeo.com` or `https://player.mux.com`) in `frame-src`; a hosted loop file
+  (`video.hero.src` on another origin) is allowed in `media-src`. With no ids, `frame-src` stays `'none'`.
 
 Because the analytics configuration is cookie-free, no cookie notice is needed for it (brief section 8).
 

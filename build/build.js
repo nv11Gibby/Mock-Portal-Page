@@ -159,13 +159,27 @@ distIndex.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, function(m, attrs, b
   return m;
 });
 const ga4 = !!CFG.ga4, turnstile = !!CFG.turnstileSiteKey;
+/* Video players: only the providers with a real id get a frame-src origin, and a hosted loop file gets media-src. */
+const videos = [];
+function collectVideos(v){ if(v && typeof v === 'object'){ if(v.type === 'video') videos.push(v); else Object.keys(v).forEach(function(k){ collectVideos(v[k]); }); } }
+collectVideos(D.video); collectVideos(D.events); collectVideos(D.journal);
+const playerHosts = {vimeo: 'https://player.vimeo.com', mux: 'https://player.mux.com'};
+const frameSrc = [], mediaSrc = [];
+videos.forEach(function(v){
+  const host = v.id ? playerHosts[v.provider || 'vimeo'] : '';
+  if(host && frameSrc.indexOf(host) < 0) frameSrc.push(host);
+  const m = /^(https:\/\/[^/]+)\//.exec(String(v.src || ''));
+  if(m && mediaSrc.indexOf(m[1]) < 0) mediaSrc.push(m[1]);
+});
+if(turnstile) frameSrc.unshift('https://challenges.cloudflare.com');
 const fill = {
   robots: LAUNCH ? '' : '  X-Robots-Tag: noindex, nofollow\n',
   hashes: hashes.join(' '),
   script: (ga4 ? ' https://www.googletagmanager.com' : '') + (turnstile ? ' https://challenges.cloudflare.com' : ''),
   img: ga4 ? ' https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com' : '',
   connect: ga4 ? ' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com' : '',
-  frame: turnstile ? 'https://challenges.cloudflare.com' : "'none'"
+  frame: frameSrc.length ? frameSrc.join(' ') : "'none'",
+  media: mediaSrc.length ? ' ' + mediaSrc.join(' ') : ''
 };
 const headers = fs.readFileSync(path.join(__dirname, 'headers.template'), 'utf8').replace(/\{\{(\w+)\}\}/g, function(m, k){ return k in fill ? fill[k] : m; });
 if(/\{\{\w+\}\}/.test(headers)) problems.push('headers.template has an unknown token');
@@ -186,7 +200,7 @@ distIndex.replace(/<link rel="preload" as="image" href="([^"]+)"/g, function(m, 
 const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
 console.log('build: ' + pages.length + ' pages + 404.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
-console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length);
+console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
 console.log('hero: ' + heroes.map(function(h){ return h.href + ' ' + (h.size < 0 ? 'missing' : Math.round(h.size / 1024) + ' KB'); }).join(', '));
 console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
 pages.forEach(function(p){ console.log('  ' + p.route + '  ' + p.title + '  (' + Math.round(p.bytes / 1024) + ' KB)'); });
