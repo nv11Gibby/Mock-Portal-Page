@@ -14,6 +14,9 @@ const { take } = require('./lib/ratelimit');
 const twilio = require('./lib/twilio');
 const { markVerified } = require('./lib/core');
 
+/* Last four digits only in the function log. */
+function masked(phone) { const s = String(phone || ''); return s ? '...' + s.slice(-4) : ''; }
+
 exports.handler = async function (event) {
   const cors = originCheck(event);
   const method = String(event.httpMethod || '').toUpperCase();
@@ -50,8 +53,15 @@ exports.handler = async function (event) {
         if (!r.ok) out = { ok: false, verified: false, reason: r.reason, detail: r.detail };
         else if (!r.approved) out = { ok: true, verified: false, reason: r.status === 'expired' ? 'expired' : 'code' };
         else {
-          const pd = await markVerified({ email: clean(body.email, 254), phone, channel });
+          const pd = await markVerified({ email: clean(body.email, 254), phone, channel, retryDelayMs: config.verifyRetryDelayMs() });
           out = { ok: true, verified: true, recorded: pd.ok, kind: pd.kind, id: pd.id };
+          if (!pd.ok) {
+            /* The code was right but nothing was written: the person is not in Pipedrive yet (submission-created still
+               running, or it failed), or the email names a person who does not hold this number. The team marks the
+               person by hand from this line; the page tells the visitor the code was accepted. */
+            out.reason = pd.reason;
+            console.warn('verify check: code accepted but not recorded', 'reason=' + pd.reason, 'phone=' + masked(phone), pd.error || '');
+          }
         }
       }
     } else out = { ok: false, reason: 'action' };
@@ -59,6 +69,6 @@ exports.handler = async function (event) {
     out = { ok: false, reason: 'error', verified: false };
     console.error('verify failed', err && err.message);
   }
-  console.log(['verify', action, out.ok ? 'ok' : 'rejected', 'enabled=' + (out.enabled === undefined ? '' : out.enabled), 'verified=' + (out.verified === undefined ? '' : out.verified), out.reason ? 'reason=' + out.reason : '', out.id ? 'record=' + out.kind + ':' + out.id : ''].filter(Boolean).join(' '));
+  console.log(['verify', action, out.ok ? 'ok' : 'rejected', 'enabled=' + (out.enabled === undefined ? '' : out.enabled), 'verified=' + (out.verified === undefined ? '' : out.verified), out.recorded === undefined ? '' : 'recorded=' + out.recorded, out.reason ? 'reason=' + out.reason : '', out.id ? 'record=' + out.kind + ':' + out.id : ''].filter(Boolean).join(' '));
   return json(200, out, cors.headers);
 };

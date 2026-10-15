@@ -153,10 +153,19 @@ assigned to the division owner.
   `verify` start is limited the same way, and code checks to 10 per 10 minutes.
 * Phone verification (`verify.js`): `{action:'start', phone, email, channel}` sends a code through Twilio Verify and
   answers `{ok:true, enabled:true, ref}`; without the Twilio env it answers `{ok:true, enabled:false}` and the page
-  skips the step. `{action:'check', ref, phone, code, email}` answers `{ok:true, verified:true}` after a good code,
-  sets Verification Status to Verified and adds a note on the person's newest open lead or deal; a wrong code answers
-  `{ok:true, verified:false, reason:'code'}`, an expired one `reason:'expired'`. A skipped step leaves the lead Not
-  Verified, which the core set at creation. The number must carry a country code (`+` or `00`).
+  skips the step. `{action:'check', ref, phone, code, email}` answers `{ok:true, verified:true, recorded:true}` after
+  a good code, sets Verification Status to Verified and adds a note on the person's newest open lead or deal; a wrong
+  code answers `{ok:true, verified:false, reason:'code'}`, an expired one `reason:'expired'`. A skipped step leaves
+  the lead Not Verified, which the core set at creation. The number must carry a country code (`+` or `00`).
+* Who gets marked: only the person who holds the verified number. `markVerified()` looks the person up by phone
+  first; a person found by the email in the request is accepted only when one of their numbers is the number Twilio
+  approved, so naming someone else's email never marks that person. Because the page checks the code while
+  `submission-created` may still be writing the person (or adding the phone to a returning person), the lookup is
+  repeated up to four times, 1.5 seconds apart. When nobody holds the number by then, the answer is
+  `{ok:true, verified:true, recorded:false, reason:'person'|'mismatch'}`: the code was right, nothing was written,
+  and the function log carries a warning (`verify check: code accepted but not recorded reason=...`) so the team
+  can mark the person by hand. The page tells the visitor the code was accepted and does not ask for it again
+  (Twilio removes an approved verification, so a second check would fail).
 
 ## 5. Confirmation email
 
@@ -176,6 +185,7 @@ TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 | `EMAIL_API_KEY`, `EMAIL_FROM` | Confirmation email | Resend API key and the named mailbox, for example `Imperial Holdings Group <enquiries@...>`. Off when either is empty. |
 | `EMAIL_REPLY_TO` | Confirmation email | Optional reply address. |
 | `LEAD_RATE_LIMIT`, `LEAD_RATE_WINDOW_MINUTES` | Rate limit | Defaults 5 and 10. |
+| `VERIFY_RETRY_DELAY_MS` | Phone verification | Pause between the person lookups after a good code (section 4). Default 1500; the offline tests set 0. |
 | `LEAD_ALLOWED_ORIGINS` | Other Imperial sites | Comma separated origins allowed to call `lead` and `verify` besides the site's own origin. |
 | `LEAD_SITE` | Site key | Default `ihg`; the hidden `site` field overrides it per submission. |
 

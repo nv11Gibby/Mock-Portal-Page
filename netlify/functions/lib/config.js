@@ -38,4 +38,10 @@ function allowedOrigins() {
 
 function site() { return env('LEAD_SITE', 'ihg'); }
 
-module.exports = { schema, routing, disposable, env, pipedriveToken, turnstileSecret, twilio, email, rate, allowedOrigins, site };
+/* Pause between the person lookups after a good code (core.markVerified), 1.5 s unless overridden; the tests set 0. */
+function verifyRetryDelayMs() {
+  const ms = parseInt(env('VERIFY_RETRY_DELAY_MS', '1500'), 10);
+  return isNaN(ms) || ms < 0 ? 1500 : ms;
+}
+
+module.exports = { schema, routing, disposable, env, pipedriveToken, turnstileSecret, twilio, email, rate, allowedOrigins, site, verifyRetryDelayMs };

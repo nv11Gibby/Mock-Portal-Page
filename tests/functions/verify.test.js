@@ -21,6 +21,7 @@ beforeEach(() => {
   m = createMock().install();
   ratelimit.reset();
   process.env.PIPEDRIVE_API_TOKEN = 'test-token';
+  process.env.VERIFY_RETRY_DELAY_MS = '0';
   delete process.env.TWILIO_ACCOUNT_SID; delete process.env.TWILIO_AUTH_TOKEN; delete process.env.TWILIO_VERIFY_SERVICE_SID;
 });
 
@@ -73,6 +74,27 @@ test('check with the right code marks the person Verified and notes the newest o
   assert.equal(m.notes.length, 1);
   assert.equal(m.notes[0].lead_id, lead.id);
   assert.ok(m.notes[0].content.indexOf('by SMS code') > -1);
+});
+
+test('check: a right code for a number nobody holds answers verified:true, recorded:false with the reason, and writes nothing', async () => {
+  twilioOn();
+  /* the person named by email holds another number: the code proves the attacker's phone, not the victim's */
+  const victim = m.seedPerson({ name: 'Victim', email: 'victim@example.com', phone: '+971500000001', custom: { [F.person.verificationStatus]: O.verificationStatus.notVerified } });
+  m.seedLead({ person_id: victim.id, title: 'Website: Victim · Imperial Citizenship' });
+  await verify.handler(event({ action: 'start', phone: '+2348020009999', email: 'victim@example.com', channel: 'sms' }));
+  const o = out(await verify.handler(event({ action: 'check', phone: '+2348020009999', code: '123456', email: 'victim@example.com' })));
+  assert.equal(o.ok, true);
+  assert.equal(o.verified, true);
+  assert.equal(o.recorded, false);
+  assert.equal(o.reason, 'mismatch');
+  assert.equal(o.kind, undefined);
+  assert.equal(m.find('PUT', /\/persons/).length, 0);
+  assert.equal(m.notes.length, 0);
+  assert.equal(victim[F.person.verificationStatus], O.verificationStatus.notVerified);
+  /* nobody in Pipedrive yet (submission-created still running): the code is accepted, the team marks by hand */
+  await verify.handler(event({ action: 'start', phone: '+2348020007777', email: 'new@example.com', channel: 'sms' }));
+  const none = out(await verify.handler(event({ action: 'check', phone: '+2348020007777', code: '123456', email: 'new@example.com' })));
+  assert.deepEqual(none, { ok: true, verified: true, recorded: false, reason: 'person' });
 });
 
 test('check with a wrong code answers verified:false and touches nothing in Pipedrive', async () => {

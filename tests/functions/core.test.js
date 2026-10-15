@@ -299,3 +299,52 @@ test('markVerified sets Verified on the person and notes the newest open lead or
   assert.equal(missing.ok, false);
   assert.equal(missing.reason, 'person');
 });
+
+test('markVerified looks the person up four times, 1.5 s apart by default, so a person written after the code check is still marked', async () => {
+  let searches = 0;
+  const orig = global.fetch;
+  global.fetch = async (url, init) => {
+    if (/\/persons\/search/.test(String(url))) { searches++; if (searches === 5) m.seedPerson({ name: 'Late Person', email: 'late@example.com', phone: '+2348020000777' }); }
+    return orig(url, init);
+  };
+  const r = await core.markVerified({ email: 'late@example.com', phone: '+2348020000777', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(m.find('PUT', /\/persons\/\d+$/)[0].body[F.person.verificationStatus], O.verificationStatus.verified);
+  assert.ok(searches >= 5 && searches <= 6, 'the person appeared on the third attempt: ' + searches + ' searches');
+  m.calls.length = 0; searches = 0;
+  const gone = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(gone.reason, 'person');
+  assert.equal(searches, 8, 'four attempts, each by phone then by email');
+  const one = await core.markVerified({ email: 'never@example.com', phone: '+2348020000778', channel: 'sms', retryDelayMs: 0, attempts: 1 });
+  assert.equal(one.reason, 'person');
+});
+
+test('markVerified only marks the person who holds the verified number', async () => {
+  /* a person named by email alone, whose numbers do not include the verified one: nothing is written */
+  const victim = m.seedPerson({ name: 'Victim', email: 'victim@example.com', phone: '+971500000001', custom: { [F.person.verificationStatus]: O.verificationStatus.notVerified } });
+  m.seedLead({ person_id: victim.id, title: 'Website: Victim · Imperial Citizenship' });
+  const r = await core.markVerified({ email: 'victim@example.com', phone: '+2348020009999', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'mismatch');
+  assert.equal(m.find('PUT', /\/persons/).length, 0, 'no update');
+  assert.equal(m.notes.length, 0, 'no note');
+  assert.equal(victim[F.person.verificationStatus], O.verificationStatus.notVerified);
+  /* the person who holds the number is marked although the email in the request is someone else's */
+  const holder = m.seedPerson({ name: 'Holder', email: 'holder@example.com', phone: '+234 802 000 9999' });
+  const h = await core.markVerified({ email: 'victim@example.com', phone: '+2348020009999', channel: 'whatsapp', retryDelayMs: 0 });
+  assert.equal(h.ok, true, JSON.stringify(h));
+  assert.equal(h.personId, holder.id);
+  assert.equal(m.find('PUT', /\/persons\/\d+$/)[0].path, '/v1/persons/' + holder.id);
+  assert.equal(victim[F.person.verificationStatus], O.verificationStatus.notVerified, 'the victim is untouched');
+  /* a returning person found by email gets the number from the current submission a moment later: the retry sees it */
+  const late = m.seedPerson({ name: 'Returning', email: 'returning@example.com', phone: '+971500000002' });
+  let gets = 0;
+  const orig = global.fetch;
+  global.fetch = async (url, init) => {
+    if (new RegExp('/persons/' + late.id + '$').test(String(url).split('?')[0])) { gets++; if (gets === 2) late.phone.push({ value: '+2348020001234', primary: false, label: 'work' }); }
+    return orig(url, init);
+  };
+  const l = await core.markVerified({ email: 'returning@example.com', phone: '+2348020001234', channel: 'sms', retryDelayMs: 0 });
+  assert.equal(l.ok, true, JSON.stringify(l));
+  assert.equal(l.personId, late.id);
+});

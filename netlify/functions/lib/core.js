@@ -277,21 +277,41 @@ async function processLead(input) {
 }
 
 /* After a successful code check: Verification Status = Verified on the person, a note on the newest open lead or deal.
-   The person may be created a moment after the form was sent, so one retry follows a short pause. */
+   Only the person who holds the verified number is marked: the lookup is by phone first; a person found by email is
+   accepted only when one of their numbers is the number Twilio approved (an email in the request body is never enough
+   on its own). The person, or the phone on a returning person, may be written by submission-created a moment after the
+   code is checked, so the lookup is repeated up to o.attempts times (default 4), o.retryDelayMs apart (default 1500 ms,
+   about 6 s in all, inside Netlify's default function timeout). Result: {ok:true, personId, kind, id} or
+   {ok:false, reason:'unconfigured'|'person'|'mismatch'|'sync'}; mismatch means a person with that email exists but
+   does not hold the number, and nothing was written. */
 async function markVerified(o) {
   const token = config.pipedriveToken();
   if (!token) return { ok: false, reason: 'unconfigured' };
   const pd = pipedrive.client(token, o.fetch);
   const now = o.now || Date.now();
   const email = checkEmail(o.email).email || '';
+  const phone = o.phone || '';
+  const attempts = Math.max(1, Number(o.attempts) || 4);
+  const delay = o.retryDelayMs === undefined ? 1500 : o.retryDelayMs;
+  const holds = (p) => (p.phone || []).some((ph) => ph && samePhone(ph.value, phone));
   try {
-    const find = async () => (email ? await pd.findPersonByEmail(email) : null) || (o.phone ? await pd.findPersonByPhone(o.phone) : null);
-    let person = await find();
-    if (!person) {
-      await new Promise((r) => setTimeout(r, o.retryDelayMs === undefined ? 1500 : o.retryDelayMs));
-      person = await find();
+    let person = null, mismatch = false;
+    for (let i = 0; i < attempts && !person; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, delay));
+      if (phone) person = await pd.findPersonByPhone(phone);
+      if (!person && email) {
+        const byEmail = await pd.findPersonByEmail(email);
+        if (byEmail) {
+          const full = await pd.getPerson(byEmail.id).catch(() => null);
+          if (full && holds(full)) person = byEmail;
+          else mismatch = true;
+        }
+      }
     }
-    if (!person) return { ok: false, reason: 'person' };
+    if (!person) {
+      if (mismatch) console.warn('verification not recorded: the person found by email does not hold the verified number');
+      return { ok: false, reason: mismatch ? 'mismatch' : 'person' };
+    }
     const upd = {};
     upd[F.person.verificationStatus] = O.verificationStatus.verified;
     await pd.updatePerson(person.id, upd);
