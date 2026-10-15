@@ -103,9 +103,12 @@ function sortByIso(list){
   }).map(function(o){return o.x;});
 }
 function loopOK(){ var c = navigator.connection || {}; return !mqReduce.matches && !c.saveData && !/2g/.test(c.effectiveType||''); }
+/* The self-hosted loop carries its captions file as a track (brief 5.2: a captions file for every clip). A Vimeo or Mux
+   embed cannot take a track, so for those the same file is uploaded at the host. TO CONFIRM: real transcripts for the
+   five files under assets/captions once the footage exists; each holds one placeholder cue today. */
 function heroLoop(v){
   if(!v || !loopOK()) return '';
-  if(v.src) return '<video class="loop" data-loop muted playsinline loop preload="none" aria-hidden="true" tabindex="-1"><source src="'+esc(v.src)+'"></video>';
+  if(v.src) return '<video class="loop" data-loop muted playsinline loop preload="none" aria-hidden="true" tabindex="-1"><source src="'+esc(v.src)+'">'+(v.captions?'<track kind="captions" src="'+esc(v.captions)+'" srclang="en" label="English">':'')+'</video>';
   if(v.id && v.provider==='mux') return '<iframe class="loop" src="https://player.mux.com/'+encodeURIComponent(v.id)+'?autoplay=muted&muted=true&loop=true&controls=false" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
   if(v.id) return '<iframe class="loop" src="https://player.vimeo.com/video/'+encodeURIComponent(v.id)+'?background=1&muted=1&loop=1&autoplay=1&dnt=1'+(v.hash?'&h='+encodeURIComponent(v.hash):'')+'" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
   return '';
@@ -443,7 +446,7 @@ V.event = function(slug){
   var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
   facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)]);
   if(ok) facts.push(['Photographs', e.n+', Imperial']);   /* counted only while the gallery is shown */
-  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
+  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), photoAlt('events/'+e.slug+'/'+pad2(i)) || (e.title+', photograph '+i+' of '+e.n))+'</figure>';
   var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
   return pageHero({img:'events/'+e.slug+'/cover', fb:fb, crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
   '<section class="sec light"><div class="wrap split"><div>'+e.body.map(function(p){return '<p class="lead" data-r>'+esc(p)+'</p>';}).join('')+
@@ -471,6 +474,8 @@ var AUDS = [['clients','A private client'],['partners','A professional partner o
 /* v5 qualification (BUILD-CONTRACT 4.2): names, values and labels are fixed there and in shared/lead-schema.json */
 var FOR_WHOM = [['myself','Myself'],['family','My family'],['client','A client I am introducing']];
 var TIMELINES = [['3m','Within 3 months'],['3-12m','3 to 12 months'],['exploring','Just exploring for now']];
+/* TO CONFIRM (Founder): the bands and the currency come from docs/BUILD-CONTRACT.md 4.2, not from the brief, which asks only
+   for broad bands, optional and worded gently. shared/lead-schema.json lists the same values. */
 var BUDGETS = [['under-250k','Under US$250,000'],['250k-500k','US$250,000 to 500,000'],['500k-1m','US$500,000 to 1 million'],['over-1m','Over US$1 million'],['undisclosed','I would rather not say yet']];
 var RE_INTENTS = [['buy','Buy'],['rent','Rent']];
 function labelOf(list, v){ for(var i=0;i<list.length;i++) if(list[i][0]===v) return list[i][1]; return v || ''; }
@@ -1466,7 +1471,7 @@ function guideForm(){
     '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
     '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
     consentBox('I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.')+
-    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(G.cta)+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
+    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(C.file ? G.cta : (G.ctaSoon || G.cta))+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
 }
 /* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
    writes the token to a hidden cf-turnstile-response input inside the form. The company_url honeypot stays alongside it. */

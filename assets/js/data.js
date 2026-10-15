@@ -58,7 +58,39 @@ window.IHG = {
     {key:'events/easter-polo-cup-2026/02', own:true, consent:true, what:'Polo at Lagos Polo Club, Ikoyi'},
     {key:'events/easter-polo-cup-2026/04', own:true, consent:true, what:'The Easter Polo Cup after party banner, Lagos Polo Club'},
     {key:'events/easter-polo-cup-2026/05', own:true, consent:true, what:'The Imperial Citizenship backdrop at the Easter Polo Cup after party'},
-    {key:'events/lagos-office-event/07', own:true, consent:false, event:'lagos-office-event', what:'Two guests in conversation at the Lagos office'},
+    {key:'events/lagos-office-event/07', own:true, consent:false, event:'lagos-office-event', what:'Guests seated round a table outdoors at night at the Lagos office event'},
+    /* Gallery photographs, one line each, so the event galleries get a description instead of a number. Written from the
+       photographs themselves; nobody is named. Each shows guests, so each waits for the consent gate (consent:false). */
+    {key:'events/lagos-office-event/01', own:true, consent:false, event:'lagos-office-event', what:'Five guests at the Imperial Citizenship photo wall at the Lagos office'},
+    {key:'events/lagos-office-event/02', own:true, consent:false, event:'lagos-office-event', what:'Guests at the photo wall at the Lagos office'},
+    {key:'events/lagos-office-event/03', own:true, consent:false, event:'lagos-office-event', what:'Three guests laughing together at the photo wall'},
+    {key:'events/lagos-office-event/04', own:true, consent:false, event:'lagos-office-event', what:'Five guests side by side at the photo wall at the Lagos office'},
+    {key:'events/lagos-office-event/05', own:true, consent:false, event:'lagos-office-event', what:'Two guests seated in the lounge at the Lagos office'},
+    {key:'events/lagos-office-event/06', own:true, consent:false, event:'lagos-office-event', what:'A guest seated on the sofa in the lounge at the Lagos office'},
+    {key:'events/gala-dinner-lagos/01', own:true, consent:false, event:'gala-dinner-lagos', what:'A speaker at the lectern at the gala dinner, Lagos'},
+    {key:'events/gala-dinner-lagos/02', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests at the photo wall at the gala dinner'},
+    {key:'events/gala-dinner-lagos/03', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests holding an award at the photo wall'},
+    {key:'events/gala-dinner-lagos/04', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests in front of the sponsors backdrop at the gala dinner'},
+    {key:'events/gala-dinner-lagos/05', own:true, consent:false, event:'gala-dinner-lagos', what:'Guests in conversation in the ballroom at the gala dinner'},
+    {key:'events/gala-dinner-lagos/06', own:true, consent:false, event:'gala-dinner-lagos', what:'A guest in a green dinner jacket at his table'},
+    {key:'events/easter-polo-cup-2026/01', own:true, consent:false, event:'easter-polo-cup-2026', what:'Two polo players on horseback at Lagos Polo Club'},
+    {key:'events/easter-polo-cup-2026/03', own:true, consent:false, event:'easter-polo-cup-2026', what:'Guests in conversation on the terrace at the after party'},
+    {key:'events/grenada-51-dubai/01', own:true, consent:false, event:'grenada-51-dubai', what:'Two guests with a glass raised at the Grenada 51st after party, Dubai'},
+    {key:'events/grenada-51-dubai/02', own:true, consent:false, event:'grenada-51-dubai', what:'A guest in a dark suit at the Grenada flag photo wall'},
+    {key:'events/grenada-51-dubai/03', own:true, consent:false, event:'grenada-51-dubai', what:'A guest arriving through the bar entrance at the Dubai EDITION'},
+    {key:'events/grenada-51-dubai/04', own:true, consent:false, event:'grenada-51-dubai', what:'A guest at the Grenada flag photo wall, Dubai'},
+    {key:'events/lagos-diplomatic-soiree-2025/01', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'A guest in a long black dress at the Lagos Diplomatic Soir\u00e9e 2025'},
+    {key:'events/lagos-diplomatic-soiree-2025/02', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'Guests standing together for a group photograph at the Soir\u00e9e'},
+    {key:'events/lagos-diplomatic-soiree-2025/03', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'A guest in a long black dress by the mirrored wall at the Soir\u00e9e'},
+    {key:'events/lagos-diplomatic-soiree-2025/04', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'Five guests together at the Lagos Diplomatic Soir\u00e9e 2025'},
+    {key:'events/lagos-diplomatic-soiree-2025/05', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'A guest in a grey jacket at the Soir\u00e9e'},
+    {key:'events/lagos-diplomatic-soiree-2025/06', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'A guest in a grey jacket beside the mirrored wall at the Soir\u00e9e'},
+    {key:'events/delborough-dinner/01', own:true, consent:false, event:'delborough-dinner', what:'A guest seated at the dinner table at DANI, The Delborough Hotel'},
+    {key:'events/delborough-dinner/02', own:true, consent:false, event:'delborough-dinner', what:'The band playing as guests arrive at DANI, The Delborough Hotel'},
+    {key:'events/delborough-dinner/03', own:true, consent:false, event:'delborough-dinner', what:'Six guests standing together for a photograph at the dinner'},
+    {key:'events/delborough-dinner/04', own:true, consent:false, event:'delborough-dinner', what:'Guests greeting one another at the dinner'},
+    {key:'events/delborough-dinner/05', own:true, consent:false, event:'delborough-dinner', what:'A guest in a blue suit talking with guests at their table'},
+    {key:'events/delborough-dinner/06', own:true, consent:false, event:'delborough-dinner', what:'A guest seated at the dinner table, flowers behind him'},
     {key:'events/lagos-diplomatic-soiree-2025/cover', own:true, consent:false, event:'lagos-diplomatic-soiree-2025', what:'A guest at the Lagos Diplomatic Soir\u00e9e 2025'},
     {key:'citizenship', own:true, consent:true, placeholder:true, what:'Private jet on the apron at sunset'},
     {key:'private-office', own:true, consent:true, placeholder:true, what:'Penthouse lounge overlooking the Dubai coast'},
@@ -422,11 +454,14 @@ window.IHG = {
   /* Downloadable guide (citizenship page). The file itself is config.guide.file; while it is empty the page shows config.guide.tbc. */
   guideCopy: {
     eyebrow:'The guide', title:['A short guide,','before you decide.'],
-    /* TO CONFIRM: once the PDF is approved, say what it is like (for example "written in the same plain language as this site") */
-    lead:'Leave your name and email and we will send you the guide as soon as it is ready.',
-    cta:'Send me the guide', note:'We use these details only to send the guide, and to reply if you ask us to.',
+    /* While config.guide.file is empty the form promises nothing it cannot keep: it takes a name and an email, says the
+       guide is being finalised and that we will let the person know. The request still reaches Pipedrive as a lead
+       (lead_source guide), so the follow-up has an owner. TO CONFIRM: who tells these people when the guide is ready,
+       and, once the PDF is approved, say what it is like (for example "written in the same plain language as this site"). */
+    lead:'The guide is being finalised. Leave your name and email and we will let you know when it is ready.',
+    cta:'Send me the guide', ctaSoon:'Tell me when it is ready', note:'We use these details only for the guide, and to reply if you ask us to.',
     ready:'Your copy of the guide is ready below. One person will be in touch only if you would like a conversation.',
-    soon:'The guide is being finalised. The team will send it to you by email as soon as it is ready.'
+    soon:'Thank you. The guide is being finalised, and we will let you know when it is ready.'
   },
 
   /* Legal pages (v5 trust, brief section 8). The privacy notice says what the forms collect, where it goes, how long it is
