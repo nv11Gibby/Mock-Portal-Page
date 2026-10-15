@@ -119,6 +119,14 @@ function bindMedia(){
     if(mqReduce.addEventListener) mqReduce.addEventListener('change', go);
   });
 }
+function relatedRow(kind, cur){
+  var list = kind==='event' ? sortByIso(D.events) : D.insights.slice(), same = [], other = [];
+  list.forEach(function(x){ if(x===cur) return; (x.cat===cur.cat ? same : other).push(x); });
+  var pick = same.concat(other).slice(0,3);
+  if(!pick.length) return '';
+  return '<section class="sec light alt" id="related"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Related')+mask(kind==='event'?['More evenings','from the house.']:['More from the house.'],'h2','d2')+'</div></div>'+
+    (kind==='event' ? '<div class="evgrid">'+pick.map(eventCard).join('')+'</div>' : '<div class="icards">'+pick.map(insightCard).join('')+'</div>')+'</div></section>';
+}
 function logoImg(d, colour, cls){
   if(d.logo) return '<img class="'+(cls||'')+'" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'">';
   return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="">'+esc(d.name)+'</span>';
@@ -350,13 +358,12 @@ V.insights = function(q){
 V.article = function(slug){
   var a=null; D.insights.forEach(function(x){if(x.slug===slug) a=x;}); if(!a) return null;
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
-  var more = D.insights.filter(function(x){return x.slug!==slug;}).slice(0,3);
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
   return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:'<div data-r style="margin-bottom:18px"><span class="sample">Sample article</span></div>', eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
   '<section class="sec light"><div class="wrap"><article class="article" id="article"><div class="notice" data-r><span class="sample">Sample</span><div><b>Sample article for layout.</b> Final copy to be written and approved. Author and publication date: '+tbc('to confirm')+'</div></div><p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
-  '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Read next')+mask(['More from the house.'],'h2','d2')+'</div></div><div class="icards">'+more.map(insightCard).join('')+'</div></div></section>';
+  relatedRow('article', a);
 };
 function splitTitle(t){
   var w = t.replace(/\.$/,'').split(' '), lines=[], cur='';
@@ -365,33 +372,42 @@ function splitTitle(t){
 }
 
 /* ---------- v4: events, journal, enquiry, finder section ---------- */
-function evWhen(e){ return e.date ? esc(e.date) : tbc('Date to confirm'); }
+function evWhen(e){ return e.date ? esc(e.date) : ''; }
 function eventCard(e,i){
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img('events/'+e.slug+'/cover', e.title)+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+' <i aria-hidden="true">·</i> '+evWhen(e)+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
+  var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+(ok ? img(k, e.title) : img(eventSafe(e), null))+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
 }
 function journalRow(j,i){
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(j.img,'','',j.own?'':'-c')+'</figure><div class="jb"><div class="meta">'+esc(j.kind)+' <i aria-hidden="true">·</i> '+(j.sample?'<span class="sample">Sample</span>':esc(j.date))+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  var ok = photoAllowed(j.img), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null, k = ok ? j.img : (ev ? eventSafe(ev) : 'about'), v = ok ? (j.own?'':'-c') : variantOf(k);
+  var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
+  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, ok?'':null, '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 V.journal = function(){
-  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
+  var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
+  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', fb:'events/easter-polo-cup-2026/02', cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
   '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Where the','network meets.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. One cover photograph for each, and a gallery inside.</p></div>'+
-   '<div class="evgrid">'+D.events.map(eventCard).join('')+'</div>'+
-   '<p class="xs" data-r style="margin-top:32px">Photographs of guests are published with their permission. '+tbc('Permissions to confirm before launch')+'</p></div></section>'+
-  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments, selected insights and partnerships.</p><p class="xs"><span class="sample">Sample</span>&nbsp; Entries marked Sample are layout samples, to be rewritten and approved.</p></div></div>'+
-   '<div class="jlist">'+D.journal.map(journalRow).join('')+'</div></div></section>'+closing();
+   '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
+   '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
+  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments, selected insights and partnerships.</p></div></div>'+
+   '<div class="jlist">'+rows.map(journalRow).join('')+'</div></div></section>'+closing();
 };
 V.event = function(slug){
-  var e = null, ix = -1; D.events.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
-  var n = D.events.length, prev = D.events[(ix-1+n)%n], next = D.events[(ix+1)%n];
-  var facts = [['When', evWhen(e)], ['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']];
-  var gal = ''; for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
-  return pageHero({img:'events/'+e.slug+'/cover', crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
+  var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
+  var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01');
+  var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
+  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)], ['Photographs', e.n+', Imperial']);
+  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), e.title+', photograph '+i+' of '+e.n)+'</figure>';
+  var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
+  return pageHero({img:'events/'+e.slug+'/cover', fb:eventSafe(e), crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
   '<section class="sec light"><div class="wrap split"><div>'+e.body.map(function(p){return '<p class="lead" data-r>'+esc(p)+'</p>';}).join('')+
     (e.guests?'<div data-r><div class="eyebrow" style="margin-top:34px">Among the guests</div><ul class="guests">'+e.guests.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>':'')+
     (e.tbc?'<p class="xs" data-r style="margin-top:24px">To confirm before launch: '+e.tbc.map(tbc).join(' ')+'</p>':'')+
-    (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+'</div>'+
+    (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+
+    '<div class="ev-share" data-r>'+shareBar(e, 'event')+'</div></div>'+
    '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?about=group&audience=institutions"><span>Start a strategic conversation</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
-  '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(['The evening,','in pictures.'],'h2','d2')+'</div><p class="xs" data-r>Photographs of guests appear with their permission. '+tbc('Permissions to confirm')+'</p></div><div class="gallery">'+gal+'</div></div></section>'+
+  '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(['The evening,','in pictures.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
+    (e.video ? videoBlock(e.video, 'gal-vid') : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
+  relatedRow('event', e)+
   '<section class="sec light"><div class="wrap"><nav class="pn" aria-label="More events" data-r><a href="#/journal/events/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/journal/events/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></div></section>'+closing();
 };
 /* home enquiry: one short form, qualified by audience and division, with source fields for Pipedrive */
@@ -1105,10 +1121,11 @@ function compare(){
 /* ---------- article sharing ---------- */
 var SHARE = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v10M6 7l4-4 4 4M4 11v5h12v-5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
 var LINK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8.5 11.5a3.5 3.5 0 0 0 5 0l2.5-2.5a3.5 3.5 0 0 0-5-5l-1 1M11.5 8.5a3.5 3.5 0 0 0-5 0L4 11a3.5 3.5 0 0 0 5 5l1-1" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
-function shareBar(a){
+function shareBar(a, what){
+  what = what || 'article';
   return '<div class="share" data-share data-title="'+esc(a.title)+'"><span class="share-l">Share</span>'+
-    '<button type="button" data-sh="copy" aria-label="Copy link to this article">'+LINK+'<span>Copy link</span></button>'+
-    '<button type="button" data-sh="native" aria-label="Share this article" hidden>'+SHARE+'<span>Share</span></button>'+
+    '<button type="button" data-sh="copy" aria-label="Copy link to this '+what+'">'+LINK+'<span>Copy link</span></button>'+
+    '<button type="button" data-sh="native" aria-label="Share this '+what+'" hidden>'+SHARE+'<span>Share</span></button>'+
     '<a data-sh="li" target="_blank" rel="noopener" aria-label="Share on LinkedIn" href="#">in</a>'+
     '<a data-sh="wa" target="_blank" rel="noopener" aria-label="Share on WhatsApp" href="#">WA</a>'+
     '<a data-sh="mail" aria-label="Share by email" href="#">@</a></div>';
