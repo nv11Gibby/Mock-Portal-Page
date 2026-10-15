@@ -454,3 +454,72 @@ then, against the source directory, a route on `assets/js/data.js` that appends
 `video/mp4`, followed by `page.emulateMedia({reducedMotion: ...})` to flip the preference at runtime. The source
 directory is used for the loop test because a prerendered page keeps its markup on first render
 (`renderView()`, `app.js` line 753) and so cannot show a loop injected after the build.
+
+## 11. Fixed (second review round, October 2026)
+
+What changed on branch `fix/content`, item by item. The item numbers are the ones in the second-round findings
+list (findings) and the third-round list (t3). Every change was checked with `npm run check`, a production build,
+`tests/seo.js`, the smoke, a11y and e2e suites, and screenshots at 1440x900 and 390x844.
+
+### Fixed
+
+1. **t3 0, Insights are drafts.** Every article carries `draft:true` in `data.js`. A draft page is reachable by
+   its address but carries `<meta name="robots" data-draft content="noindex, follow">` (kept through `LAUNCH=1`),
+   is left out of `sitemap.xml`, `journal/feed.xml`, the search palette and the related rows, and shows "Draft,
+   awaiting approval" where "Sample" stood. The Insights listing keeps the four cards with one short notice.
+   `window.IHG_APP.routes({published:true})` gives the build the indexable list; `tests/seo.js` checks both lists.
+2. **t3 1, the em dash glyph.** The "Not sure which applies?" card and the search palette drew a dash with the
+   em dash character written as an escape. Both now draw a short gold rule in CSS (`.ix-rule`, `.pal-rule`).
+   `tests/copy-rules.js` now also catches the JavaScript and CSS escapes and the three HTML entities.
+3. **t3 2, event TO CONFIRM lines** render with the amber `tbc` placeholder style (`.ev-tbc`).
+4. **t3 3, alt text for `events/lagos-office-event/07`** now describes the guests seated round a table outdoors at
+   night.
+5. **Finding 0, the dark hero.** The production fallback is `hero-lights`, a crop of the gala dinner stage lights
+   with nobody in frame, with its own scrim (`.hh.fallback`). Measured against the v4 reference with the text
+   hidden: desktop headline 12.4:1 (v4 8.9:1), lead 14.2:1 (14.3:1), buttons 14.9:1 (13.0:1); phone headline
+   10.8:1 (v4 2.8:1), lead 12.8:1 (8.8:1), buttons 13.7:1 (13.0:1). The old `hero-alt` files are gone and the two
+   preload lines in `index.html` point at the new files.
+6. **Findings 1 and 3, one event illustrated with another's banner.** Event cards, related rows and journal rows
+   pick from a per-event pair of neutral own photographs (`EVENT_SAFE`), with the city view as the last resort,
+   and the home page counts its uses so no photograph appears more than twice inside `<main>`.
+7. **Finding 2, the held-back gallery.** The photograph count, the gallery link and the facts line are hidden
+   while a gallery waits for consent; the card says "Read the story" and the heading says what is on the page.
+8. **Findings 4, 5 and 6, layout.** The budget placeholder reads "If you wish to say" and fits beside the chevron
+   at 1440px; the Contact side column labels each booking placeholder "Dubai booking page" or "Lagos booking
+   page" in sentence case (the report and the success state keep the full sentence); the video placeholder pill
+   keeps its dashed box whole and stays on one line at 390px.
+9. **Finding 11, the hard-coded domain.** `siteCta` carries the site's `label` and `name`, and the At a glance
+   panel, the closing band and the routing card print those. Marking a site real needs no change in `app.js`
+   (`docs/ECOSYSTEM.md` section 6).
+10. **t3 4, captions.** The self-hosted hero loop carries its captions file as a `<track>`; the Vimeo and Mux
+    embeds need the same file uploaded at the host (comment above `heroLoop`).
+11. **t3 7, budget bands.** A TO CONFIRM note above `BUDGETS` records that the amounts and the currency come from
+    the build contract, not the brief. The bands are unchanged.
+12. **t3 8, gallery alt text.** The photo registry holds one line for every gallery photograph, written from the
+    photographs and naming nobody; the galleries use those lines, with "photograph i of n" only as the fallback.
+13. **t3 9, the six-digit code.** Already fixed upstream before this round (`app.js` no longer says "six").
+14. **t3 10, the guide form.** The form says the guide is being finalised and that we will let the person know,
+    with a "Tell me when it is ready" button while `config.guide.file` is empty; the request still reaches
+    Pipedrive as a lead (lead_source guide).
+15. **t3 11, three clips sharing one poster, as a side effect of item 6:** each event's highlights clip now takes
+    that event's second neutral photograph as its poster while the cover waits for consent, so the three posters
+    differ and none shows another event's banner.
+
+### Not changed, and why
+
+* The confirmation email for a guide request (`netlify/functions/lib/email.js`, with its unit test and
+  `docs/LEADS.md` section on it) still says "It will follow by email from the team". That is backend copy with
+  its own test; left for the leads owner, see TO CONFIRM below.
+* The "It concerns" select in the two-column enquiry card shows "Citizenship or residen" when the division is
+  preselected on a division page: a long option label, not a placeholder, and not in the findings. Noted.
+* `build/build.js` line 72 and the PERFORMANCE and ACCEPTANCE documents still mention `hero-alt` as history.
+
+### TO CONFIRM arising from this round
+
+* Founder approval of the four Insights articles (then remove `draft:true`).
+* Consent for `events/lagos-office-event/cover`, which replaces the fallback hero at once, and the final hero
+  photograph from the shoot.
+* The budget bands and currency (t3 7).
+* The Twilio Verify code length, when the service is created.
+* Who tells guide requesters when the guide is ready, and the wording of the confirmation email (above).
+* Real captions for the five `.vtt` files once the footage exists.
