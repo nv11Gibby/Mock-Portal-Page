@@ -374,6 +374,14 @@ function bindCond(form){
   apply(); return apply;
 }
 function ensureHidden(form, name, value){ var f = form.elements.namedItem(name); if(f) return f; f = document.createElement('input'); f.type = 'hidden'; f.name = name; f.value = value; form.appendChild(f); return f; }
+/* consent (brief 8): every consent box links the privacy notice next to it. Templates use consentBox(); bindForms adds the link
+   to any consent box that still lacks one. */
+var PRIVACY_LINK = '<a class="ul" href="#/privacy">privacy notice</a>';
+function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span></label>'; }
+function ensurePrivacyLink(form){
+  [].forEach.call(form.querySelectorAll('.consent'), function(c){ if(c.querySelector('a[href$="/privacy"]')) return; var s = c.querySelector('span') || c; s.insertAdjacentHTML('beforeend', ' See our '+PRIVACY_LINK+'.'); });
+  fixLinks(form);
+}
 function enquiryForm(pre){
   return '<div class="form-card" data-form="enquiry" id="enq"><form novalidate name="enquiry" method="post"><input type="hidden" name="form-name" value="enquiry"><input type="hidden" name="routed_to" value=""><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="lead_source" value="website"><input type="hidden" name="quiz_answers" value="">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
    '<div class="eyebrow">Private enquiry</div>'+
@@ -385,7 +393,7 @@ function enquiryForm(pre){
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    qualWho()+qualPlan()+condFields()+
    '<label class="field full"><span>How can we help?</span><textarea name="msg" rows="4" required></textarea><em class="em">A few lines are enough.</em></label></div>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
    '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">Send enquiry</span><span class="spin"></span></button><span class="xs">We use your details only to reply to this enquiry.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
 }
 function finderSec(){
@@ -424,7 +432,7 @@ V.contact = function(q){
    '<dl class="cf-review" id="cfReview"></dl>'+
    '<div class="fgrid qual">'+qualPlan()+'</div>'+condFields()+
    '<label class="field"><span>How can we help?</span><textarea name="msg" required placeholder="A few lines about your family, your plans or your practice."></textarea><em class="em">Please tell us a little about your enquiry.</em></label>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group using these details to respond to my enquiry, as described in the {privacy}.')+
    '<div class="cf-nav"><button class="btn line" type="button" data-back>'+BACK+'<span>Back</span></button><button class="btn" type="submit" data-send><span class="lbl">Send enquiry</span><span class="spin"></span></button></div>'+
    '<div class="form-err" role="alert" hidden></div>'+
    '<p class="xs" style="margin-top:16px">We use these details only to respond. Nothing is shared beyond what a service needs.</p></div>'+
@@ -1078,7 +1086,7 @@ function guideForm(){
     '<div class="eyebrow">Request the guide</div>'+
     '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
     '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
-    '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+    consentBox('I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.')+
     '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(G.cta)+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
 }
 /* Cloudflare Turnstile (invisible): loaded once, only when config.turnstileSiteKey is set. Each form gets a widget; Turnstile
@@ -1122,6 +1130,7 @@ function bindForms(){
     TRK_KEYS.forEach(function(k){ ensureHidden(form, k, TRK[k]||''); }); ensureHidden(form, 'page', ''); ensureHidden(form, 'audience_resolved', '');
     if(kind==='interest') ensureHidden(form, 'audience', 'clients');
     ensureHidden(form, 'site', D.config.site); ensureHidden(form, 'lead_source', 'website');
+    ensurePrivacyLink(form);
     turnstileBind(form);
     var applyCond = bindCond(form);
     /* draft (every form): restore what was typed, keep saving, and offer a clean start */
