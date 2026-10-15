@@ -154,7 +154,20 @@ assigned to the division owner.
 * Rate limit: 5 submissions per 10 minutes per IP (`reason: rate`), as a token bucket in the memory of the function
   instance. This is best effort on serverless: each instance keeps its own buckets, a cold start empties them, and
   parallel instances do not share them. It stops a casual flood; Turnstile and Netlify's own filter do the rest.
-  `verify` start is limited the same way, and code checks to 10 per 10 minutes.
+* SMS pumping: every `verify` start costs a Twilio send, and an attacker who can start verifications at will runs up
+  the bill on numbers they control (toll fraud) until Twilio suspends the account, which would switch the step off
+  for real leads. The function therefore brakes a start four ways, all best effort: (1) the request must carry an
+  email or a submission reference next to the phone, as the page sends after an enquiry (`reason: enquiry`
+  otherwise; this is a shape check, not a proof); (2) at most 5 starts per address per hour and 3 per phone number
+  per hour, in the same in-memory buckets as above (`reason: rate`), with one shared bucket when no client address
+  is known so the limit never silently switches off; code checks stay at 10 per address per 10 minutes; (3) when
+  `TURNSTILE_SECRET_KEY` is set, a start needs a fresh `cf-turnstile-response` token like a submission (`reason:
+  turnstile`; the page mints one for the start and for the resend; a missing token is refused without asking
+  Cloudflare, and the outage rule above applies). (4) Nothing in the function can prove that the enquiry was stored:
+  the Netlify Forms path returns no reference and a Pipedrive lookup at start would race `submission-created` (the
+  person is created a moment after the page calls start), so no CRM check is made. The backstop is in the Twilio
+  console: switch on Verify Fraud Guard and set the service rate limits for the Verify service (TO CONFIRM: who holds
+  the Twilio account), and watch the function log for `verify start rejected reason=rate` bursts.
 * Phone verification (`verify.js`): `{action:'start', phone, email, channel}` sends a code through Twilio Verify and
   answers `{ok:true, enabled:true, ref}`; without the Twilio env it answers `{ok:true, enabled:false}` and the page
   skips the step. `{action:'check', ref, phone, code, email}` answers `{ok:true, verified:true, recorded:true}` after
@@ -184,7 +197,7 @@ TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 | Variable | Needed for | Notes |
 |---|---|---|
 | `PIPEDRIVE_API_TOKEN` | Everything in Pipedrive | Pipedrive > Personal preferences > API. Without it leads stay in the Netlify Forms inbox only and the direct endpoint answers `reason: unconfigured`. |
-| `TURNSTILE_SECRET_KEY` | Turnstile check | Pair of the site key in `D.config.turnstileSiteKey`. Off when empty. |
+| `TURNSTILE_SECRET_KEY` | Turnstile check on submissions and on `verify` start | Pair of the site key in `D.config.turnstileSiteKey`. Off when empty. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Phone verification | All three or nothing; the step is skipped without them. |
 | `EMAIL_API_KEY`, `EMAIL_FROM` | Confirmation email | Resend API key and the named mailbox, for example `Imperial Holdings Group <enquiries@...>`. Off when either is empty. |
 | `EMAIL_REPLY_TO` | Confirmation email | Optional reply address. |

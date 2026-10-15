@@ -128,6 +128,7 @@ function pipedrive(m, c) {
 
 function twilio(m, c) {
   if (!/^Basic /.test(c.headers.Authorization || '')) return jsonRes(401, { message: 'no auth' });
+  if (m.twilioFail) return jsonRes(400, { message: 'Twilio mock: invalid parameter To: ' + (c.body.To || ''), code: 60200 });
   if (/\/Verifications$/.test(c.path)) {
     const v = { sid: 'VE' + m.id(), to: c.body.To, channel: c.body.Channel, status: 'pending' };
     m.verifications.push(v);

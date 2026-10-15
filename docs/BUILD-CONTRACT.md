@@ -128,11 +128,16 @@ Budget labels: "Under US$250,000", "US$250,000 to 500,000", "US$500,000 to 1 mil
 
 ### 4.4 Phone verification (`netlify/functions/verify.js`)
 POST JSON. `{action:'start', phone, email, channel:'whatsapp'|'sms'}` answers `{ok, enabled, ref}`; when Twilio is
-not configured it answers `{ok:true, enabled:false}` and the page skips the step. `{action:'check', ref, phone, code,
-email}` answers `{ok, verified}`. On success the backend sets the Pipedrive person field "Verification Status" to
-Verified (option 982) and adds a note on the newest open lead or deal for that email; otherwise the person stays
-Not Verified (983), which the core sets at creation. Env: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`,
-`TWILIO_VERIFY_SERVICE_SID`. Nothing is sent without them.
+not configured it answers `{ok:true, enabled:false}` and the page skips the step. A start needs the email (or the
+direct submission `ref`) next to the phone, is limited per address and per number (`reason:'rate'`), and when
+Turnstile is on it carries a fresh `cf-turnstile-response` token (`reason:'turnstile'` without one); see
+docs/LEADS.md section 4. `{action:'check', ref, phone, code, email}` answers `{ok, verified, recorded}`. On success
+the backend sets the Pipedrive person field "Verification Status" to Verified (option 982) and adds a note on the
+newest open lead or deal of the person who holds that number (a person found by email counts only when the verified
+number is one of theirs); `recorded:false` with a `reason` means the code was right but nobody held the number yet,
+and the page says the code was accepted without asking for it again. Otherwise the person stays Not Verified (983),
+which the core sets at creation. Env: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`.
+Nothing is sent without them.
 
 ### 4.5 Backend core (A)
 * Config, not code: `shared/lead-routing.json` holds, per division (citizenship, private-office, partners-club,
