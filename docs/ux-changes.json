@@ -1,0 +1,342 @@
+[
+  {
+    "id": 1,
+    "severity": "high",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Intro veil on the first visit",
+    "why": "1.6 s of black on the first visit, the hero headline and reveals held back 1.6 s, Lighthouse mobile LCP 4.9 s, and a permanent black screen if app.js does not run because body.veiled is baked into the prerendered home.",
+    "where": "index.html #veil; assets/js/app.js:1853-1861 (intro veil block); assets/css/site.css:781-792 (.intro-veil, .veiled, .unveil, 1.6 s delay rule); prerender of body.veiled in the build",
+    "how": "Delete the markup, the block and the rules; drop the ihg-intro sessionStorage flag."
+  },
+  {
+    "id": 2,
+    "severity": "high",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Pinned parallax hero",
+    "why": "675 px (desktop) and 422 px (phone) of scrolling during which nothing new appears, plus a scroll-linked transform on the largest image.",
+    "where": "assets/css/site.css:185-190 (.hh, .hh-pin); assets/js/app.js:943 onScroll parallax branch; app.js:255 V.home hero markup",
+    "how": "Make the reduced-motion layout the default (.hh height auto, .hh-pin position relative), remove the dusk and night layers from the scroll handler, keep one still photograph at 100svh."
+  },
+  {
+    "id": 3,
+    "severity": "high",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Masked headline reveals and [data-r] section reveals",
+    "why": "1.4 s transforms with staggered delays on 63 blocks make every page slow to arrive; after a route change 38 of 42 blocks on About are invisible until scrolled.",
+    "where": "assets/css/site.css:76-80; shared/tokens.css (--t4, --t5); assets/js/app.js:178 mask(); app.js:908 enhance()",
+    "how": "One 0.3 s opacity fade with no translate and no per-block delay, or none; render everything visible on landing and keep the observer only for lazy work."
+  },
+  {
+    "id": 4,
+    "severity": "high",
+    "area": "accessibility",
+    "decision": "keep",
+    "what": "Contrast of eyebrows, breadcrumbs and the Journal headline over photographs (keep the elements, fix the contrast)",
+    "why": "Home eyebrow p90 3.42:1; Citizenship breadcrumb mobile mean 3.57:1; Partners Club breadcrumb mobile mean 2.50:1; Journal mobile eyebrow mean 4.29:1 and headline p90 2.95:1 (needs 4.5 for small text, 3 for large).",
+    "where": "assets/css/site.css:209 (.ph::after gradient); site.css:190 (.hh-pin::after); site.css:39 (.eyebrow); site.css:215-218 (.crumb)",
+    "how": "Deepen the top of the hero gradient to at least rgba(14,13,11,.85) behind the breadcrumb and eyebrow or put them on a solid band; use --text rather than --soft for breadcrumb links over photographs; re-measure with photoContrast."
+  },
+  {
+    "id": 5,
+    "severity": "high",
+    "area": "accessibility",
+    "decision": "keep",
+    "what": "Header layout on phones (keep the WhatsApp entry, fix its size)",
+    "why": "The WhatsApp button is squeezed to 23 px wide at 390 px and 13 px at 375 and 360 px, below the 24 px minimum, because the 221 px wordmark and 32 px gaps take the row.",
+    "where": "assets/css/site.css:97 (.hdr-in gap); site.css:99 (.brand img); site.css:1175-1187 (.wa-btn)",
+    "how": "flex: none and min-width 44px on .wa-btn, a smaller gap on narrow screens, and either the crown mark instead of the full wordmark under 420 px or the WhatsApp entry moved into the action bar only."
+  },
+  {
+    "id": 6,
+    "severity": "medium",
+    "area": "overlays",
+    "decision": "simplify",
+    "what": "Mega menu opening on hover with a full-height scrim",
+    "why": "Crossing the navigation darkens the whole page; opening takes 424 ms on hover and the panel lingers 1,179 ms after the pointer leaves; the 1.6 s preview zoom and three-stage stagger slow it.",
+    "where": "assets/js/app.js:1101-1102 openMega/closeMega and their hover listeners; assets/css/site.css:115-141",
+    "how": "Open on click, Enter or ArrowDown only; remove .mega::after; one 0.2 s fade; keep the division list, descriptions and site links."
+  },
+  {
+    "id": 7,
+    "severity": "medium",
+    "area": "navigation",
+    "decision": "simplify",
+    "what": "Header hiding on downward scroll",
+    "why": "On a phone the menu button disappears with the header after 520 px and the visitor must scroll up to find it.",
+    "where": "assets/js/app.js:943 onScroll (hdr-hide logic); assets/css/site.css:95-96",
+    "how": "Keep the header visible under 1024 px; on desktop keep it visible or hide it only after 1,200 px and show it on any upward movement."
+  },
+  {
+    "id": 8,
+    "severity": "medium",
+    "area": "navigation",
+    "decision": "simplify",
+    "what": "\"Our Network\" header item",
+    "why": "It is a link to a section 3,907 px down the home page, so from any other page it is a route change followed by a long scroll.",
+    "where": "index.html header nav (data-goto item); assets/js/app.js:844 afterLand",
+    "how": "Drop it from the header and keep Network in the footer, or give it a page of its own if the content justifies one."
+  },
+  {
+    "id": 9,
+    "severity": "medium",
+    "area": "navigation",
+    "decision": "simplify",
+    "what": "Comparison table on phones",
+    "why": "A 980 px table in a 341 px viewport shows one column at a time under the action bar.",
+    "where": "assets/js/app.js:1720 compare(); assets/css/site.css:931-948",
+    "how": "Under 760 px render the same data as five stacked cards (one per division, rows as definition lists); keep the table on wider screens."
+  },
+  {
+    "id": 10,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Film grain layer",
+    "why": "A full-viewport fixed layer above all content (z 150) with an SVG turbulence filter, purely decorative, kept even under reduced motion.",
+    "where": "index.html .grain; assets/css/site.css:778",
+    "how": "Delete both."
+  },
+  {
+    "id": 11,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Scroll progress bar and reading bar",
+    "why": "Two gold bars on article pages; the scroll handler that drives them is the largest forced-reflow source Lighthouse found on home (103 ms).",
+    "where": "index.html .sprog; assets/js/app.js:943 onScroll; app.js:816 renderView (reading bar); assets/css/site.css:88-89 and 591-592",
+    "how": "Delete both bars; keep the scroll handler only for the header state if item 7 keeps it."
+  },
+  {
+    "id": 12,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Magnetic buttons",
+    "why": "A pointermove listener drags buttons up to 10 x 8 px towards the cursor; decorative.",
+    "where": "assets/js/app.js:1005 bindMagnetic; assets/css/site.css:73 .mag; mag class in closing() and V.home",
+    "how": "Delete the function and the class."
+  },
+  {
+    "id": 13,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Divisions index cursor preview and row dimming",
+    "why": "A 300 x 380 image chases the cursor and the other rows dim to .42, which makes the list harder to read and adds a fixed layer and a per-frame loop.",
+    "where": "assets/js/app.js:1058-1069 cLoop and bindIndex; index.html #cprev; assets/css/site.css:442-443 and .drow.dim",
+    "how": "Delete; the row hover (name shifts 16 px, gold) is enough."
+  },
+  {
+    "id": 14,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Houses accordion timing and dimming",
+    "why": "1.4 s to settle and inactive panels at 62% brightness and 55% saturation feel sluggish and murky; the exploration itself is valuable and keyboard-correct.",
+    "where": "assets/css/site.css:243 (.house transition) and the .house:not(.on) filter rule; assets/js/app.js:1015 bindHouses",
+    "how": "transition: flex-grow .5s; inactive filter: brightness(.8); keep the arrow-key behaviour."
+  },
+  {
+    "id": 15,
+    "severity": "medium",
+    "area": "navigation",
+    "decision": "simplify",
+    "what": "Route transitions (View Transitions)",
+    "why": "843 ms per navigation and content below the fold hidden on arrival.",
+    "where": "assets/css/site.css:604-612 (::view-transition-*); assets/js/app.js:845-871 route(); app.js:844 afterLand",
+    "how": "0.2 s crossfade for the root, drop the shared dv-img and dv-title groups, mark every reveal visible on landing."
+  },
+  {
+    "id": 16,
+    "severity": "medium",
+    "area": "accessibility",
+    "decision": "keep",
+    "what": "Focus after client-side navigation (keep the router, fix the focus)",
+    "why": "After the home to About transition the active element was the document body; focusMain only focuses main when nothing else is focused, so a visitor who clicked a link keeps focus on a removed node.",
+    "where": "assets/js/app.js:904 focusMain; app.js:816 renderView",
+    "how": "Always move focus to main (tabindex -1) or the H1 after a route change, with preventScroll."
+  },
+  {
+    "id": 17,
+    "severity": "medium",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "World map arcs and pins, shown on Home and About",
+    "why": "A 2.2 s arc draw and two infinite pings, and the same block appears twice on the site.",
+    "where": "assets/js/app.js:226 mapBlock; app.js:1031 bindMap; assets/css/site.css:295-327",
+    "how": "Show the map once (About, or Home if deliverable 3 keeps it there), remove the ping animation, draw the arcs statically; keep the tabs and region buttons."
+  },
+  {
+    "id": 18,
+    "severity": "medium",
+    "area": "loading",
+    "decision": "simplify",
+    "what": "Image delivery for cards, event covers and logos",
+    "why": "Cards and event covers ship at 1400 to 1728 px wide for 343 px renderings; the Journal sends 1.0 MB of images to a phone (Lighthouse: 197 KB of savings); the 44 KB logo SVGs render at 15 px; the crown has no intrinsic size.",
+    "where": "assets/js/app.js:58 img() and app.js:641 menuImg; app.js:425 eventCard; the build image step; assets/logos/*.svg; index.html head",
+    "how": "Add -c and -m card variants with srcset and sizes for cards and event covers; recompress the event covers; optimise the logo SVGs; add width and height to the crown."
+  },
+  {
+    "id": 19,
+    "severity": "medium",
+    "area": "loading",
+    "decision": "simplify",
+    "what": "Render-blocking CSS payload",
+    "why": "site.css blocks rendering at 88 KB with 54 to 71 KB unused per page (Lighthouse: 950 to 1,290 ms of savings); most of what this audit removes lives there.",
+    "where": "assets/css/site.css; shared/tokens.css; index.html head",
+    "how": "Delete the removed features' rules, inline tokens.css, and consider inlining the critical hero and header rules."
+  },
+  {
+    "id": 20,
+    "severity": "medium",
+    "area": "forms",
+    "decision": "simplify",
+    "what": "Required fields in the first contact",
+    "why": "10 required visible fields on the home enquiry card is a long ask before any conversation.",
+    "where": "assets/js/app.js:528 enquiryForm; app.js:486-495 qualWho, qualPlan, condFields",
+    "how": "Require name, email, what it is about and consent; make country, nationality, for whom, timeline and message optional; keep every hidden tracking field (v5 rule). Deliverable 6 decides the final journey."
+  },
+  {
+    "id": 21,
+    "severity": "medium",
+    "area": "accessibility",
+    "decision": "keep",
+    "what": "Touch targets of standalone links (keep the links, fix the sizes)",
+    "why": "Footer office phone and email links are forced to 17 px, journey links are 36 px, the captions link 23 px and comparison header links 32 px.",
+    "where": "assets/css/site.css:1117 (.ftr .off a); site.css:70 (.tlink); .vid-cc; site.css:936 (.cmp thead th a)",
+    "how": "Give each a 44 px minimum height (24 px at the very least) with padding; inline links inside sentences may stay."
+  },
+  {
+    "id": 22,
+    "severity": "medium",
+    "area": "navigation",
+    "decision": "simplify",
+    "what": "Home page length",
+    "why": "14,565 px (16 screens) on desktop and 18,410 px (22 screens) on a phone across 9 sections, with the map repeated from About and 63 reveals.",
+    "where": "assets/js/app.js:255-311 V.home",
+    "how": "Keep hero, ecosystem (houses), one proof block, one Journal row and the closing band; move the rest to About and the Journal. Deliverable 3 owns the final structure."
+  },
+  {
+    "id": 23,
+    "severity": "low",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Scroll cue",
+    "why": "An infinite 2.4 s animation telling the visitor to scroll on a page that is obviously scrollable.",
+    "where": "assets/js/app.js:281 (.cue in V.home); assets/css/site.css:199-201",
+    "how": "Delete."
+  },
+  {
+    "id": 24,
+    "severity": "low",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Clock and greeting line",
+    "why": "A pulsing dot, a 20 s timer and a greeting computed from Dubai's hour rather than the visitor's.",
+    "where": "assets/js/app.js:992-1001 tick and greet; app.js:280 hero markup; assets/css/site.css:195-198",
+    "how": "Keep \"Offices in Dubai and Lagos\" with the two local times updated once a minute, no dot, no greeting."
+  },
+  {
+    "id": 25,
+    "severity": "low",
+    "area": "animations",
+    "decision": "remove",
+    "what": "Figures count-up",
+    "why": "Numbers spinning up from 0 draw attention to the animation rather than the fact; the figures themselves are with the claims audit.",
+    "where": "assets/js/app.js:933 count(); app.js:214 figures()",
+    "how": "Render the final values in the HTML."
+  },
+  {
+    "id": 26,
+    "severity": "low",
+    "area": "animations",
+    "decision": "keep",
+    "what": "Submit button spinner (keep it, stop it running while hidden)",
+    "why": ".btn .spin rotates permanently at opacity 0 on every submit button, so two animations run on division pages at idle.",
+    "where": "assets/css/site.css:66-67",
+    "how": "Move the animation declaration to .btn.loading .spin."
+  },
+  {
+    "id": 27,
+    "severity": "low",
+    "area": "animations",
+    "decision": "remove",
+    "what": "\"Coming soon\" badge pulse",
+    "why": "Infinite, non-composited (box-shadow) animation on a status badge.",
+    "where": "assets/css/site.css:227",
+    "how": "Delete the ::before animation."
+  },
+  {
+    "id": 28,
+    "severity": "low",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Back to top ring",
+    "why": "A progress ring and a backdrop blur for a button the header makes unnecessary once item 7 keeps the header reachable.",
+    "where": "index.html #totop; assets/js/app.js totop block (around line 1853); assets/css/site.css:831-838",
+    "how": "Plain Top button without the ring, or remove."
+  },
+  {
+    "id": 29,
+    "severity": "low",
+    "area": "forms",
+    "decision": "simplify",
+    "what": "Success mark animation",
+    "why": "A 1.4 s ring draw, a tick draw and burst lines after a form send.",
+    "where": "assets/js/app.js:1294 successHTML; assets/css/site.css:563-568",
+    "how": "A static tick; keep the heading, message, verification and next steps."
+  },
+  {
+    "id": 30,
+    "severity": "low",
+    "area": "animations",
+    "decision": "simplify",
+    "what": "Hover zooms on rail cards and mega previews",
+    "why": "1.4 s image zoom on rail cards and a 1.6 s zoom on mega previews.",
+    "where": "assets/css/site.css:501-502; site.css:134-135",
+    "how": "Remove the scale transitions."
+  },
+  {
+    "id": 31,
+    "severity": "low",
+    "area": "forms",
+    "decision": "keep",
+    "what": "Form drafts in localStorage (keep, add an age limit)",
+    "why": "Drafts (name, email, phone, message) stay on the device indefinitely.",
+    "where": "assets/js/app.js:1285 saveDraft; app.js:1283 readDraft",
+    "how": "Store a timestamp and discard drafts older than 30 days. To confirm that the privacy notice mentions on-device drafts."
+  },
+  {
+    "id": 32,
+    "severity": "low",
+    "area": "accessibility",
+    "decision": "keep",
+    "what": "House numbers over panel photographs (keep, raise the contrast)",
+    "why": "12 px numerals at 3.8 to 4.5:1; decorative (aria-hidden) but visible.",
+    "where": ".house .n in assets/css/site.css",
+    "how": "Raise the opacity or set them on the panel's dark band."
+  },
+  {
+    "id": 33,
+    "severity": "low",
+    "area": "loading",
+    "decision": "keep",
+    "what": "Host behaviour: 404 status, back/forward cache, compression",
+    "why": "The local server answered unknown paths with the fallback page (200) and sends Cache-Control no-store; both depend on the host, not the site.",
+    "where": "dist/_redirects; netlify.toml",
+    "how": "To confirm on the host after deploy: /no-such-page answers 404 with 404.html, HTML is served with a cacheable header, assets are compressed."
+  },
+  {
+    "id": 34,
+    "severity": "low",
+    "area": "links",
+    "decision": "keep",
+    "what": "Placeholder links for the four unbuilt division websites",
+    "why": "402 href=\"#\" links with data-tbc (8 on a typical page) are honest placeholders with a \"Link to confirm\" toast, which is right until those sites exist.",
+    "where": "assets/js/data.js sites; assets/js/app.js:159-176 extLink and siteLink",
+    "how": "Keep the toast; before launch either fill the URLs or hide the links (launch audit, deliverable 8)."
+  }
+]
