@@ -62,7 +62,9 @@ const F = routing.pipedrive.fields, O = routing.pipedrive.options;
 const m = createMock();
 m.token = process.env.PIPEDRIVE_API_TOKEN;
 const log = [];
-const state = { primaryFail: false, fallbackFail: false, primaryDelayMs: 0, test: null, inHandler: false };
+/* primaryHangMs: the Netlify Forms stand-in holds the connection for that long and then answers 504 without running the
+   function, the way a stalled connection behaves; the page must give up on it and use the fallback endpoint. */
+const state = { primaryFail: false, fallbackFail: false, primaryDelayMs: 0, primaryHangMs: 0, test: null, inHandler: false };
 function without(o, k) { const c = Object.assign({}, o); delete c[k]; return c; }
 global.fetch = async function (u, init) {
   const res = await m.handle(u, init);
@@ -122,6 +124,7 @@ async function handle(req, res) {
   if (state.test) state.test.http.push(entry);
   try {
     if (p === '/') {
+      if (state.primaryHangMs) { await new Promise(function (ok) { setTimeout(ok, state.primaryHangMs); }); entry.status = 504; res.writeHead(504, { 'Content-Type': 'text/plain' }); res.end('Gateway Timeout'); return; }
       if (state.primaryFail) { entry.status = 500; res.writeHead(500, { 'Content-Type': 'text/plain' }); res.end('Internal Server Error'); return; }
       if (state.primaryDelayMs) await new Promise(function (ok) { setTimeout(ok, state.primaryDelayMs); });
       const data = Object.fromEntries(new URLSearchParams(body));
@@ -275,15 +278,34 @@ const VIEWPORTS = {
   desktop: { viewport: { width: 1440, height: 900 } },
   mobile: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }
 };
-async function open(browser, t, vp, url) {
+/* prep (optional) runs on the new page before it navigates: routes to stub, state to set. */
+async function open(browser, t, vp, url, prep, gotoOpts) {
   const ctx = await browser.newContext(Object.assign({ reducedMotion: 'reduce', locale: 'en-GB' }, VIEWPORTS[vp || 'desktop']));
   const page = await ctx.newPage();
   page.on('pageerror', function (e) { t.errors.push('pageerror: ' + e.message); });
   page.on('console', function (msg) { if (msg.type() === 'error') t.console.push(msg.text()); });
-  await page.goto(BASE + url, { waitUntil: 'networkidle' });
+  if (prep) await prep(page);
+  await page.goto(BASE + url, Object.assign({ waitUntil: 'networkidle' }, gotoOpts || {}));
   t.close = function () { return ctx.close(); };
   return page;
 }
+/* Stub the verify function from the page's side (the page under test, not the backend, is what these cases check):
+   answer(body) returns a JSON answer to send, or null to let the real function answer. */
+function stubVerify(answer) {
+  return async function (page) {
+    await page.route('**/.netlify/functions/verify', function (route) {
+      let body = {}; try { body = JSON.parse(route.request().postData() || '{}'); } catch (e) { /* empty */ }
+      const out = answer(body);
+      if (out) return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(out) });
+      return route.continue();
+    });
+  };
+}
+/* Capture the analytics events the page sends (shared/analytics.js queues them when GA4 is off). */
+async function captureEvents(page) { await page.evaluate(function () { window.__e2eEvents = []; window.ihgTrack = function (n, p) { window.__e2eEvents.push({ name: n, params: p }); }; }); }
+function events(page) { return page.evaluate(function () { return window.__e2eEvents || []; }); }
+function twilioStarts(t) { return t.calls.filter(function (c) { return c.host === 'verify.twilio.com' && /Verifications$/.test(c.path); }); }
+function twilioChecks(t) { return t.calls.filter(function (c) { return c.host === 'verify.twilio.com' && /VerificationCheck$/.test(c.path); }); }
 /* A fixed element (the mobile action bar) can sit over a button; fall back to a DOM click then. */
 async function click(loc) { try { await loc.click({ timeout: 5000 }); } catch (e) { await loc.evaluate(function (el) { el.click(); }); } }
 function trackingUrl(route, tag) { return route + '?utm_source=google&utm_medium=organic&utm_campaign=e2e-' + tag + '&utm_content=harness&utm_term=acceptance'; }
@@ -446,25 +468,58 @@ test('1.13 returning person: same email, then same phone (dedupe, note and activ
   t.detail = 'three enquiries, one person ' + first.person + ' and one ' + first.kind + ' ' + first.id + ': the second (same email) and third (new email, same phone) each added a note and a "' + routing.pipedrive.activity.subject + '" activity due today; the person now holds both emails.';
 });
 
-test('2.1 disposable email through Netlify Forms: rejected by the function', async function (t, browser) {
+/* The email field's state as the person sees it. */
+function emailState(page) {
+  return page.evaluate(function () {
+    const f = document.querySelector('#cf form'), em = f.querySelector('input[name="email"]'), box = em.closest('.field');
+    return { err: box.classList.contains('err'), msg: box.querySelector('.em').textContent.trim(), invalid: em.getAttribute('aria-invalid'), step: (document.querySelector('.cf-step.on') || {}).getAttribute('data-step'), focused: document.activeElement === em };
+  });
+}
+test('2.1 disposable email through Netlify Forms: the page refuses it before sending, the function refuses it too', async function (t, browser) {
   const spec = { about: 'citizenship', division: 'citizenship', name: 'E2E Disposable', email: 'e2e.disposable@mailinator.com', phone: '', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'myself', timeline: '3m', budget: 'over-1m', msg: 'TEST disposable address.' };
   const page = await open(browser, t, 'desktop', '/contact');
-  await contactFlow(page, spec);
-  await page.waitForSelector('.success', { timeout: 20000 });
+  const f = page.locator('#cf form');
+  await click(page.locator('label:has(input[name="about"][value="citizenship"])'));
+  await page.waitForSelector('#routing.show', { timeout: 5000 });
+  await click(page.locator('.cf-step[data-step="1"] [data-next]'));
+  await page.waitForSelector('.cf-step[data-step="2"].on', { timeout: 5000 });
+  await f.locator('input[name="name"]').fill(spec.name);
+  await f.locator('input[name="email"]').fill(spec.email);
+  await f.locator('input[name="country"]').fill(spec.country);
+  await f.locator('input[name="nationality"]').fill(spec.nationality);
+  await f.locator('select[name="for_whom"]').selectOption(spec.for_whom);
+  await click(page.locator('.cf-step[data-step="2"] [data-next]'));
+  await page.waitForTimeout(500);
+  /* the page checks the domain against shared/disposable-domains.json: step 2 stays, the field says why */
+  const st = await emailState(page);
+  assert.equal(st.step, '2', 'step 2 does not continue with a disposable address');
+  assert.ok(st.err && /email address you check regularly/.test(st.msg), 'field error on the email: ' + st.msg);
+  assert.equal(st.invalid, 'true', 'aria-invalid on the email field');
+  assert.equal(t.http.length, 0, 'nothing was posted');
+  /* a permanent address lets the person continue */
+  await f.locator('input[name="email"]').fill('e2e.disposable.fixed@example.com');
+  await click(page.locator('.cf-step[data-step="2"] [data-next]'));
+  await page.waitForSelector('.cf-step[data-step="3"].on', { timeout: 5000 });
+  const fixed = await emailState(page);
+  assert.ok(!fixed.err && /valid email address/.test(fixed.msg), 'the field returns to its own message: ' + fixed.msg);
+  /* the function keeps its own check (brief 3.3): the same data posted straight to Netlify Forms is refused there */
+  const fields = { 'form-name': 'contact', about: 'citizenship', name: spec.name, email: spec.email, country: spec.country, nationality: spec.nationality, for_whom: spec.for_whom, timeline: spec.timeline, msg: spec.msg, consent: 'yes', site: 'ihg' };
+  const r1 = await realFetch(BASE + '/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(fields).toString() });
+  assert.equal(r1.status, 200, 'Netlify Forms stand-in answers 200');
   const sub = lastSubmission(t);
   assert.ok(sub, 'the Netlify Forms post reached the function');
   assert.equal(sub.result.ok, false); assert.equal(sub.result.reason, 'disposable');
   assert.equal(t.calls.filter(function (c) { return c.host === 'api.pipedrive.com'; }).length, 0, 'nothing reached Pipedrive');
   assert.equal(t.calls.filter(function (c) { return c.host === 'api.resend.com'; }).length, 0, 'no email was sent');
-  const seen = await page.locator('.success h3').innerText() + ' / ' + await page.locator('.success > p').first().innerText();
   t.ids = { ref: sub.result.ref, submission: sub.id };
-  t.detail = 'function: rejected reason=disposable, no Pipedrive call, no email. The person sees the success state ("' + seen.replace(/\s+/g, ' ').trim() + '") because Netlify Forms accepts the post before the function runs; the submission stays in the Netlify Forms inbox only.';
+  t.detail = 'page: step 2 refuses mailinator.com with "' + st.msg + '" and nothing is posted; a permanent address continues. Function (same data posted directly): rejected reason=disposable, no Pipedrive call, no email.';
 });
 
-test('2.2 disposable email through the fallback endpoint: rejected, fallback message shown', async function (t, browser) {
+test('2.2 disposable email through the fallback endpoint: refused, and the person is told which field', async function (t, browser) {
   state.primaryFail = true;
   const spec = { about: 'citizenship', division: 'citizenship', name: 'E2E Disposable Two', email: 'e2e.disposable2@mailinator.com', phone: '', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'myself', timeline: '3m', budget: 'over-1m', msg: 'TEST disposable address via the direct endpoint.' };
-  const page = await open(browser, t, 'desktop', '/contact');
+  /* the page cannot load the domain list here (as on an old cached copy, or a blocked fetch), so the function's answer is what tells it */
+  const page = await open(browser, t, 'desktop', '/contact', async function (p) { await p.route('**/shared/disposable-domains.json', function (route) { route.abort(); }); });
   await contactFlow(page, spec);
   await page.waitForSelector('#cf form .form-err:not([hidden])', { timeout: 20000 });
   const lead = t.http.find(function (h) { return h.path === '/.netlify/functions/lead'; });
@@ -472,25 +527,34 @@ test('2.2 disposable email through the fallback endpoint: rejected, fallback mes
   assert.equal(lead.response.ok, false); assert.equal(lead.response.reason, 'disposable');
   assert.equal(t.calls.filter(function (c) { return c.host === 'api.pipedrive.com'; }).length, 0, 'nothing reached Pipedrive');
   const seen = (await page.locator('#cf form .form-err').innerText()).replace(/\s+/g, ' ').trim();
-  assert.ok(/could not send/i.test(seen), 'fallback message: ' + seen);
+  assert.ok(/email address you check regularly/.test(seen), 'the message names the address, not an outage: ' + seen);
+  assert.ok(!/could not send/i.test(seen), 'no generic fallback message');
+  const st = await emailState(page);
+  assert.equal(st.step, '2', 'the step with the email field is shown again');
+  assert.ok(st.err && /email address you check regularly/.test(st.msg), 'field error on the email: ' + st.msg);
+  const btn = await page.evaluate(function () { const b = document.querySelector('#cf form [data-send]'); return { loading: b.classList.contains('loading'), disabled: b.disabled }; });
+  assert.ok(!btn.loading && !btn.disabled, 'the Send button is released');
   t.ids = { ref: lead.response.ref };
-  t.detail = 'lead.js: {ok:false, reason:disposable}, nothing in Pipedrive. The person sees the generic fallback message ("' + seen.slice(0, 90) + '...") rather than a note about the address.';
+  t.detail = 'lead.js: {ok:false, reason:disposable}, nothing in Pipedrive. The page shows "' + seen.slice(0, 80) + '", returns to step 2 and marks the email field.';
 });
 
-test('2.3 honeypot filled in the page: nothing is sent', async function (t, browser) {
+test('2.3 honeypot filled in the page: nothing is sent, the button is released and the office contacts are shown', async function (t, browser) {
   const spec = { about: 'citizenship', division: 'citizenship', name: 'E2E Honeypot', email: 'e2e.honeypot@example.com', phone: '', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'myself', timeline: '3m', budget: 'over-1m', msg: 'TEST honeypot.' };
   spec.before = async function (p) { await p.evaluate(function () { document.querySelector('#cf form input[name="company_url"]').value = 'http://spam.example'; }); };
   const page = await open(browser, t, 'desktop', '/contact');
   await contactFlow(page, spec);
-  await page.waitForTimeout(1500);
+  await page.waitForSelector('#cf form .form-err:not([hidden])', { timeout: 10000 });
+  await page.waitForTimeout(500);
   assert.equal(t.http.length, 0, 'no request left the page');
   assert.equal(await page.locator('.success').count(), 0, 'no success state');
-  const btn = await page.evaluate(function () {
-    const f = document.querySelector('#cf form'), pick = function (el) { return el.classList.contains('loading') + '/' + el.disabled; };
-    return { send: pick(f.querySelector('[data-send]')), step1: pick(f.querySelector('.cf-step[data-step="1"] [data-next]')), err: !f.querySelector('.form-err').hidden };
+  const st = await page.evaluate(function () {
+    const f = document.querySelector('#cf form'), b = f.querySelector('[data-send]');
+    return { loading: b.classList.contains('loading'), disabled: b.disabled, busy: b.getAttribute('aria-busy'), err: f.querySelector('.form-err').innerText.replace(/\s+/g, ' ').trim() };
   });
+  assert.ok(!st.loading && !st.disabled && !st.busy, 'the Send button is not left busy: ' + JSON.stringify(st));
+  ['+971 4 546 1110', '+234 902 222 2024', 'info@imperialholdingsgroup.com'].forEach(function (s) { assert.ok(st.err.indexOf(s) > -1, 'the message carries ' + s + ': ' + st.err); });
   t.ids = {};
-  t.detail = 'no POST at all (the page stops before sending). The person sees no message and no change on Send (loading/disabled: Send ' + btn.send + ', hidden step 1 Continue ' + btn.step1 + ', error shown ' + btn.err + '); see 7.1.';
+  t.detail = 'no POST at all (the page stops before sending); the Send button is released and the person sees the office contacts ("' + st.err.slice(0, 60) + '..."), so a browser that autofilled the hidden field does not leave them with a spinner.';
 });
 
 test('2.4 honeypot filled, posted straight to the endpoints: rejected', async function (t) {
@@ -556,7 +620,8 @@ test('4.1 booking buttons carry name, email and division (config override)', asy
   await afterSuccess(page, 'none');
   const b = await bookingState(page);
   assert.equal(b.links.length, 2, 'one button per office');
-  const q = 'name=' + encodeURIComponent(spec.name) + '&email=' + encodeURIComponent(spec.email) + '&a1=citizenship';
+  /* a1 carries the division's name, which reads as an answer on the booking page (the key stays in data-division for analytics) */
+  const q = 'name=' + encodeURIComponent(spec.name) + '&email=' + encodeURIComponent(spec.email) + '&a1=' + encodeURIComponent('Imperial Citizenship');
   assert.equal(b.links[0].href, 'https://booking.example.test/dubai?' + q, 'Dubai link');
   assert.equal(b.links[1].href, 'https://booking.example.test/lagos?office=lagos&' + q, 'Lagos link keeps its own query');
   assert.deepEqual(b.links.map(function (l) { return l.office; }), ['Dubai', 'Lagos']);
@@ -688,7 +753,167 @@ test('7.1 contact form: the Send button shows the loading state while the enquir
   await afterSuccess(page, 'none');
   t.ids = checkStored(t, spec, {});
   t.detail = 'while the POST was in flight: Send ' + JSON.stringify(st.send) + ', hidden step 1 Continue ' + JSON.stringify(st.step1Continue) + '; the enquiry itself arrived (' + t.ids.kind + ' ' + t.ids.id + ').';
-  assert.ok(st.send.loading && st.send.disabled, 'Send is marked loading and disabled while the request is in flight; got Send ' + JSON.stringify(st.send) + ' and hidden step 1 Continue ' + JSON.stringify(st.step1Continue) + ' (finish() in bindForms picks form.querySelector("[data-send], button[type=submit]"), which is the step 1 Continue button on the three step form)');
+  assert.ok(st.send.loading && st.send.disabled && st.send.busy === 'true', 'Send is marked loading, disabled and aria-busy while the request is in flight; got Send ' + JSON.stringify(st.send) + ' and hidden step 1 Continue ' + JSON.stringify(st.step1Continue));
+  assert.ok(!st.step1Continue.loading && !st.step1Continue.disabled, 'the hidden step 1 Continue button is left alone');
+});
+
+test('7.2 old #/ links and the .html copies land on their page, not on the home markup the server sent', async function (t, browser) {
+  const ctx = await browser.newContext(Object.assign({ reducedMotion: 'reduce' }, VIEWPORTS.desktop));
+  t.close = function () { return ctx.close(); };
+  const page = await ctx.newPage();
+  page.on('pageerror', function (e) { t.errors.push('pageerror: ' + e.message); });
+  const urls = ['/#/contact', '/#/about', '/#/divisions/citizenship', '/#/contact?about=academy', '/about.html', '/divisions/citizenship.html'];
+  const seen = {};
+  for (const u of urls) {
+    await page.goto(BASE + u, { waitUntil: 'networkidle' });
+    seen[u] = await page.evaluate(function () {
+      return { path: location.pathname + location.search, title: document.title, h1: ((document.querySelector('#app h1') || {}).textContent || '').replace(/\s+/g, ' '), contact: !!document.querySelector('#app form[name="contact"]'), home: !!document.querySelector('#app .hh'), nf: document.body.classList.contains('is-nf'), about: (document.querySelector('#cf input[name="about"]:checked') || {}).value || '' };
+    });
+  }
+  assert.equal(seen['/#/contact'].path, '/contact', 'the hash is rewritten to the path');
+  assert.ok(seen['/#/contact'].contact && !seen['/#/contact'].home, '/#/contact shows the contact form, not the home hero: ' + JSON.stringify(seen['/#/contact']));
+  assert.ok(/^Contact/.test(seen['/#/contact'].title), 'contact title');
+  assert.ok(/One house/.test(seen['/#/about'].h1) && !seen['/#/about'].home, '/#/about shows the About page: ' + JSON.stringify(seen['/#/about']));
+  assert.ok(/Second residency/.test(seen['/#/divisions/citizenship'].h1), '/#/divisions/citizenship shows the division page: ' + JSON.stringify(seen['/#/divisions/citizenship']));
+  assert.equal(seen['/#/contact?about=academy'].about, 'academy', 'a hash link with a query keeps its choice');
+  assert.ok(!seen['/about.html'].nf && /One house/.test(seen['/about.html'].h1), '/about.html is the About page, not the not-found view: ' + JSON.stringify(seen['/about.html']));
+  assert.ok(!seen['/divisions/citizenship.html'].nf && /Second residency/.test(seen['/divisions/citizenship.html'].h1), '/divisions/citizenship.html is the division page: ' + JSON.stringify(seen['/divisions/citizenship.html']));
+  t.ids = {};
+  t.detail = urls.map(function (u) { return u + ' -> ' + seen[u].path + ' "' + seen[u].title + '"'; }).join('; ');
+});
+
+test('7.3 a visitor from a search engine is recorded as organic, not as a referral', async function (t, browser) {
+  const spec = { about: 'citizenship', division: 'citizenship', name: 'E2E Organic', email: 'e2e.organic@example.com', phone: '', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'family', timeline: '3m', budget: 'over-1m', band: 'hot', points: 9, msg: 'TEST organic search visit.' };
+  /* a plain referral first, in its own session, so the two cannot be confused */
+  const other = await open(browser, t, 'desktop', '/contact', null, { referer: 'https://partner.example.net/introductions' });
+  const ref = await other.evaluate(function () { return JSON.parse(sessionStorage.getItem('ihg-src')); });
+  assert.equal(ref.source, 'partner.example.net'); assert.equal(ref.medium, 'referral');
+  await t.close();
+  const page = await open(browser, t, 'desktop', '/contact', null, { referer: 'https://www.google.com/' });
+  const trk = await page.evaluate(function () { return JSON.parse(sessionStorage.getItem('ihg-src')); });
+  assert.equal(trk.source, 'google.com', 'source is the search engine host');
+  assert.equal(trk.medium, 'organic', 'medium organic for a search engine referrer');
+  assert.equal(trk.referrer, 'https://www.google.com/');
+  let tracking;
+  spec.before = async function (p) { tracking = await trackingSeen(p); };
+  await contactFlow(page, spec);
+  await afterSuccess(page, 'none');
+  assert.equal(tracking.source, 'google.com'); assert.equal(tracking.medium, 'organic');
+  t.ids = checkStored(t, spec, { tracking: tracking });
+  t.detail = 'referrer https://www.google.com/ -> source google.com, medium organic (a partner.example.net referrer stays referral); the note on ' + t.ids.kind + ' ' + t.ids.id + ' carries source: google.com and medium: organic, score hot (9 points, organic +1).';
+});
+
+test('7.4 code accepted but not yet recorded in Pipedrive: softer wording, the step still finishes, no second check', async function (t, browser) {
+  const spec = { division: 'citizenship', audience: 'clients', name: 'E2E Unrecorded', email: 'e2e.unrecorded@example.com', phone: '+234 802 000 0704', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'myself', timeline: '3m', budget: 'undisclosed', band: 'hot', points: 6, msg: 'TEST code accepted, not recorded.' };
+  const stub = { checks: 0 };
+  const page = await open(browser, t, 'desktop', '/divisions/citizenship', stubVerify(function (body) { if (body.action !== 'check') return null; stub.checks++; return { ok: true, verified: true, recorded: false, reason: 'person' }; }));
+  await captureEvents(page);
+  await enquiryFlow(page, spec);
+  const s = '[data-form="enquiry"] ';
+  await page.waitForSelector(s + '[data-verify]', { timeout: 10000 });
+  await page.locator(s + 'input[name="code"]').fill('123456');
+  await click(page.locator(s + '[data-verify-send]'));
+  await page.waitForSelector(s + '.verified', { timeout: 10000 });
+  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  const text = (await page.locator(s + '.verified').innerText()).replace(/\s+/g, ' ').trim();
+  assert.ok(/Code accepted/.test(text) && /note it on your enquiry/.test(text) && !/Phone verified/.test(text), 'softer wording: ' + text);
+  assert.equal(stub.checks, 1, 'exactly one check call');
+  await page.waitForTimeout(800);
+  assert.equal(stub.checks, 1, 'the code is never checked a second time');
+  assert.equal(await page.locator(s + '[data-verify]').count(), 0, 'no re-check offered');
+  const pv = (await events(page)).find(function (e) { return e.name === 'phone_verified'; });
+  assert.ok(pv, 'phone_verified event sent');
+  assert.equal(pv.params.recorded, false, 'the event says recorded:false');
+  assert.equal(twilioStarts(t).length, 1, 'one code sent (the real start)');
+  t.ids = checkStored(t, spec, {});
+  t.detail = 'check answered {verified:true, recorded:false}: the page says "' + text + '", moves on to booking, sends phone_verified with recorded:false and never re-checks; person ' + t.ids.person + ' stays Not Verified until the team marks it.';
+});
+
+test('7.5 WhatsApp cannot deliver the code: the page tries SMS itself', async function (t, browser) {
+  const spec = { division: 'private-office', audience: 'clients', name: 'E2E No WhatsApp', email: 'e2e.nowhatsapp@example.com', phone: '+971 50 000 0705', country: 'United Arab Emirates', nationality: 'United Kingdom', for_whom: 'myself', timeline: '3m', budget: 'undisclosed', band: 'hot', points: 6, msg: 'TEST WhatsApp refused, SMS instead.' };
+  const page = await open(browser, t, 'desktop', '/divisions/private-office', stubVerify(function (body) { return body.action === 'start' && body.channel === 'whatsapp' ? { ok: false, enabled: true, reason: 'provider', detail: 'not on WhatsApp' } : null; }));
+  await enquiryFlow(page, spec);
+  const s = '[data-form="enquiry"] ';
+  await page.waitForSelector(s + '[data-verify]', { timeout: 10000 });
+  const intro = (await page.locator(s + '.verify > p').first().innerText()).replace(/\s+/g, ' ');
+  assert.ok(/by SMS/.test(intro), 'the step says the code went by SMS: ' + intro);
+  const starts = twilioStarts(t);
+  assert.equal(starts.length, 1, 'one Twilio send'); assert.equal(starts[0].body.Channel, 'sms', 'by SMS');
+  await page.locator(s + 'input[name="code"]').fill('123456');
+  await click(page.locator(s + '[data-verify-send]'));
+  await page.waitForSelector(s + '.verified', { timeout: 10000 });
+  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  t.ids = checkStored(t, spec, { verification: O.verificationStatus.verified });
+  t.detail = 'whatsapp start refused (reason provider), sms start sent (Twilio Channel sms), 123456 approved; person ' + t.ids.person + ' Verified (982).';
+});
+
+test('7.6 a number without its country code: the person is told and the enquiry continues unverified', async function (t, browser) {
+  const spec = { division: 'academy', audience: 'partners', name: 'E2E No Code', email: 'e2e.nocode@example.com', phone: '0802 000 0706', country: 'Nigeria', nationality: 'Nigeria', for_whom: 'myself', timeline: '3-12m', budget: 'undisclosed', band: 'warm', points: 4, msg: 'TEST number without country code.' };
+  const page = await open(browser, t, 'mobile', '/divisions/academy');
+  await enquiryFlow(page, spec);
+  const s = '[data-form="enquiry"] ';
+  await page.waitForSelector(s + '.verify-note', { timeout: 10000 });
+  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  const note = (await page.locator(s + '.verify-note').innerText()).replace(/\s+/g, ' ').trim();
+  assert.ok(/could not send a verification code/.test(note) && /country code/.test(note), 'the note explains: ' + note);
+  assert.equal(await page.locator(s + '[data-verify]').count(), 0, 'no code step');
+  const verifyHttp = t.http.filter(function (h) { return h.path === '/.netlify/functions/verify'; });
+  assert.equal(verifyHttp.length, 1, 'one start call'); assert.equal(verifyHttp[0].response.reason, 'phone', 'verify.js answered reason phone');
+  assert.equal(twilioStarts(t).length, 0, 'nothing sent to Twilio');
+  t.ids = checkStored(t, Object.assign({}, spec, { phone: '' }), {});
+  t.detail = 'verify.js answered {ok:false, enabled:true, reason:phone} (no Twilio call); the page says "' + note + '" and shows booking; ' + t.ids.kind + ' ' + t.ids.id + ' arrived Not Verified (mobile).';
+});
+
+test('7.7 programme fit answers survive a wander round the site: the draft keeps lead_source and quiz_answers', async function (t, browser) {
+  const page = await open(browser, t, 'desktop', '/divisions/citizenship');
+  const answers = [['who', 'family'], ['where', 'nigeria'], ['matters', 'live'], ['timeline', '3m'], ['budget', '500k-1m']];
+  for (let i = 0; i < answers.length; i++) {
+    await page.waitForSelector('.fit-q[data-k="' + answers[i][0] + '"].on', { timeout: 5000 });
+    await click(page.locator('.fit-q[data-k="' + answers[i][0] + '"] [data-opt="' + answers[i][1] + '"]'));
+  }
+  await page.waitForSelector('.fit-done.on', { timeout: 5000 });
+  const f = page.locator('[data-form="enquiry"] form');
+  await f.locator('input[name="name"]').fill('E2E Wanderer');
+  await f.locator('input[name="email"]').fill('e2e.wanderer@example.com');
+  const link = await page.evaluate(function () { const a = document.querySelector('[data-form="enquiry"] .consent a[href$="/privacy"]'); return { target: a.getAttribute('target'), rel: a.getAttribute('rel') }; });
+  assert.equal(link.target, '_blank', 'the privacy link in the consent box opens in a new tab'); assert.ok(/noopener/.test(link.rel));
+  /* away to About through the header, then back */
+  await click(page.locator('.nav a[data-nav="about"]'));
+  await page.waitForFunction(function () { return location.pathname === '/about' && /One house/.test(((document.querySelector('#app h1') || {}).textContent || '')); }, null, { timeout: 10000 });
+  await page.goBack();
+  await page.waitForFunction(function () { return location.pathname === '/divisions/citizenship' && !!document.querySelector('[data-form="enquiry"] form input[name="name"]'); }, null, { timeout: 10000 });
+  const back = await page.evaluate(function () {
+    const f = document.querySelector('[data-form="enquiry"] form');
+    return { lead_source: f.lead_source.value, quiz_answers: f.quiz_answers.value, name: f.name.value, email: f.email.value, division: f.division.value, timeline: f.timeline.value, budget: f.budget.value, country: f.country.value, note: !document.querySelector('[data-form="enquiry"] .draft').hidden };
+  });
+  assert.equal(back.lead_source, 'programme-fit', 'lead_source restored');
+  assert.deepEqual(JSON.parse(back.quiz_answers), { who: 'family', where: 'nigeria', matters: 'live', timeline: '3m', budget: '500k-1m' }, 'quiz_answers restored');
+  assert.equal(back.name, 'E2E Wanderer'); assert.equal(back.email, 'e2e.wanderer@example.com'); assert.equal(back.division, 'citizenship'); assert.equal(back.timeline, '3m'); assert.equal(back.budget, '500k-1m'); assert.equal(back.country, 'Nigeria');
+  assert.ok(back.note, 'the draft note is shown');
+  const spec = { division: 'citizenship', name: 'E2E Wanderer', email: 'e2e.wanderer@example.com', nationality: 'Nigerian', band: 'hot', points: 8, leadSource: 'programme-fit', timeline: '3m', msg: 'TEST fit answers after a wander.' };
+  await enquiryFlow(page, spec);
+  await afterSuccess(page, 'none', '[data-form="enquiry"] ');
+  t.ids = checkStored(t, spec, { titleSuffix: '(programme fit)', noteHas: ['Lead source: programme-fit', 'Programme fit answers: ' + back.quiz_answers] });
+  t.detail = 'after About and back: lead_source programme-fit, quiz_answers and the typed fields restored with the draft note; the lead ' + t.ids.id + ' arrived as "(programme fit)" with the answers in the note. The consent box privacy link opens in a new tab.';
+});
+
+test('7.8 a stalled primary post is abandoned after 15 s and the fallback endpoint takes the lead', async function (t, browser) {
+  state.primaryHangMs = 19000;
+  const spec = { about: 'private-office', division: 'private-office', name: 'E2E Stalled', email: 'e2e.stalled@example.com', phone: '', country: 'United Arab Emirates', nationality: 'United Kingdom', for_whom: 'myself', timeline: '3-12m', budget: '250k-500k', band: 'warm', points: 5, msg: 'TEST stalled connection.' };
+  const page = await open(browser, t, 'desktop', '/contact');
+  const t0 = Date.now();
+  await contactFlow(page, spec);
+  await afterSuccess(page, 'none');
+  const took = Date.now() - t0;
+  assert.ok(took >= 14000 && took < 19000, 'success after the 15 s abandon, before the server gave up: ' + took + ' ms');
+  const lead = t.http.find(function (h) { return h.path === '/.netlify/functions/lead'; });
+  assert.ok(lead && lead.status === 200 && lead.response.ok === true, 'the fallback endpoint stored the lead');
+  t.ids = checkStored(t, spec, { result: lead.response, noteHas: ['Direct submission (fallback endpoint)'] });
+  /* let the held connection finish before the next case, so its 504 is logged against this one */
+  await new Promise(function (ok) { setTimeout(ok, Math.max(0, 19500 - (Date.now() - t0))); });
+  const primary = t.http.find(function (h) { return h.path === '/'; });
+  assert.ok(primary && primary.status === 504 && !primary.submission, 'the stalled primary post never ran the function');
+  t.detail = 'POST / held for 19 s (never run): the page abandoned it after 15 s (' + took + ' ms to the success state), posted to lead.js and got ' + t.ids.kind + ' ' + t.ids.id + ' (ref ' + lead.response.ref + ').';
 });
 
 /* ---------- run ---------- */
@@ -709,7 +934,7 @@ async function main() {
   for (let i = 0; i < list.length; i++) {
     const x = list[i];
     const t = { name: x.name, status: 'pass', detail: '', ids: {}, calls: [], http: [], fnlog: [], errors: [], console: [], ms: 0 };
-    state.test = t; state.primaryFail = false; state.fallbackFail = false; state.primaryDelayMs = 0;
+    state.test = t; state.primaryFail = false; state.fallbackFail = false; state.primaryDelayMs = 0; state.primaryHangMs = 0;
     ratelimit.reset();
     const t0 = Date.now();
     say('\n' + x.name);
