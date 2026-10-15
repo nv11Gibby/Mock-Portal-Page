@@ -65,7 +65,7 @@ const render = createRenderer({
 /* The app leaves a few things in the DOM that belong to the browser session, not to a file on disk. */
 function finish(page, opts){
   const doc = page.document, root = doc.documentElement, body = doc.body;
-  root.setAttribute('data-prerendered', '');
+  root.setAttribute('data-prerendered', opts.route || '');   /* the route this file was built for: the app re-renders when the address names another */
   if(PREVIEW) root.setAttribute('data-preview', '');
   root.removeAttribute('class');                                  /* the inline head script adds hist and js again */
   Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics]'), function(el){ el.parentNode.removeChild(el); });
@@ -105,7 +105,7 @@ routes.forEach(function(route){
   const out = page.window.IHG_APP.resolve(page.window.IHG_APP.parse());
   if(page.errors.length) problems.push(route + ': ' + page.errors.join(' | '));
   if(out.nf) problems.push(route + ': resolved to the not-found view');
-  const html = finish(page, {});
+  const html = finish(page, {route: route});
   page.close();
   const title = (/<title>([\s\S]*?)<\/title>/.exec(html) || [])[1] || '';
   pages.push({route: route, title: title, bytes: Buffer.byteLength(html)});
@@ -115,7 +115,7 @@ routes.forEach(function(route){
 
 const nf = render('/this-page-does-not-exist');
 if(nf.errors.length) problems.push('404: ' + nf.errors.join(' | '));
-write('404.html', finish(nf, {notFound: true}));
+write('404.html', finish(nf, {notFound: true, route: '/404'}));
 nf.close();
 
 /* error.html (brief section 8): rendered on a path the app does not know (so the intro veil stays off), then switched
@@ -123,7 +123,7 @@ nf.close();
 const er = render('/error');
 er.window.IHG_APP.showError();
 if(er.errors.length) problems.push('error.html: ' + er.errors.join(' | '));
-write('error.html', finish(er, {notFound: true}));
+write('error.html', finish(er, {notFound: true, route: '/error'}));
 er.close();
 
 /* 3. robots.txt and sitemap.xml. */

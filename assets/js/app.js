@@ -160,8 +160,13 @@ function announce(t){var a=document.getElementById('announce'); a.textContent=''
 function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:tz}).format(new Date());}catch(e){return '--:--';}}
 
 /* ---------- shared blocks ---------- */
+/* The hero photograph: the desktop file as one <img> and, where a mobile crop exists, a <picture> source for narrow
+   screens, as on the home hero. Every site photograph has a -m file (a 3:4 centre crop of the same frame, so nothing
+   changes visually); event photographs and portraits have none. Brief section 4: responsive sizes, LCP on mobile. */
+function heroVariant(k){ return k.indexOf('events/')===0 || k.indexOf('people/')===0 ? '' : '-m'; }
 function pageHero(o){
-  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(safePhoto(o.img, o.fb), null, '', '', true)+'</div></div>' : '';
+  var k = o.img ? safePhoto(o.img, o.fb) : '', v = k ? heroVariant(k) : '';
+  var bg = k ? '<div class="ph-bg"><div class="px">'+(v ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+v+'.webp" sizes="100vw">' : '')+img(k, null, '', '', true)+(v ? '</picture>' : '')+'</div></div>' : '';
   var crumb = o.crumb ? '<nav class="crumb" aria-label="Breadcrumb" data-r><a href="#/">Home</a>'+o.crumb.map(function(c){return '<i aria-hidden="true">/</i>'+(c[1]?'<a href="'+c[1]+'">'+esc(c[0])+'</a>':'<span aria-current="page">'+esc(c[0])+'</span>');}).join('')+'</nav>' : '';
   return '<section class="ph'+(o.cls?' '+o.cls:'')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
 }
@@ -617,10 +622,13 @@ function buildChrome(){
 }
 
 /* ---------- router (view transitions with a shared division image) ---------- */
-var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered');
+/* data-prerendered carries the route the served file was built for (build/build.js), so the app can tell whether the
+   markup on screen is the page the address now names. */
+var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered'), PRE = root.getAttribute('data-prerendered') || '';
 if(HIST && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
 function parse(){
-  var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
+  /* /about/, /about/index.html and the about.html copy the build writes all resolve to /about */
+  var h = HIST ? (location.pathname.replace(/\/index\.html?$/,'/').replace(/(.)\.html?$/,'$1').replace(/(.)\/$/,'$1') + location.search) : location.hash.replace(/^#/,'');
   if(h==='' || h==='/') return {path:'/', parts:[], q:{}};
   if(h.charAt(0)!=='/') return null;
   var qs = h.split('?'), q = {};
@@ -631,10 +639,10 @@ function parse(){
 function resolve0(r){
   if(!r) return {html:V.notFound(), title:'Page not found', nav:null, nf:true};
   var p = r.parts;
-  if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Two cities. One horizon. Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos: Citizenship, Partners Club, Private Office, Real Estate and Academy.'};
+  if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Imperial Holdings Group: five specialist divisions, led from Dubai and Lagos. Citizenship, Private Office, Partners Club, Academy and Real Estate.'};
   if(p[0]==='about' && p.length===1) return {html:V.about(), title:'About', nav:'about', view:'about', desc:'Imperial began as a citizenship and residency specialist and has grown into a group of five specialist divisions, run by one team to one standard.'};
   if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'Citizenship, Private Office, Partners Club, Academy and Real Estate: five specialist houses at one table, with one Relationship Manager across all five.'};
-  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.line+' '+d.card}; }
+  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.line}; }
   if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Genuine company developments, insights, partnerships and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
@@ -684,6 +692,7 @@ function heroImage(html){
 function pageMeta(out, r){
   var p = r ? r.parts : [], path = r ? r.path : null, ld = [orgLD()], crumbs = null, x = null;
   out.path = path;
+  if(out.desc) out.desc = metaDesc(out.desc);
   out.canonical = (!out.nf && path) ? (path === '/' ? SITE + '/' : SITE + path) : null;
   out.image = heroImage(out.html);
   out.type = (out.view === 'article' || out.view === 'event') ? 'article' : 'website';
@@ -694,12 +703,15 @@ function pageMeta(out, r){
   else if(out.view === 'event'){
     D.events.forEach(function(e){ if(e.slug === p[2]) x = e; });
     crumbs = [['Journal', '/journal'], [x.short, path]];
-    /* only what data.js records: a start date needs a full date, a venue is named only when known */
-    var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
-    if(x.venue) ev.location.name = x.venue;
-    var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
-    if(fullDate(x.iso)) ev.startDate = x.iso;
-    ld.push(ev);
+    /* Only what data.js records, and only where the block can be valid: Google requires name, startDate and location on
+       an Event, so it is written for events with a full date and left out otherwise (a date is never invented). The
+       venue is named only when known (recommended, not required). */
+    if(fullDate(x.iso)){
+      var ev = {'@context':'https://schema.org', '@type':'Event', name: x.title, description: x.dek, url: out.canonical, image: out.image, startDate: x.iso, location: {'@type':'Place', address: {'@type':'PostalAddress', addressLocality: x.city}}};
+      if(x.venue) ev.location.name = x.venue;
+      var cc = countryOf(x.city); if(cc) ev.location.address.addressCountry = cc;
+      ld.push(ev);
+    }
   }
   else if(out.view === 'insights') crumbs = [['Insights', '/insights']];
   else if(out.view === 'article'){
@@ -720,6 +732,15 @@ function pageMeta(out, r){
   return out;
 }
 function resolve(r){ return pageMeta(resolve0(r), r); }
+/* Titles and descriptions sized for a search result: the brand suffix is shortened, then dropped, so the whole title
+   stays within about 60 characters; a description over 160 characters is cut at a clause boundary, never reworded. */
+function pageTitle(t){ if(!t) return 'Imperial Holdings Group · Two Cities. One Horizon.'; return t + (t.length <= 34 ? ' · Imperial Holdings Group' : t.length <= 49 ? ' · Imperial' : ''); }
+function metaDesc(s){
+  s = String(s || '').replace(/\s+/g, ' ').trim(); if(s.length <= 160) return s;
+  var cut = s.slice(0, 160), i = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(', '), cut.lastIndexOf('; '));
+  if(i > 60) return cut.slice(0, i) + '.';
+  i = cut.lastIndexOf(' '); return cut.slice(0, i > 60 ? i : 157) + '…';
+}
 /* The first-touch values in a prerendered page's hidden form fields belong to the build, not the visitor: refresh them
    from TRK when the server markup is kept. The names mirror trackFields(). */
 var TRK_KEYS = ['source','medium','campaign','utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','landing','referrer'];
@@ -747,14 +768,16 @@ function showError(err){
 function renderView(){
   var r = parse(), out = resolve(r);
   /* First render of a prerendered page: the browser has already painted this same markup (built by the same code), so
-     it is kept, together with its largest contentful paint, and only behaviour is bound. A query that changes the view
-     (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from what was
-     served (404.html on a path the app knows), gets a full render. */
-  if(prerendered && r && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
+     it is kept, together with its largest contentful paint, and only behaviour is bound. That holds only when the file
+     was built for the route now in the address (data-prerendered): an old /#/contact link lands on the prerendered home
+     page and is rewritten to /contact before the app runs, so the home markup must be replaced. A query that changes
+     the view (about, audience, goals, faq, cat; campaign parameters do not), or a page that resolves differently from
+     what was served (404.html on a path the app knows), gets a full render too. */
+  if(prerendered && r && (r.path === PRE || out.nf) && onlyTracking(r.q) && app.firstElementChild && !!out.nf === body.classList.contains('is-nf')) refreshTracking(app);
   else app.innerHTML = out.html;
   fixLinks(app);
   curView = out.view; curQ = r ? r.q : {};
-  document.title = out.title ? out.title+' · Imperial Holdings Group' : 'Imperial Holdings Group · Two Cities. One Horizon.';
+  document.title = pageTitle(out.title);
   setMeta(out);
   /* analytics (shared/analytics.js): one page view per route change, none for a same-path re-render */
   if(window.ihgPageView && (r ? r.path : null) !== lastPath){ try{ window.ihgPageView(out.path || location.pathname, document.title); }catch(e){} }
@@ -806,13 +829,16 @@ function go(url, scrollTo){
 }
 function setMeta(out){
   var H = document.head, d = out.desc || 'Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos.';
-  var t = document.title, url = out.canonical || location.href.split('#')[0], im = out.image || abs('assets/img/og.jpg'), isOg = /\/og\.jpg$/.test(im);
-  /* a null value removes the tag: the width and height are known for og.jpg only */
-  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['property','og:image',im],['property','og:image:width',isOg?'1200':null],['property','og:image:height',isOg?'630':null],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
+  var t = document.title, url = out.canonical || location.href.split('#')[0], og = abs('assets/img/og.jpg'), im = out.image || og;
+  [['name','description',d],['property','og:description',d],['property','og:title',t],['property','og:url',url],['property','og:type',out.type||'website'],['name','twitter:card','summary_large_image'],['name','twitter:title',t],['name','twitter:description',d],['name','twitter:image',im]].forEach(function(m){
     var el = H.querySelector('meta['+m[0]+'="'+m[1]+'"]');
-    if(m[2]==null){ if(el) el.parentNode.removeChild(el); return; }
     if(!el){ el=document.createElement('meta'); el.setAttribute(m[0],m[1]); H.appendChild(el); } el.setAttribute('content', m[2]);
   });
+  /* Social images: the JPEG card first, with its size, because WhatsApp and LinkedIn do not reliably show a WebP
+     preview; the page's own photograph second, for the services that do. TO CONFIRM: per-page JPEG cards (build/README.md). */
+  [].forEach.call(H.querySelectorAll('meta[property="og:image"], meta[property="og:image:width"], meta[property="og:image:height"]'), function(el){ el.parentNode.removeChild(el); });
+  var ogm = [['og:image', og], ['og:image:width', '1200'], ['og:image:height', '630']]; if(im !== og) ogm.push(['og:image', im]);
+  ogm.forEach(function(m){ var el = document.createElement('meta'); el.setAttribute('property', m[0]); el.setAttribute('content', m[1]); H.appendChild(el); });
   var can = H.querySelector('link[rel="canonical"]');
   if(out.canonical){ if(!can){ can=document.createElement('link'); can.setAttribute('rel','canonical'); H.appendChild(can); } can.setAttribute('href', out.canonical); }
   else if(can) can.parentNode.removeChild(can);
