@@ -19,8 +19,9 @@ var SITES = [
   {key:'academy', name:'Imperial Academy', short:'Academy', href:'#', url:'', real:false, tbc:'Imperial Academy website link', label:'Website to confirm', role:'Learning and standards: training and certification for the people who do this work', tagline:'Education. Talent. Leadership. A stronger tomorrow.'}
 ];
 function siteOf(key){ for(var i = 0; i < SITES.length; i++){ if(SITES[i].key === key) return SITES[i]; } return null; }
-/* A division page's "visit the website" call to action, taken from the site entry so the link lives in one place. */
-function siteCta(key, label){ var s = siteOf(key); return {label:label, href:s.href, real:!!s.real, tbc:s.tbc}; }
+/* A division page's "visit the website" call to action, taken from the site entry so the link, the domain shown and
+   the site's name all live in one place: marking a site real here is enough, the page copy follows. */
+function siteCta(key, label){ var s = siteOf(key); return {label:label, href:s.href, real:!!s.real, tbc:s.tbc, domain:s.label, siteName:s.name}; }
 window.IHG = {
   /* Site configuration (v5). Empty strings switch a feature off. Every TO CONFIRM here is listed in the launch report. */
   config: {
