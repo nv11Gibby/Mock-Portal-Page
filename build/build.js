@@ -4,7 +4,7 @@
    - the site copied as it is (assets, shared, site.webmanifest, _redirects);
    - one HTML file per route, prerendered through the real app inside jsdom (build/prerender.js), written twice
      (about.html and about/index.html) so every static host serves /about;
-   - robots.txt and sitemap.xml;
+   - robots.txt, sitemap.xml and journal/feed.xml (RSS 2.0 of journal entries and insights);
    - _headers from build/headers.template, with the sha256 of every inline script and the CSP origins GA4 and
      Turnstile need only when those keys are configured in data.js.
    Switches: LAUNCH=1 drops the pre-launch noindex (meta tag and X-Robots-Tag); BUILD_PREVIEW=1 sets data-preview on
@@ -78,6 +78,8 @@ function finish(page, opts){
     const desc = doc.querySelector('meta[name="description"]'); desc.parentNode.insertBefore(m, desc.nextSibling);
   }
   if(LAUNCH) Array.prototype.forEach.call(doc.querySelectorAll('meta[name="robots"]'), function(el){ el.parentNode.removeChild(el); });
+  const feed = doc.querySelector('link[rel="alternate"][type="application/rss+xml"]');
+  if(feed) feed.setAttribute('href', abs('journal/feed.xml'));
   let html = page.serialize();
   /* Root-relative asset URLs, so a page served from /about/ or 404.html served anywhere resolves them without the
      base element the inline script adds. */
@@ -117,6 +119,27 @@ write('robots.txt', [
 write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schema/sitemap/0.9">\n' +
   routes.map(function(r){ return '  <url><loc>' + esc(r === '/' ? SITE + '/' : SITE + r) + '</loc></url>'; }).join('\n') + '\n</urlset>\n');
 
+/* 4. RSS 2.0: journal entries first, then insights not already linked from the journal. Dates appear only where
+   data.js records a full date; nothing is invented. */
+const seen = {}, items = [];
+(D.journal || []).forEach(function(j){
+  const link = abs(j.to); if(seen[link]) return; seen[link] = true;
+  items.push({title: j.title, link: link, desc: j.dek, cat: j.kind, date: fullDate(j.iso)});
+});
+(D.insights || []).forEach(function(a){
+  const link = abs('insights/' + a.slug); if(seen[link]) return; seen[link] = true;
+  items.push({title: a.title, link: link, desc: a.dek, cat: a.cat, date: fullDate(a.iso)});
+});
+write('journal/feed.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n' +
+  '  <title>Imperial Holdings Group Journal</title>\n  <link>' + esc(abs('journal')) + '</link>\n' +
+  '  <description>Company developments, insights, partnerships and selected Imperial events in Dubai and Lagos.</description>\n' +
+  '  <language>en-GB</language>\n  <lastBuildDate>' + rfc822(t0) + '</lastBuildDate>\n' +
+  '  <atom:link href="' + esc(abs('journal/feed.xml')) + '" rel="self" type="application/rss+xml"/>\n' +
+  '  <image><url>' + esc(abs('assets/img/og.jpg')) + '</url><title>Imperial Holdings Group Journal</title><link>' + esc(abs('journal')) + '</link></image>\n' +
+  items.map(function(i){
+    return '  <item>\n    <title>' + esc(i.title) + '</title>\n    <link>' + esc(i.link) + '</link>\n    <guid isPermaLink="true">' + esc(i.link) + '</guid>\n' +
+      '    <description>' + esc(i.desc) + '</description>\n    <category>' + esc(i.cat) + '</category>\n' + (i.date ? '    <pubDate>' + rfc822(i.date + 'T00:00:00Z') + '</pubDate>\n' : '') + '  </item>';
+  }).join('\n') + '\n</channel>\n</rss>\n');
 
 /* 5. _headers from the template: inline script hashes and the extra CSP origins. */
 const distIndex = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
@@ -156,6 +179,6 @@ pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: '
 console.log('build: ' + pages.length + ' pages in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length);
 console.log('hero: ' + heroes.map(function(h){ return h.href + ' ' + (h.size < 0 ? 'missing' : Math.round(h.size / 1024) + ' KB'); }).join(', '));
-console.log('sitemap: ' + routes.length + ' urls');
+console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
 pages.forEach(function(p){ console.log('  ' + p.route + '  ' + p.title + '  (' + Math.round(p.bytes / 1024) + ' KB)'); });
 if(problems.length){ console.error('BUILD PROBLEMS:\n  ' + problems.join('\n  ')); process.exit(1); }
