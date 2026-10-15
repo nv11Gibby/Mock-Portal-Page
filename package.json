@@ -1,0 +1,12 @@
+{
+  "name": "ihg-website",
+  "version": "5.0.0",
+  "private": true,
+  "description": "Imperial Holdings Group website: static source, build scripts, Netlify functions and tests.",
+  "scripts": {
+    "serve": "node tests/serve.js . 8765",
+    "smoke": "node tests/smoke.js",
+    "check": "node --check assets/js/app.js && node --check assets/js/data.js && node tests/copy-rules.js"
+  },
+  "license": "UNLICENSED"
+}

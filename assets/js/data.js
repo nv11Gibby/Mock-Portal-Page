@@ -5,6 +5,26 @@
    Anything not sourced is wrapped in a TBC placeholder: tbc('...'). */
 (function(){
 window.IHG = {
+  /* Site configuration (v5). Empty strings switch a feature off. Every TO CONFIRM here is listed in the launch report. */
+  config: {
+    site: 'ihg',
+    siteUrl: 'https://www.imperialholdingsgroup.com',   /* TO CONFIRM: final production domain */
+    defaultDivision: 'group',
+    leadEndpoint: '/.netlify/functions/lead',
+    verifyEndpoint: '/.netlify/functions/verify',
+    turnstileSiteKey: '',                                 /* TO CONFIRM: Cloudflare Turnstile site key (Gilbert) */
+    ga4: '',                                              /* TO CONFIRM: GA4 measurement id (Gilbert) */
+    searchConsole: '',                                    /* TO CONFIRM: Search Console verification token (Gilbert) */
+    booking: {
+      dubai: {url:'', tbc:'Dubai booking page (Microsoft Bookings or Calendly)'},
+      lagos: {url:'', tbc:'Lagos booking page (Microsoft Bookings or Calendly)'}
+    },
+    whatsapp: {
+      dubai: {number:'+971 4 546 1110', tbc:'Confirm this number is WhatsApp enabled'},
+      lagos: {number:'+234 902 222 2024', tbc:'Confirm this number is WhatsApp enabled'}
+    },
+    guide: {file:'', title:'The Imperial guide to second residency and citizenship', tbc:'Guide PDF to be written and approved'}
+  },
   photos: [
     {key:'dusk', own:true, what:'Dubai skyline at sunset'},
     {key:'night', own:true, what:'Dubai skyline at blue hour'},
