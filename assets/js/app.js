@@ -51,6 +51,74 @@ function div(k){for(var i=0;i<D.divisions.length;i++) if(D.divisions[i].key===k)
 function pad2(n){return (n<10?'0':'')+n;}
 function photoAlt(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i].what; return '';}
 function img(k, alt, cls, v, eager){return '<img src="'+IMG+k+(v||'')+'.webp" alt="'+esc(alt==null?photoAlt(k):alt)+'"'+(cls?' class="'+cls+'"':'')+(eager?' fetchpriority="high"':' loading="lazy"')+' decoding="async">';}
+/* v5 media: consent-aware photographs and video. A photograph shows when the registry records consent for it, when
+   its event has consent recorded (events[i].consent), or on a preview build (data-preview on <html>). Otherwise
+   safePhoto() returns a fallback that shows no guests. Video blocks share one shape (see D.video in data.js):
+   an empty id renders the poster and a TO CONFIRM label; a real id renders the poster with a play button and loads
+   the player only on click (Vimeo with dnt=1, or Mux). The hero loop is rendered only when motion and data allow. */
+var PREVIEW = root.hasAttribute('data-preview'), VID = D.video || {};
+var PLAY = '<svg class="play" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11l9-5.5z" fill="currentColor"/></svg>';
+/* Fallback photograph per event while its guests' consent is outstanding: the three consent-free Easter Polo Cup
+   photographs, the Lagos and Dubai city photographs and the colonnade, chosen to suit each evening. */
+var EVENT_SAFE = {'easter-polo-cup-2026':'events/easter-polo-cup-2026/02', 'lagos-diplomatic-soiree-2025':'lagos', 'gala-dinner-lagos':'hero-alt', 'lagos-office-event':'events/easter-polo-cup-2026/04', 'delborough-dinner':'about'};
+function photoMeta(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i]; return null;}
+function eventBySlug(slug){for(var i=0;i<D.events.length;i++) if(D.events[i].slug===slug) return D.events[i]; return null;}
+function photoAllowed(k){
+  if(PREVIEW) return true;
+  var m = photoMeta(k), slug = m && m.event ? m.event : (k.indexOf('events/')===0 ? k.split('/')[1] : null), ev;
+  if(m && m.consent) return true;
+  if(slug){ ev = eventBySlug(slug); return !!(ev && ev.consent); }
+  return true; /* not from an event and not gated in the registry: nothing to hold back */
+}
+function safePhoto(k, fb){ return photoAllowed(k) ? k : (fb || 'about'); }
+function variantOf(k){ return k.indexOf('events/')===0 ? '' : k.indexOf('hero')===0 ? '-m' : '-c'; }
+function eventSafe(e){ return EVENT_SAFE[e.slug] || (e.city==='Dubai' ? 'closing' : 'hero-alt'); }
+function sortByIso(list){
+  return list.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){
+    var p = a.x.iso || '', q = b.x.iso || '';
+    if(p && q && p!==q) return p<q ? 1 : -1;
+    if(!!p !== !!q) return p ? -1 : 1;
+    return a.i-b.i;
+  }).map(function(o){return o.x;});
+}
+function loopOK(){ var c = navigator.connection || {}; return !mqReduce.matches && !c.saveData && !/2g/.test(c.effectiveType||''); }
+function heroLoop(v){
+  if(!v || !loopOK()) return '';
+  if(v.src) return '<video class="loop" data-loop muted playsinline loop preload="none" aria-hidden="true" tabindex="-1"><source src="'+esc(v.src)+'"></video>';
+  if(v.id && v.provider==='mux') return '<iframe class="loop" src="https://player.mux.com/'+encodeURIComponent(v.id)+'?autoplay=muted&muted=true&loop=true&controls=false" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
+  if(v.id) return '<iframe class="loop" src="https://player.vimeo.com/video/'+encodeURIComponent(v.id)+'?background=1&muted=1&loop=1&autoplay=1&dnt=1'+(v.hash?'&h='+encodeURIComponent(v.hash):'')+'" title="" aria-hidden="true" tabindex="-1" allow="autoplay" loading="lazy"></iframe>';
+  return '';
+}
+function videoBlock(v, cls){
+  if(!v) return '';
+  var pk = safePhoto(v.poster, 'hero-alt'), ready = !!v.id, title = v.title || 'Video';
+  return '<figure class="vid'+(cls?' '+cls:'')+(ready?'':' pending')+'" data-r'+(ready?' data-video data-provider="'+esc(v.provider||'vimeo')+'" data-id="'+esc(v.id)+'"'+(v.hash?' data-hash="'+esc(v.hash)+'"':'')+' data-vtitle="'+esc(title)+'"':'')+'>'+
+    '<div class="vid-stage">'+img(pk, title+' (poster)', 'vid-poster')+
+    (ready ? '<button type="button" class="vid-play" aria-label="Play '+esc(title)+'">'+PLAY+'<span>Play</span></button>' : '<span class="vid-tbc">'+PLAY+tbc(v.tbc||'Footage to be supplied')+'</span>')+'</div>'+
+    '<figcaption><b>'+esc(title)+'</b>'+(v.duration?'<i aria-hidden="true">·</i>'+esc(v.duration):'')+(v.captions?'<i aria-hidden="true">·</i><a class="vid-cc" href="'+esc(v.captions)+'">Captions</a>':'')+'</figcaption></figure>';
+}
+function homeVideo(){ var f = null; D.events.concat(D.journal).forEach(function(x){ if(!f && x.video && x.video.id) f = x.video; }); return f; }
+function playerSrc(f){
+  var p = f.getAttribute('data-provider'), id = encodeURIComponent(f.getAttribute('data-id')), h = f.getAttribute('data-hash');
+  if(p==='mux') return 'https://player.mux.com/'+id+'?autoplay=true';
+  return 'https://player.vimeo.com/video/'+id+'?dnt=1&autoplay=1&title=0&byline=0&portrait=0'+(h?'&h='+encodeURIComponent(h):'');
+}
+function bindMedia(){
+  [].forEach.call(app.querySelectorAll('[data-video]'), function(f){
+    var b = f.querySelector('.vid-play'); if(!b) return;
+    b.addEventListener('click', function(){
+      var st = f.querySelector('.vid-stage');
+      st.innerHTML = '<iframe src="'+esc(playerSrc(f))+'" title="'+esc(f.getAttribute('data-vtitle')||'Video')+'" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>';
+      f.classList.add('playing');
+    });
+  });
+  [].forEach.call(app.querySelectorAll('video[data-loop]'), function(v){
+    v.muted = true; v.setAttribute('preload','auto');
+    var go = function(){ if(loopOK()){ var p = v.play(); if(p && p.catch) p.catch(function(){}); } else v.pause(); };
+    go();
+    if(mqReduce.addEventListener) mqReduce.addEventListener('change', go);
+  });
+}
 function logoImg(d, colour, cls){
   if(d.logo) return '<img class="'+(cls||'')+'" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'">';
   return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="">'+esc(d.name)+'</span>';
@@ -76,7 +144,7 @@ function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',
 
 /* ---------- shared blocks ---------- */
 function pageHero(o){
-  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(o.img, null, '', '', true)+'</div></div>' : '';
+  var bg = o.img ? '<div class="ph-bg"><div class="px">'+img(safePhoto(o.img, o.fb), null, '', '', true)+'</div></div>' : '';
   var crumb = o.crumb ? '<nav class="crumb" aria-label="Breadcrumb" data-r><a href="#/">Home</a>'+o.crumb.map(function(c){return '<i aria-hidden="true">/</i>'+(c[1]?'<a href="'+c[1]+'">'+esc(c[0])+'</a>':'<span aria-current="page">'+esc(c[0])+'</span>');}).join('')+'</nav>' : '';
   return '<section class="ph'+(o.cls?' '+o.cls:'')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
 }
@@ -125,9 +193,9 @@ function mapBlock(){
 }
 function story(){
   var ch = [
-    {img:'dunes2', t:'One conversation', p:D.steps[0][1]},
-    {img:'marina', t:'The right house', p:D.steps[1][1]},
-    {img:'cistern', t:'One person, for the long term', p:D.steps[2][1]}
+    {img:'citizenship', t:'One conversation', p:D.steps[0][1]},
+    {img:'private-office', t:'The right house', p:D.steps[1][1]},
+    {img:'about', t:'One person, for the long term', p:D.steps[2][1]}
   ];
   return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
     '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
@@ -139,18 +207,21 @@ function story(){
 /* ---------- views ---------- */
 var V = {};
 V.home = function(){
-  var N = D.network, ev = D.events.filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
+  var N = D.network, HH = D.hero, hk = safePhoto(HH.photo, HH.fallback), nk = photoAllowed(HH.night) ? HH.night : null, hv = homeVideo();
+  var ev = sortByIso(D.events).filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
+  var NET_SAFE = ['events/easter-polo-cup-2026/04','closing','events/easter-polo-cup-2026/02','lagos'], AUD_SAFE = ['private-office','partners','about'];
+  var held = N.photos.some(function(p){return !photoAllowed(p);});
   return ''+
   /* hero: the strongest element of the existing site, kept. Two journeys: clients explore the ecosystem, partners go to IPC. */
   '<section class="hh" id="top"><div class="hh-pin">'+
-    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+'dusk-m.webp"><img src="'+IMG+'dusk.webp" alt="'+esc(photoAlt('dusk'))+'" fetchpriority="high"></picture></figure>'+
-    '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+'night-m.webp"><img src="'+IMG+'night.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>'+
+    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'+
+    (nk ? '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+nk+'-m.webp"><img src="'+IMG+nk+'.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>' : '')+
     '<div class="hh-c wrap">'+eyebrow('Imperial Holdings Group <i>·</i> Dubai <i>·</i> Lagos')+mask(['Two Cities.','One Horizon.'],'h1','d1',.15)+
     '<p class="lead" data-r style="--d:.55s">Five specialist divisions, one standard, and one person who knows your family.</p>'+
     '<div class="hh-row" data-r style="--d:.7s"><div class="journeys">'+
       '<div class="jny"><a class="btn gold mag" href="#/" data-scroll="ecosystem"><span>Explore our ecosystem</span>'+AR+'</a><small>For private clients</small></div>'+
       '<div class="jny"><a class="btn line" href="#/divisions/partners-club" data-dv="partners-club"><span>Partner with us</span>'+AR+'</a><small>For professional partners</small></div></div>'+
-    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p></div></div>'+
+    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred" data-r style="--d:.8s">'+tbc(HH.tbc)+'</p></div></div>'+
     '<span class="cue" aria-hidden="true">Scroll</span></div></section>'+
 
   '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow('The Group')+mask(['A house for a life','across borders.'],'h2','d2')+'</div>'+
@@ -162,8 +233,8 @@ V.home = function(){
   /* Our Network: one client journey, four photographs of genuine Imperial gatherings, three audiences */
   '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our Network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The ecosystem exists so that each step is taken with the others in view.</p></div>'+
    '<ol class="journey" aria-label="How a relationship with Imperial grows">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
-   '<div class="net-photos" data-r>'+N.photos.map(function(p,i){return '<figure class="np'+(i+1)+'">'+img(p,'')+'</figure>';}).join('')+'</div><p class="xs net-cap" data-r>Imperial gatherings in Dubai and Lagos. <a class="ul" href="#/journal">See selected events</a></p>'+
-   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><figure>'+img(a.img,'')+'</figure><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
+   '<div class="net-photos" data-r>'+N.photos.map(function(p,i){return '<figure class="np'+(i+1)+'">'+img(safePhoto(p, NET_SAFE[i]),'')+'</figure>';}).join('')+'</div><p class="xs net-cap" data-r>Imperial gatherings in Dubai and Lagos. '+(held?'Photographs of guests appear once they have confirmed they are happy to be featured. ':'')+'<a class="ul" href="#/journal">See selected events</a></p>'+
+   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><figure>'+img(safePhoto(a.img, AUD_SAFE[i]),'')+'</figure><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
 
   '<section class="sec lead-sec" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its founder, with one Group team working across every division.</p></div>'+
    '<div class="leaders real home">'+lead.map(function(l,i){return '<div class="leader" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div><div class="role">'+esc(l.role)+'</div><h3>'+esc(l.name)+'</h3></div>';}).join('')+
@@ -171,9 +242,11 @@ V.home = function(){
 
   '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Gatherings','worth the evening.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic collaborations, private gatherings and the relationships behind them.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
    '<div class="evgrid two">'+ev.map(eventCard).join('')+'</div></div></section>'+
+  /* one video block on the home page, only once a clip exists (first event or journal video with an id) */
+  (hv ? '<section class="sec light home-vid" id="film"><div class="wrap"><div class="sec-head"><div>'+eyebrow('On film')+mask(['The evening,','in motion.'],'h2','d2')+'</div></div>'+videoBlock(hv,'')+'</div></section>' : '')+
 
   '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: genuine company developments, insights, partnerships and selected events.</p></div>'+
-   '<div class="jlist">'+D.journal.slice(0,3).map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
+   '<div class="jlist">'+sortByIso(D.journal).slice(0,3).map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
   '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Global presence')+mask(['Led from Dubai','and Lagos.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Headquarters in Dubai, a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.</p></div>'+mapBlock()+'</div></section>'+
 
@@ -203,11 +276,13 @@ V.about = function(){
   '<section class="sec light alt" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its founder, with one Group team working across every division. Each division\u2019s own leadership is introduced on its website.</p></div>'+
    '<div class="leaders real">'+D.leadership.map(function(l,i){return '<div class="leader'+(l.img?'':' more')+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s">'+(l.img?'<div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div>':'')+'<div class="role">'+esc(l.role)+'</div><h3>'+esc(l.name||l.area)+'</h3><p>'+(l.name?esc(l.area)+'<br>Biography: '+tbc('to be approved'):'Introduced on each division\u2019s website.')+'</p></div>';}).join('')+'</div></div></section>'+
 
+  '<section class="sec light founder-film" id="founder-film"><div class="wrap split"><div>'+eyebrow('Founder film')+mask(['The founder,','on film.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s">A short film with the founder, 60 to 90 seconds, is planned for this page. '+tbc('Footage to be supplied')+'</p></div>'+videoBlock(VID.about,'')+'</div></section>'+
+
   '<section class="sec deep"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Where we work')+mask(['Led from Dubai.','At home worldwide.'],'h2','d2')+'</div></div>'+mapBlock()+'</div></section>'+closing();
 };
 
 V.divisions = function(){
-  return pageHero({img:'sils', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
+  return pageHero({img:'partners', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
     return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-img="'+IMG+d.img+'-c.webp" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
@@ -267,7 +342,7 @@ function registerForm(){
 V.insights = function(q){
   var pre = (q && q.cat) || 'All';
   var cats = ['All'].concat(D.insights.map(function(a){return a.cat;}).filter(function(v,i,s){return s.indexOf(v)===i;}));
-  return pageHero({img:'monaco', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
+  return pageHero({img:'academy', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
   '<section class="sec light"><div class="wrap"><div class="notice" data-r><span class="sample">Sample</span><div><b>These are sample articles.</b> They show the layout and tone of the Insights section. Titles and copy draw on the Imperial Holdings brochure; final articles are to be written and approved before launch.</div></div>'+
    '<div class="filters" role="group" aria-label="Filter insights" data-r>'+cats.map(function(c){var n=c==='All'?D.insights.length:D.insights.filter(function(a){return a.cat===c;}).length, on=c===pre;return '<button class="'+(on?'on':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+on+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('')+'</div>'+
    '<h2 class="vh">Articles</h2><div class="icards four" id="icards">'+D.insights.map(function(a,i){var h=insightCard(a,i);return pre!=='All'&&a.cat!==pre?h.replace('class="icard"','class="icard hide"'):h;}).join('')+'</div><p class="vh" id="filterMsg" aria-live="polite"></p></div></section>'+closing();
@@ -350,7 +425,7 @@ V.contact = function(q){
   var pre = q.about || '', goals = (q.goals||'').split(',').filter(function(g){return D.finder.goals[g];});
   var gl = goals.map(function(g){for(var i=0;i<D.ambitions.length;i++) if(D.ambitions[i][0].toLowerCase()===g) return D.ambitions[i][0]; return g;});
   var steps = ['What it is about','About you','Your message'];
-  return pageHero({img:'contact', cls:'short', crumb:[['Contact',null]], eyebrow:'Speak to us', title:['Shall we begin?'], lead:'Three short steps. Tell us where you are, and where you would like to be. We will make sure the right house picks it up, with one person as your point of contact.'})+
+  return pageHero({img:'about', cls:'short', crumb:[['Contact',null]], eyebrow:'Speak to us', title:['Shall we begin?'], lead:'Three short steps. Tell us where you are, and where you would like to be. We will make sure the right house picks it up, with one person as your point of contact.'})+
   '<section class="sec light"><div class="wrap split cf-split"><div data-r><div class="form-card" data-form="contact" id="cf"><form novalidate name="contact" method="post">'+
    '<input type="hidden" name="form-name" value="contact"><input type="hidden" name="routed_to" value=""><input type="hidden" name="interests" value="'+esc(gl.join(', '))+'"><input type="hidden" name="audience" value="'+esc(q.audience||'')+'">'+trackFields()+
    '<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
@@ -402,7 +477,7 @@ function legal(kind){
 V.privacy = function(){return legal('privacy');};
 V.terms = function(){return legal('terms');};
 V.notFound = function(){
-  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('arches','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
+  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div></div></section>';
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
@@ -548,7 +623,7 @@ function enhance(){
     reading: document.getElementById('reading'), article: document.getElementById('article')
   };
   if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
-  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare();
+  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare(); bindMedia();
   body.classList.toggle('on-contact', curView==='contact');
 }
 function count(el){
@@ -579,8 +654,7 @@ function onScroll(){
     var r = fx.hh.getBoundingClientRect(), p = clamp(-r.top/Math.max(1,r.height-H),0,1), e = p*p*(3-2*p);
     if(r.bottom > 0){
       fx.dusk.style.transform = 'scale('+(1.08-0.06*p).toFixed(4)+') translate3d(0,'+(p*3).toFixed(2)+'%,0)';
-      fx.night.style.opacity = e.toFixed(3);
-      fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')';
+      if(fx.night){ fx.night.style.opacity = e.toFixed(3); fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')'; }
       fx.hc.style.transform = 'translate3d(0,'+(-p*48).toFixed(1)+'px,0)';
     }
   }
@@ -1073,7 +1147,7 @@ function palIndex(){
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
-  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:'events/'+e.slug+'/cover-p', v:'', kw:e.city+' '+e.cat+' event gallery'}); });
+  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', 'hero-alt'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
   D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });

@@ -1150,3 +1150,43 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .leader.more{grid-column:1/-1}
   .journeys{flex-direction:column}
 }
+
+/* === v5 media === */
+/* Home hero: the silent loop sits over the still photograph and is only rendered when motion and data allow it.
+   The small TO CONFIRM line under the clock marks the hero photograph as provisional until the shoot. */
+.hh-pin .loop{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0;pointer-events:none}
+.hh-cred{margin-top:18px;font-size:12px;color:var(--dim)}
+/* Consent note above a gallery, and under the network photographs */
+.gal-note{max-width:40em;margin:0}
+/* Video block: poster first, a play button once a clip exists, otherwise the TO CONFIRM label; caption names the
+   clip, its length and the captions file. The player (Vimeo or Mux) replaces the poster only on click. */
+.vid{margin:0 0 clamp(28px,4vw,48px)}
+.vid-stage{position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:2px;background:var(--ink)}
+.vid-stage img,.vid-stage iframe{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border:0}
+.vid-stage img{opacity:.92}
+.vid-play,.vid-tbc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:12px;max-width:calc(100% - 32px);padding:14px 22px 14px 16px;border:1px solid rgba(196,165,116,.7);border-radius:40px;background:rgba(14,13,11,.74);color:var(--text);font-family:var(--sans);font-size:13px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.vid-play{cursor:pointer;transition:background var(--t2),border-color var(--t2),color var(--t2)}
+.vid-play:hover,.vid-play:focus-visible{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+.vid .play{width:18px;height:18px;flex:none}
+.vid-tbc{gap:10px;letter-spacing:0;text-transform:none;white-space:normal;text-align:left}
+.vid-tbc .tbc{border-color:var(--gold);color:var(--gold-l)}
+.vid figcaption{display:flex;flex-wrap:wrap;align-items:center;margin-top:12px;font-size:13.5px;color:var(--l-muted)}
+.vid figcaption b{font-weight:500;color:var(--l-text)}
+.vid figcaption i{font-style:normal;margin:0 8px;opacity:.6}
+.sec:not(.light) .vid figcaption{color:var(--soft)}
+.sec:not(.light) .vid figcaption b{color:var(--text)}
+.vid-cc{text-decoration:underline;text-underline-offset:3px}
+.vid-cc:hover{color:var(--gold-ink)}
+.gal-vid{margin-bottom:10px}
+.home-vid .vid,.founder-film .vid{margin:0}
+/* Small marker in event cards and journal rows, shown only where a clip exists */
+.vmark{display:inline-flex;align-items:center;gap:4px;color:var(--gold-ink)}
+.vmark .play{width:12px;height:12px}
+/* Share row on an event page */
+.ev-share{margin-top:34px}
+.ev-share .share{margin:0}
+@media (max-width:640px){
+  .vid-play,.vid-tbc{padding:10px 16px 10px 12px;font-size:12px}
+  .hh-cred{margin-top:14px}
+}
+.founder-film .vid-stage img{object-position:50% 18%}
