@@ -118,9 +118,13 @@ Well known throwaway email providers. Checked case-insensitively, including subd
 | Phone | Person phone, in E.164 when a country code was given; Verification Status Not Verified (983) at creation, Verified (982) after a successful code |
 | Everything else, every tracking field, the message, the score reasons, the Netlify submission id or the direct reference | The note on the person and the lead or deal |
 
-Lead labels: the Leads API has its own label set, so the deal label ids may be rejected on a lead. The core tries
-`label_ids` first and, if the API rejects it, creates the lead without it. The title prefix and the note carry the
-score either way, so nothing is lost. Deals accept the label ids.
+Lead labels: the Leads inbox has its own label set with UUID ids, separate from the deal labels (787, 788, 827), which
+the Leads API rejects. The core reads the account's lead labels once per function instance (`GET /leadLabels`, cached
+for ten minutes) and sends the first label whose name starts with Hot, Warm or Cold (the exploring band) in
+`label_ids`. Nothing is created in the account: if no label matches, the lead goes without one, and the title prefix
+and the note carry the score either way. TO CONFIRM: that the three Leads inbox labels exist with those leading words
+(the snapshot lists only the deal labels). Deals take the numeric deal label ids. `visible_to` is sent as a string on
+leads (the Leads API types it so) and as a number on deals, persons and organisations.
 
 ### Score
 
@@ -201,7 +205,8 @@ Runs `node --test tests/functions/*.test.js` (Node 22, built-in test runner, no 
 replaces `fetch` with an in-memory Pipedrive, Turnstile, Twilio and Resend, records every request and lets the tests
 assert on what was written. Covered: each of the six division choices (kind, owner, pipeline, stage, score, note with
 every tracking field), the owner from the config file, disposable email, honeypot, Turnstile pass and fail, dedupe by
-email and by phone with note and activity, reuse of an open record, rate limit, lead label fallback, nationality and
+email and by phone with note and activity, reuse of an open record, rate limit, lead labels read from the account (and
+none when nothing matches), nationality and
 country matching, guide and interest defaults, programme fit and partner details, no token, Pipedrive failure, the
 confirmation email, `markVerified`, the direct endpoint (origin, methods, bodies, references), the Netlify event, the
 score table, and the verify function (start without env, start with env, rate limit, right code, wrong code).

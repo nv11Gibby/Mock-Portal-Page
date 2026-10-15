@@ -196,7 +196,11 @@ async function syncPipedrive(o) {
       const deal = await pd.createDeal(body);
       kind = 'deal'; id = deal.id;
     } else {
-      const body = Object.assign({ title, person_id: person.id, visible_to: PD.visibleTo, label_ids: [labelId] }, fields);
+      /* Leads: visible_to is a string enum in the Leads API (a number on deals), and the label is the account's own
+         Leads inbox label for the band (a UUID from GET /leadLabels), never the numeric deal label id. */
+      const body = Object.assign({ title, person_id: person.id, visible_to: String(PD.visibleTo) }, fields);
+      const leadLabel = await pd.leadLabelId(o.score.band);
+      if (leadLabel) body.label_ids = [leadLabel];
       if (org) body.organization_id = org.id;
       if (owner) body.owner_id = owner;
       const lead = await pd.createLead(body);

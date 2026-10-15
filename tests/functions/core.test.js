@@ -5,6 +5,7 @@ const { test, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { createMock } = require('./_mock');
 const ratelimit = require('../../netlify/functions/lib/ratelimit');
+const pipedrive = require('../../netlify/functions/lib/pipedrive');
 const core = require('../../netlify/functions/lib/core');
 const routing = require('../../shared/lead-routing.json');
 const schema = require('../../shared/lead-schema.json');
@@ -25,6 +26,7 @@ let m;
 beforeEach(() => {
   m = createMock().install();
   ratelimit.reset();
+  pipedrive.resetLeadLabelCache();
   process.env.PIPEDRIVE_API_TOKEN = 'test-token';
   delete process.env.TURNSTILE_SECRET_KEY;
   delete process.env.EMAIL_API_KEY;
@@ -55,9 +57,13 @@ Object.keys(EXPECT).forEach((div) => {
     if (e.kind === 'deal') {
       assert.equal(body.pipeline_id, e.pipeline);
       assert.equal(body.stage_id, e.stage);
-      assert.deepEqual(body.label_ids, [O.label.hot]);
+      assert.deepEqual(body.label_ids, [O.label.hot], 'deals take the numeric deal label id');
+      assert.equal(body.visible_to, routing.pipedrive.visibleTo, 'deals take visible_to as a number');
       assert.equal(body.user_id, cfg.owner || undefined);
     } else {
+      assert.equal(posts.length, 1, 'one POST to /leads');
+      assert.deepEqual(body.label_ids, [m.leadLabelFor('hot')], 'leads take the Leads inbox label UUID for the band');
+      assert.equal(body.visible_to, String(routing.pipedrive.visibleTo), 'leads take visible_to as a string');
       assert.equal(body.owner_id, cfg.owner || undefined);
     }
     assert.equal(body[F.deal.division], e.division);
@@ -205,21 +211,47 @@ test('rate limit: the sixth submission from one address in ten minutes is refuse
   assert.equal(other.ok, true, 'another address is not affected');
 });
 
-test('lead label: tried as label_ids, then the title prefix carries the score when the API rejects it', async () => {
+test('lead label: the Leads inbox label is read from the account once and sent in a single POST; none when nothing matches; other errors are not retried', async () => {
   const r = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
-  assert.equal(r.ok, true);
+  assert.equal(r.ok, true, JSON.stringify(r));
   assert.equal(r.score, 'warm');
-  const posts = m.find('POST', /\/leads$/);
-  assert.equal(posts.length, 2, 'first with label_ids, then without');
-  assert.deepEqual(posts[0].body.label_ids, [O.label.warm]);
-  assert.equal(posts[1].body.label_ids, undefined);
-  assert.ok(posts[1].body.title.indexOf('[WARM] ') === 0);
-  assert.equal(r.labelRejected, true);
-  m.leadsAcceptLabels = true;
-  const r2 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'two@example.com', phone: '+971 50 123 4567', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
-  assert.equal(r2.labelRejected, false);
-  assert.equal(m.find('POST', /\/leads$/).length, 3);
-  assert.deepEqual(m.find('POST', /\/leads$/)[2].body.label_ids, [O.label.warm]);
+  let posts = m.find('POST', /\/leads$/);
+  assert.equal(posts.length, 1, 'one POST, with the account label');
+  assert.deepEqual(posts[0].body.label_ids, [m.leadLabelFor('warm')]);
+  assert.ok(posts[0].body.title.indexOf('[WARM] ') === 0);
+  assert.equal(r.labelRejected, false);
+  assert.equal(m.find('GET', /\/leadLabels$/).length, 1, 'labels read from the account');
+  const r2 = await core.processLead({ form: 'enquiry', data: data({ division: 'private-office', email: 'two@example.com', phone: '+971 50 123 4567', timeline: 'exploring' }), ctx: ctx() });
+  assert.equal(r2.score, 'exploring');
+  assert.equal(m.find('GET', /\/leadLabels$/).length, 1, 'read once per instance, then cached');
+  assert.deepEqual(m.find('POST', /\/leads$/)[1].body.label_ids, [m.leadLabelFor('exploring')], 'exploring maps to the Cold label');
+  /* an account whose lead labels are named differently: no label, the band stays in the title and the note */
+  pipedrive.resetLeadLabelCache();
+  m.leadLabels = [{ id: '0f1e2d3c-4b5a-4968-8776-655443322110', name: 'Website' }];
+  const r3 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'three@example.com', phone: '+971 50 123 4568', timeline: '3-12m', budget: '250k-500k' }), ctx: ctx() });
+  assert.equal(r3.ok, true);
+  posts = m.find('POST', /\/leads$/);
+  assert.equal(posts.length, 3);
+  assert.equal(posts[2].body.label_ids, undefined, 'no label when none matches');
+  assert.ok(posts[2].body.title.indexOf('[WARM] ') === 0, 'the band stays in the title');
+  assert.ok(m.notes[2].content.indexOf('Score: WARM') > -1, 'and in the note');
+  /* the labels endpoint failing costs only the label */
+  pipedrive.resetLeadLabelCache();
+  m.failLeadLabels = true;
+  const r4 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'four@example.com', phone: '+971 50 123 4569', timeline: '3-12m' }), ctx: ctx() });
+  assert.equal(r4.ok, true, JSON.stringify(r4));
+  assert.equal(m.find('POST', /\/leads$/)[3].body.label_ids, undefined);
+  /* a lead error that is not about the label is reported as is, never masked by a retry without the label */
+  m.failLeadLabels = false;
+  pipedrive.resetLeadLabelCache();
+  m.failLeadsOnce = true;
+  const r5 = await core.processLead({ form: 'enquiry', data: data({ division: 'citizenship', email: 'five@example.com', phone: '+971 50 123 4570', timeline: '3-12m' }), ctx: ctx() });
+  assert.equal(r5.ok, false);
+  assert.equal(r5.reason, 'sync');
+  assert.ok(/POST \/leads: 500/.test(r5.error), r5.error);
+  assert.equal(m.find('POST', /\/leads$/).length, 5, 'one POST only, no retry');
+  /* the numeric deal label id is never sent to the Leads API */
+  m.find('POST', /\/leads$/).forEach((p) => assert.ok(!p.body.label_ids || p.body.label_ids.every((x) => typeof x === 'string'), 'UUID strings only'));
 });
 
 test('nationality and country go on the person only when they match an option label', async () => {

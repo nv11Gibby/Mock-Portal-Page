@@ -219,9 +219,10 @@ function checkStored(t, spec, opts) {
     const posts = pdCalls(t, 'POST', /^\/v1\/leads$/);
     assert.ok(posts.length >= 1, 'a lead was posted');
     const last = posts[posts.length - 1], first = posts[posts.length === 1 ? 0 : posts.length - 2];
-    assert.deepEqual(first.body.label_ids, [O.label[spec.band]], 'the first lead POST carries the ' + spec.band + ' label');
-    if (posts.length >= 2) { assert.equal(first.status, 400, 'the Leads API rejected the deal label id'); assert.equal(last.body.label_ids, undefined, 'the retry has no label'); ids.label = O.label[spec.band] + ' (rejected by the Leads API, retried without; score kept in the title and the note)'; }
-    else ids.label = O.label[spec.band];
+    const want = m.leadLabelFor(spec.band);
+    assert.deepEqual(first.body.label_ids, want ? [want] : undefined, 'the lead POST carries the Leads inbox label for ' + spec.band + ' (from GET /leadLabels), never the deal label id');
+    assert.equal(posts.length, 1, 'one POST to /leads: no retry without the label');
+    ids.label = want ? want + ' (Leads inbox label from the account)' : 'none (no matching Leads inbox label; band in the title and the note)';
     assert.equal(last.status, 200, 'the lead was created');
     if (exp.owner) assert.equal(rec.owner_id, exp.owner, 'lead owner'); else assert.equal(rec.owner_id, undefined, 'owner 0 means no owner_id (account default)');
     ids.pipeline = 'Leads inbox';

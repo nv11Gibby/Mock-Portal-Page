@@ -12,10 +12,23 @@ function digits(s) { return String(s || '').replace(/\D/g, ''); }
 function createMock() {
   const m = {
     calls: [], persons: [], orgs: [], leads: [], deals: [], notes: [], activities: [], emails: [], verifications: [],
-    leadsAcceptLabels: false, turnstileOk: true, goodCode: '123456', failPipedrive: false, token: 'test-token',
+    /* The Leads inbox labels of the account, as GET /leadLabels answers them: their own UUID ids, not the deal label ids. */
+    leadLabels: [
+      { id: '6b1f3c2e-8d4a-4f0b-9c7e-2a5d8e1f3b40', name: 'Hot Lead', color: 'red' },
+      { id: 'c4e2a7d9-1b3f-4e8c-a6d5-9f0b2c7e4a11', name: 'Warm lead', color: 'yellow' },
+      { id: 'e9d7b5a3-6c1e-4a2f-b8d4-3c6a9e2f5d72', name: 'Cold Lead', color: 'blue' }
+    ],
+    failLeadLabels: false, failLeadsOnce: false, failGetPerson: 0,
+    turnstileOk: true, goodCode: '123456', failPipedrive: false, token: 'test-token',
     nextId: 1, clock: Date.UTC(2026, 9, 15, 9, 0, 0)
   };
   m.id = function () { return m.nextId++; };
+  /* The label id the core should send for a band, from the labels above (leading word hot, warm or cold). */
+  m.leadLabelFor = function (band) {
+    const word = band === 'exploring' ? 'cold' : band;
+    const l = m.leadLabels.find((x) => String(x.name || '').trim().toLowerCase().split(/\s+/)[0] === word);
+    return l ? l.id : undefined;
+  };
   m.time = function () { return new Date(m.clock += 1000).toISOString().replace('T', ' ').slice(0, 19); };
 
   m.seedPerson = function (o) {
@@ -91,8 +104,18 @@ function pipedrive(m, c) {
   }
   if (c.method === 'POST' && p === '/organizations') { const o = Object.assign({ id: m.id() }, c.body); m.orgs.push(o); return ok(o); }
   if (c.method === 'GET' && p === '/leads') return ok(m.leads.filter((l) => String(l.person_id) === String(c.query.person_id) && !l.is_archived));
+  if (c.method === 'GET' && p === '/leadLabels') {
+    if (m.failLeadLabels) return jsonRes(500, { success: false, error: 'mock: labels unavailable' });
+    return ok(m.leadLabels);
+  }
   if (c.method === 'POST' && p === '/leads') {
-    if (c.body.label_ids && !m.leadsAcceptLabels) return jsonRes(400, { success: false, error: 'Invalid label_ids', error_info: 'lead labels must be UUIDs' });
+    if (m.failLeadsOnce) { m.failLeadsOnce = false; return jsonRes(500, { success: false, error: 'mock: leads service unavailable' }); }
+    /* As the Leads API does: label_ids must be the UUIDs of the account's lead labels; a deal label id is rejected. */
+    if (c.body.label_ids !== undefined) {
+      const ids = m.leadLabels.map((x) => x.id);
+      const bad = !Array.isArray(c.body.label_ids) || !c.body.label_ids.every((x) => typeof x === 'string' && ids.indexOf(x) > -1);
+      if (bad) return jsonRes(400, { success: false, error: 'Invalid label_ids', error_info: 'lead labels must be UUIDs from GET /leadLabels' });
+    }
     const l = Object.assign({ id: 'lead-' + m.id(), is_archived: false, add_time: m.time() }, c.body);
     m.leads.push(l);
     return ok(l);
