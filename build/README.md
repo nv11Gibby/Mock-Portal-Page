@@ -8,7 +8,11 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
 
 `dist/` holds:
 
-* The site copied as it is: `assets/`, `shared/`, `site.webmanifest`, `_redirects`.
+* `assets/`, `site.webmanifest` and `_redirects` as they are, and `shared/` without the three lead files
+  (`lead-routing.json`, `lead-schema.json`, `disposable-domains.json`): the functions bundle those through
+  `netlify/functions/lib/config.js` and no page fetches them, so they are never published (the routing file lists
+  every Pipedrive field key and option id, and all three carry TO CONFIRM notes). `shared/tokens.css`,
+  `shared/analytics.js`, `shared/ecosystem.json` and `shared/chrome/` stay public for the sister sites.
 * One prerendered page per route, written twice so every static host serves the clean URL: `about.html` and
   `about/index.html`, `divisions/citizenship.html` and `divisions/citizenship/index.html`, and so on. The home page is
   `index.html`. Routes come from `window.IHG_APP.routes()` in app.js: the static pages, every division, every event,
@@ -42,6 +46,13 @@ adds, the GA4 script element, the clock values, the first-touch tracking values 
 fills them from the real visit). It puts the intro veil markup back where the app removed it, rewrites relative asset
 URLs to root-relative ones, sets `data-prerendered` on `html` and, with `BUILD_PREVIEW=1`, `data-preview`.
 
+The two hero `<link rel="preload" as="image">` lines in `index.html` belong to the home page. The build replaces them
+on every page with that page's own hero as the app rendered it: the home picture with its desktop and mobile files
+(each with its media query), the `pageHero` image on inner pages (plus a mobile source when the markup gives one),
+the backdrop on `404.html` and `error.html`, and no preload on pages without a hero image (privacy, terms). A hero
+over 200 KB is not preloaded: the build prints a `WARNING` naming the file and the pages, so it can be re-exported
+under the limit (docs/PHOTO-SHOT-LIST.md), and `tests/seo.js` prints the same warning.
+
 In the browser the app runs again on the prerendered page. Because the page carries `data-prerendered`, the first
 render keeps the markup the browser has already painted (it was built by the same code), refreshes the first-touch
 tracking values in the hidden form fields from the real visit, binds behaviour and marks every reveal element visible
@@ -55,7 +66,7 @@ as it always did; on the home page the veil shows from first paint on a first vi
 | Variable | Effect |
 |---|---|
 | `LAUNCH=1` | Drops the pre-launch `noindex`: the `robots` meta tag in every page and the `X-Robots-Tag` header. Until then every build stays out of search engines, and `robots.txt` says so in a comment. Set it in Netlify under Site configuration, Environment variables, when the TO CONFIRM placeholders are resolved and the site may be indexed. |
-| `BUILD_PREVIEW=1` | Sets `data-preview` on `html`. The app then shows photographs that still lack recorded consent (docs/BUILD-CONTRACT.md 4.8). Never set it on the production site. |
+| `BUILD_PREVIEW=1` | Sets `data-preview` on `html` before the app renders, so the prerendered markup carries the photographs that still lack recorded consent (event galleries, the consent-gated home hero) and the hero preloads follow them (docs/BUILD-CONTRACT.md 4.8). Never set it on the production site. |
 
 Both are read by `build/build.js` and by `tests/seo.js` (which checks the matching state).
 
@@ -90,8 +101,11 @@ node tests/serve.js dist 8776 &   # then: node tests/smoke.js http://127.0.0.1:8
 `tests/seo.js` asserts, for every route: HTTP 200, `data-prerendered`, exactly one title, one description and one
 canonical, an absolute `og:image`, the Open Graph and Twitter tags, an `h1`, no hash links or relative asset URLs left,
 the robots state matching `LAUNCH`, valid JSON-LD of the expected types, and unique titles and descriptions across
-pages. It also checks `robots.txt`, that `sitemap.xml` lists every route and nothing else, the RSS feed, `404.html`,
-the inline script hashes in `_headers`, the absence of a catch-all rewrite, and that each hero preload is under 200 KB.
+pages, and that the page's image preloads are exactly its own hero (desktop and mobile on the home page, none on
+the legal pages, every file under 200 KB). It also checks `robots.txt`, that `sitemap.xml` lists every route and
+nothing else, the RSS feed, `404.html` and `error.html` (noindex, no canonical, office contacts, their own backdrop
+preload), the inline script hashes in `_headers`, the absence of a catch-all rewrite, that `dist/shared` holds no
+lead JSON file, and that each event gallery is in the markup on a preview build and absent on a production one.
 
 Lighthouse, mobile, against the dist server (Chromium from the Playwright install):
 

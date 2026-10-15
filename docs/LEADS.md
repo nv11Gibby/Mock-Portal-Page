@@ -50,6 +50,10 @@ Files:
 
 ## 2. The config files (change these, not the code)
 
+The three JSON files below are bundled into each function by esbuild (`lib/config.js` requires them with static
+paths) and are never published: `npm run build` leaves them out of `dist/shared` on purpose, and `tests/seo.js`
+checks that it does. A change takes effect on the next deploy.
+
 ### `shared/lead-routing.json`
 
 `divisions` holds one entry per division key (`citizenship`, `private-office`, `partners-club`, `academy`,

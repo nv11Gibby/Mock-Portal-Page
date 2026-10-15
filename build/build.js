@@ -48,19 +48,67 @@ const SITE = String(CFG.siteUrl || '').replace(/\/+$/, '');
 if(!/^https?:\/\//.test(SITE)) throw new Error('config.siteUrl must be an absolute URL (assets/js/data.js)');
 const abs = function(p){ return SITE + '/' + String(p).replace(/^\//, ''); };
 
-/* 1. A clean dist with the static files. The Netlify functions are not copied: netlify.toml points at the repository. */
+/* 1. A clean dist with the static files. The Netlify functions are not copied: netlify.toml points at the repository.
+   shared/ is published without the three lead files: the functions get them through lib/config.js (static require,
+   bundled by esbuild) and no page fetches them, so they never need a public URL. lead-routing.json lists every
+   Pipedrive field key, option id, pipeline and owner id, and all three carry TO CONFIRM notes that would otherwise
+   turn up in the built site. tokens.css, analytics.js, ecosystem.json and chrome/ stay public for the sister sites. */
+const PRIVATE_SHARED = ['lead-routing.json', 'lead-schema.json', 'disposable-domains.json'];
 fs.rmSync(DIST, {recursive: true, force: true});
 fs.mkdirSync(DIST, {recursive: true});
-['assets', 'shared'].forEach(function(d){ if(fs.existsSync(path.join(ROOT, d))) fs.cpSync(path.join(ROOT, d), path.join(DIST, d), {recursive: true}); });
+fs.cpSync(path.join(ROOT, 'assets'), path.join(DIST, 'assets'), {recursive: true});
+fs.cpSync(path.join(ROOT, 'shared'), path.join(DIST, 'shared'), {recursive: true, filter: function(src){ return PRIVATE_SHARED.indexOf(path.basename(src)) < 0; }});
 ['site.webmanifest', '_redirects'].forEach(function(f){ if(fs.existsSync(path.join(ROOT, f))) fs.copyFileSync(path.join(ROOT, f), path.join(DIST, f)); });
 
-/* 2. Prerender. */
+/* 2. Prerender. preview sets data-preview before the app runs, so the consent-gated photographs are in the markup. */
 const render = createRenderer({
   root: ROOT,
   indexPath: path.join(ROOT, 'index.html'),
   siteUrl: SITE,
-  scripts: ['assets/js/data.js', 'shared/analytics.js', 'assets/js/app.js'].map(function(p){ return path.join(ROOT, p); })
+  scripts: ['assets/js/data.js', 'shared/analytics.js', 'assets/js/app.js'].map(function(p){ return path.join(ROOT, p); }),
+  preview: PREVIEW
 });
+
+/* Hero preloads. index.html carries the home page's two lines (the desktop and mobile hero-alt); every other page
+   renders its own hero, so the lines are replaced per page with the first hero image as the app drew it: the home
+   picture element with its mobile source, the pageHero image (with a mobile source when the page gives one), or the
+   not-found backdrop; pages without a hero image (privacy, terms) get none. A hero over HERO_LIMIT is not preloaded
+   and is reported, so the build never commits a high priority fetch above the budget. */
+function heroSources(doc){
+  /* .ph is the pageHero section: the closing section further down also has a .ph-bg, and it must not be preloaded */
+  const img = doc.querySelector('.hh .dusk img') || doc.querySelector('#app .ph > .ph-bg img') || doc.querySelector('.nf > .ph-bg img');
+  if(!img || !img.getAttribute('src')) return [];
+  const out = [{href: img.getAttribute('src'), media: ''}];
+  const pic = img.closest('picture');
+  if(pic){
+    Array.prototype.forEach.call(pic.querySelectorAll('source[srcset]'), function(s){
+      const media = s.getAttribute('media') || '', href = String(s.getAttribute('srcset')).split(',')[0].trim().split(/\s+/)[0];
+      if(href && media) out.push({href: href, media: media});
+    });
+    const mob = out.find(function(x){ return /max-width:\s*(\d+)px/.test(x.media); });
+    if(mob) out[0].media = '(min-width:' + (parseInt(/max-width:\s*(\d+)px/.exec(mob.media)[1], 10) + 1) + 'px)';
+  }
+  return out;
+}
+const preloadLog = [], oversize = [];
+function setPreloads(doc, name){
+  const old = Array.prototype.slice.call(doc.querySelectorAll('link[rel="preload"][as="image"]'));
+  const anchor = old[0] || doc.querySelector('link[rel="preload"][as="font"]') || doc.querySelector('link[rel="stylesheet"]');
+  const written = [];
+  heroSources(doc).forEach(function(h){
+    let size = -1; try{ size = fs.statSync(path.join(DIST, h.href.replace(/^\//, '').split('?')[0])).size; }catch(e){}
+    const rec = {page: name, href: h.href, media: h.media, size: size};
+    if(size > HERO_LIMIT){ oversize.push(rec); return; }
+    const l = doc.createElement('link');
+    l.setAttribute('rel', 'preload'); l.setAttribute('as', 'image'); l.setAttribute('href', h.href);
+    if(h.media) l.setAttribute('media', h.media);
+    l.setAttribute('fetchpriority', 'high');
+    if(anchor) anchor.parentNode.insertBefore(l, anchor); else doc.head.appendChild(l);
+    written.push(rec);
+  });
+  old.forEach(function(el){ el.parentNode.removeChild(el); });
+  preloadLog.push({page: name, preloads: written});
+}
 
 /* The app leaves a few things in the DOM that belong to the browser session, not to a file on disk. */
 function finish(page, opts){
@@ -87,6 +135,7 @@ function finish(page, opts){
   }
   const feed = doc.querySelector('link[rel="alternate"][type="application/rss+xml"]');
   if(feed) feed.setAttribute('href', abs('journal/feed.xml'));
+  setPreloads(doc, opts.name || '');
   let html = page.serialize();
   /* Root-relative asset URLs, so a page served from /about/ or 404.html served anywhere resolves them without the
      base element the inline script adds. */
@@ -105,7 +154,7 @@ routes.forEach(function(route){
   const out = page.window.IHG_APP.resolve(page.window.IHG_APP.parse());
   if(page.errors.length) problems.push(route + ': ' + page.errors.join(' | '));
   if(out.nf) problems.push(route + ': resolved to the not-found view');
-  const html = finish(page, {});
+  const html = finish(page, {name: route});
   page.close();
   const title = (/<title>([\s\S]*?)<\/title>/.exec(html) || [])[1] || '';
   pages.push({route: route, title: title, bytes: Buffer.byteLength(html)});
@@ -115,7 +164,7 @@ routes.forEach(function(route){
 
 const nf = render('/this-page-does-not-exist');
 if(nf.errors.length) problems.push('404: ' + nf.errors.join(' | '));
-write('404.html', finish(nf, {notFound: true}));
+write('404.html', finish(nf, {notFound: true, name: '404.html'}));
 nf.close();
 
 /* error.html (brief section 8): rendered on a path the app does not know (so the intro veil stays off), then switched
@@ -123,7 +172,7 @@ nf.close();
 const er = render('/error');
 er.window.IHG_APP.showError();
 if(er.errors.length) problems.push('error.html: ' + er.errors.join(' | '));
-write('error.html', finish(er, {notFound: true}));
+write('error.html', finish(er, {notFound: true, name: 'error.html'}));
 er.close();
 
 /* 3. robots.txt and sitemap.xml. */
@@ -195,23 +244,28 @@ const headers = fs.readFileSync(path.join(__dirname, 'headers.template'), 'utf8'
 if(/\{\{\w+\}\}/.test(headers)) problems.push('headers.template has an unknown token');
 write('_headers', headers);
 
-/* 6. Core Web Vitals guard: the hero preloads must stay under 200 KB each. */
-const heroes = [];
-distIndex.replace(/<link rel="preload" as="image" href="([^"]+)"/g, function(m, href){
-  const fp = path.join(DIST, href.replace(/^\//, '').split('?')[0]);
-  let size = -1; try{ size = fs.statSync(fp).size; }catch(e){}
-  heroes.push({href: href, size: size});
-  if(size < 0) problems.push('hero preload missing: ' + href);
-  else if(size > HERO_LIMIT) problems.push('hero over 200 KB: ' + href + ' is ' + Math.round(size / 1024) + ' KB');
-  return m;
+/* 6. Core Web Vitals guard, over every written page: each hero preload must point at a file that exists and stays
+   under 200 KB, and the home page must carry its two lines (desktop and mobile). A hero the build left out because
+   it is over the limit is listed in the report so the photograph can be re-exported (shot list rule, under 200 KB). */
+const heroes = {};
+preloadLog.forEach(function(p){
+  p.preloads.forEach(function(h){
+    if(h.size < 0) problems.push('hero preload missing: ' + h.href + ' on ' + h.page);
+    else if(h.size > HERO_LIMIT) problems.push('hero over 200 KB: ' + h.href + ' is ' + Math.round(h.size / 1024) + ' KB on ' + h.page);
+    heroes[h.href] = h.size;
+  });
+  if(p.page === '/' && p.preloads.length !== 2) problems.push('home page: expected a desktop and a mobile hero preload, got ' + p.preloads.length);
 });
+const big = {};
+oversize.forEach(function(h){ (big[h.href] = big[h.href] || {size: h.size, pages: []}).pages.push(h.page); });
 
 /* 7. Report. */
 const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
 console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
-console.log('hero: ' + heroes.map(function(h){ return h.href + ' ' + (h.size < 0 ? 'missing' : Math.round(h.size / 1024) + ' KB'); }).join(', '));
+console.log('hero preloads: ' + Object.keys(heroes).map(function(h){ return h + ' ' + (heroes[h] < 0 ? 'missing' : Math.round(heroes[h] / 1024) + ' KB'); }).join(', '));
+if(Object.keys(big).length) console.log('WARNING hero over 200 KB, not preloaded (re-export under 200 KB, see docs/PHOTO-SHOT-LIST.md): ' + Object.keys(big).map(function(h){ return h + ' ' + Math.round(big[h].size / 1024) + ' KB on ' + big[h].pages.join(', '); }).join('; '));
 console.log('feed: ' + items.length + ' items | sitemap: ' + routes.length + ' urls');
 pages.forEach(function(p){ console.log('  ' + p.route + '  ' + p.title + '  (' + Math.round(p.bytes / 1024) + ' KB)'); });
 if(problems.length){ console.error('BUILD PROBLEMS:\n  ' + problems.join('\n  ')); process.exit(1); }
