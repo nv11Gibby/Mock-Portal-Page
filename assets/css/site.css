@@ -1271,3 +1271,10 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .legal-offices{display:grid;grid-template-columns:1fr 1fr;gap:20px 32px;margin:4px 0 1em;font-size:15px;color:var(--l-body);line-height:1.6}
 .legal-offices b{display:block;color:var(--l-text);font-weight:500;margin-bottom:2px}
 @media (max-width:640px){ .legal-offices{grid-template-columns:1fr} }
+/* Keyboard focus (brief 8, acceptance test 9.7). The global :focus-visible ring is gold (gold-l on dark, gold-ink on
+   light) and every control keeps it; the search box removes its own outline, so the box shows focus through a gold
+   rule instead. The consent box carries error text like every other field, so screen readers can read it. */
+.pal-top:focus-within{border-bottom-color:var(--gold);box-shadow:inset 0 -1px 0 var(--gold)}
+.consent .em{grid-column:2;display:none;font-style:normal;font-size:13px;color:#9A3B2A}
+.consent.err .em{display:block}
+.pal-body:focus-visible{outline-offset:-4px}

@@ -181,8 +181,8 @@ function figures(){
 function houses(){
   return '<div class="houses" id="houses">'+D.divisions.map(function(d,i){
     var cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
-    return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'" aria-label="'+esc(d.name)+': '+esc(d.line)+'">'+
-      '<figure>'+img(d.img,'', '', '-c')+'</figure><span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl" aria-hidden="true">'+esc(d.short)+'</span>'+
+    return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'">'+
+      '<figure>'+img(d.img,'', '', '-c')+'</figure><span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
       '<div class="hc"><span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span><h3>'+esc(d.name)+'</h3><p>'+esc(d.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
   }).join('')+'</div>';
 }
@@ -209,7 +209,7 @@ function story(){
   return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
     '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
     '<div class="story-text"><div class="eyebrow">How we work</div><div class="story-num" aria-hidden="true"><span id="storyNum">01</span></div>'+
-    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img)+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
+    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img,'')+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
     '<div class="story-dots" aria-hidden="true">'+ch.map(function(){return '<i></i>';}).join('')+'</div></div></div></section>';
 }
 
@@ -345,7 +345,7 @@ function registerForm(){
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    '<label class="field"><span>I am interested in</span><select name="interest" required><option value="">Choose one</option><option>A family home in Dubai</option><option>Property linked to UAE residency</option><option>An investment property</option><option>Not sure yet</option></select><em class="em">Please choose an option.</em></label>'+
    '<label class="field full"><span>Anything else <i>(optional)</i></span><textarea name="msg" rows="3"></textarea></label></div>'+
-   '<label class="consent"><input type="checkbox" name="consent" required><span>I agree to Imperial Holdings Group contacting me about Imperial Real Estate. See our <a class="ul" href="#/privacy">privacy notice</a>.</span></label>'+
+   consentBox('I agree to Imperial Holdings Group contacting me about Imperial Real Estate, as described in the {privacy}.')+
    '<div class="form-foot"><button class="btn" type="submit"><span class="lbl">Register interest</span><span class="spin"></span></button><span class="xs">We use these details only to contact you about Imperial Real Estate.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
 }
 
@@ -377,12 +377,12 @@ function splitTitle(t){
 function evWhen(e){ return e.date ? esc(e.date) : ''; }
 function eventCard(e,i){
   var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+(ok ? img(k, e.title) : img(eventSafe(e), null))+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img(ok ? k : eventSafe(e), '')+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+e.n+' photographs'+AR+'</span></div></a>';
 }
 function journalRow(j,i){
   var ok = photoAllowed(j.img), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null, k = ok ? j.img : (ev ? eventSafe(ev) : 'about'), v = ok ? (j.own?'':'-c') : variantOf(k);
   var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, ok?'':null, '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, '', '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 V.journal = function(){
   var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
@@ -468,7 +468,7 @@ function ensureHidden(form, name, value){ var f = form.elements.namedItem(name);
 /* consent (brief 8): every consent box links the privacy notice next to it. Templates use consentBox(); bindForms adds the link
    to any consent box that still lacks one. */
 var PRIVACY_LINK = '<a class="ul" href="#/privacy">privacy notice</a>';
-function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span></label>'; }
+function consentBox(text){ return '<label class="consent"><input type="checkbox" name="consent" required><span>'+text.replace('{privacy}', PRIVACY_LINK)+'</span><em class="em">Please tick the box so that we can reply.</em></label>'; }
 function ensurePrivacyLink(form){
   [].forEach.call(form.querySelectorAll('.consent'), function(c){ if(c.querySelector('a[href$="/privacy"]')) return; var s = c.querySelector('span') || c; s.insertAdjacentHTML('beforeend', ' See our '+PRIVACY_LINK+'.'); });
   fixLinks(form);
@@ -1084,6 +1084,25 @@ function mark(f, show){
   f.setAttribute('aria-invalid', (!good && show) ? 'true' : 'false');
   return good;
 }
+/* v5 trust (brief 8): screen readers hear what needs attention. Every field's error text is linked through
+   aria-describedby in bindForms and the error box has role="alert"; this names the first invalid field, and how many
+   there are, in the live region whenever a step or a form is sent with something missing. */
+function fieldLabel(f){
+  if(f.type==='checkbox') return 'Consent';
+  if(f.type==='radio') return 'What we can help with';
+  var box = f.closest('.field'), s = box && box.querySelector('span');
+  return s ? s.textContent.replace(/\s+/g,' ').trim() : (f.name || 'This field');
+}
+function errorText(f){
+  var box = f.closest('.field,.consent'), em = box && box.querySelector('.em');
+  if(em) return em.textContent;
+  var re = f.type==='radio' ? document.getElementById('routeErr') : null;
+  return re ? re.textContent : 'Please check this field.';
+}
+function announceInvalid(form, bad){
+  var n = form.querySelectorAll('[aria-invalid="true"]').length;
+  announce((n>1 ? n+' fields need attention. ' : '')+fieldLabel(bad)+': '+errorText(bad));
+}
 /* v5: every form's key value pairs, as one object (the same data goes urlencoded to Netlify Forms and as JSON to our own function) */
 function leadData(form, extra){
   var o = {};
@@ -1384,7 +1403,7 @@ function bindForms(){
       form.addEventListener('submit', function(e){
         e.preventDefault(); var bad=null;
         [].forEach.call(form.querySelectorAll('[required]'), function(f){ if(f.disabled) return; f._tried=true; if(!mark(f,true) && !bad) bad=f; });
-        if(bad){ bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
+        if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); window.scrollTo({top: bad.getBoundingClientRect().top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
         var dest = kind==='guide' ? 'Imperial Citizenship' : null;
         if(kind==='enquiry'){ var dv = form.elements.namedItem('division').value; dest = 'the Group team'; D.enquiry.forEach(function(x){ if(x.v===dv){ var d = div(x.to); dest = d ? d.name : 'the Group team'; } }); }
         finish(dest, (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
@@ -1427,7 +1446,7 @@ function bindForms(){
     form.addEventListener('submit', function(e){
       e.preventDefault();
       var bad = check(step);
-      if(bad){ bad.focus({preventScroll:true}); var r=bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
+      if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); var r=bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
       if(step<3){ show(step+1); return; }
       finish(destName(), (form.elements.namedItem('name').value||'').trim().split(' ')[0]);
     });
@@ -1533,9 +1552,9 @@ function shareBar(a, what){
   return '<div class="share" data-share data-title="'+esc(a.title)+'"><span class="share-l">Share</span>'+
     '<button type="button" data-sh="copy" aria-label="Copy link to this '+what+'">'+LINK+'<span>Copy link</span></button>'+
     '<button type="button" data-sh="native" aria-label="Share this '+what+'" hidden>'+SHARE+'<span>Share</span></button>'+
-    '<a data-sh="li" target="_blank" rel="noopener" aria-label="Share on LinkedIn" href="#">in</a>'+
-    '<a data-sh="wa" target="_blank" rel="noopener" aria-label="Share on WhatsApp" href="#">WA</a>'+
-    '<a data-sh="mail" aria-label="Share by email" href="#">@</a></div>';
+    '<a data-sh="li" target="_blank" rel="noopener" aria-label="in, share on LinkedIn" href="#">in</a>'+
+    '<a data-sh="wa" target="_blank" rel="noopener" aria-label="WA, share on WhatsApp" href="#">WA</a>'+
+    '<a data-sh="mail" aria-label="@, share by email" href="#">@</a></div>';
 }
 function bindShare(){
   [].forEach.call(app.querySelectorAll('[data-share]'), function(s){
@@ -1637,13 +1656,13 @@ palIn.addEventListener('keydown', function(e){
 palList.addEventListener('click', function(e){ var o = e.target.closest('[role=option]'); if(o) palOpenItem(+o.getAttribute('data-i')); });
 palList.addEventListener('mousemove', function(e){ var o = e.target.closest('[role=option]'); if(!o) return; var i=+o.getAttribute('data-i'); if(i!==palSel){ palSel=i-0; palMove(0); } });
 pal.addEventListener('click', function(e){ if(e.target.closest('[data-pal-close]')){ closePal(); } if(e.target.closest('#palEmpty a')){ closePal(true); } });
-pal.addEventListener('keydown', function(e){ if(e.key==='Tab'){ var f=[palIn, pal.querySelector('.pal-esc')]; var i=f.indexOf(document.activeElement); e.preventDefault(); f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus(); } });
+pal.addEventListener('keydown', function(e){ if(e.key==='Tab'){ var f=[palIn, pal.querySelector('.pal-body'), pal.querySelector('.pal-esc')]; var i=f.indexOf(document.activeElement); e.preventDefault(); f[(i+(e.shiftKey?-1:1)+f.length)%f.length].focus(); } });
 document.addEventListener('keydown', function(e){
   var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement||{}).tagName||'') || (document.activeElement && document.activeElement.isContentEditable);
   if((e.metaKey||e.ctrlKey) && (e.key==='k'||e.key==='K')){ e.preventDefault(); if(pal.hidden) openPal(); else closePal(); }
   else if(e.key==='/' && !typing && pal.hidden){ e.preventDefault(); openPal(); }
 });
-(function(){ var k=document.getElementById('kbdHint'); if(k) k.textContent=KBD; })();
+(function(){ var k=document.getElementById('kbdHint'); if(!k) return; k.textContent=KBD; var b=k.closest('button'); if(b) b.setAttribute('aria-label', 'Search the site, '+KBD); })();
 
 /* ---------- back to top, intro veil ---------- */
 document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduced?'auto':'smooth'}); var m=document.getElementById('main'); m.focus({preventScroll:true}); });

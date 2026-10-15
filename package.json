@@ -9,10 +9,12 @@
     "test:functions": "node --test tests/functions/*.test.js",
     "check": "node --check assets/js/app.js && node --check assets/js/data.js && node tests/copy-rules.js",
     "build": "node build/build.js",
-    "test:seo": "node tests/seo.js"
+    "test:seo": "node tests/seo.js",
+    "test:a11y": "node tests/a11y.js"
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "axe-core": "^4.14.0",
     "jsdom": "^30.1.3"
   }
 }
