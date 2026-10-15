@@ -1,7 +1,7 @@
 # Acceptance tests: the lead flow (brief section 9, items 1 to 4)
 
-Run on 15 October 2026 at 15:21 UTC with `npm run test:e2e` (`tests/e2e-leads.js`) on branch `verify/e2e`, from the
-prerendered build in `dist/`, on desktop (1440 by 900) and mobile (390 by 844, touch) Chromium through Playwright.
+Run on 15 October 2026 at 16:13 UTC with `node tests/e2e-leads.js --port 8882` (what `npm run test:e2e` runs) on
+branch `fix/frontend`, from the prerendered build in `dist/`, on desktop (1440 by 900) and mobile (390 by 844, touch) Chromium through Playwright.
 
 **These are offline simulations.** The live Pipedrive token is not available in this environment, so every call to
 Pipedrive, Twilio Verify and Resend went to the in-memory stand-ins in `tests/functions/_mock.js`, and the ids in the
@@ -11,8 +11,11 @@ with approval, described in `docs/LEADS.md` section 8.** What this run does prov
 submission paths, the real function code (`submission-created.js`, `lead.js`, `verify.js` and `lib/`), the routing
 config and the schema behave together as the brief asks, with the responses a real API would give.
 
-Result: **25 of 26 cases pass.** The one failure (7.1) is a defect in the contact form's loading state; it does not
-stop any enquiry from arriving. Issues are listed in section 5.
+Result: **33 of 33 cases pass.** The first run (15:21 UTC, branch `verify/e2e`) had 25 of 26 passing; its one failure
+(7.1, the loading state on the wrong button) and the two page defects it reported (the silent disposable address, the
+honeypot limbo) are fixed and covered by cases 2.1 to 2.3 and 7.1. Seven cases added in the same round (7.2 to 7.8)
+cover the other page fixes. Section 5 lists what remains for the owners of other files, and section 6 the decisions
+needed before launch.
 
 ## 1. How the harness works
 
@@ -31,7 +34,9 @@ stop any enquiry from arriving. Issues are listed in section 5.
    harness has created that email or phone; POST persons, organisations, leads, deals, notes and activities return ids
    and keep the bodies; PUT persons is recorded; the Leads API rejects deal label ids as the real one does, so the
    core's retry without a label is exercised; Twilio start always succeeds and check approves `123456` only; Resend
-   returns an id. Every call is written to `tests/e2e-output/mock-log.json` with the test that caused it, the method,
+   returns an id. Two cases answer the verify call in the browser instead (7.4 stubs `{verified:true, recorded:false}`,
+   7.5 refuses the WhatsApp start with `reason:'provider'`), one blocks the page's fetch of the disposable domain list
+   (2.2), and one holds `POST /` open for 19 seconds without running the function (7.8). Every call is written to `tests/e2e-output/mock-log.json` with the test that caused it, the method,
    path, query (token removed), body, status and response. `results.json` and `summary.md` sit next to it. The
    directory is ignored by git.
 5. The rate limit buckets are reset before each case, so the per IP limit (5 per 10 minutes) does not interfere with
@@ -57,19 +62,26 @@ Options: `--no-build` reuses `dist/`, `--port 8792` or `E2E_PORT` moves the serv
 | 1.11 contact real-estate (mobile) | pass | ref NE2E-0011, person 52, lead lead-53, note 54, email em_55 | as 1.5 on mobile |
 | 1.12 contact group (mobile) | pass | ref NE2E-0012, person 57, deal 58, note 59, email em_60 | as 1.6 on mobile |
 | 1.13 returning person (dedupe) | pass | refs NE2E-0013 to 0015, person 62, lead lead-63, notes 64, 67, 71, activities 68, 72 | three enquiries: the second with the same email and the third with a new email and the same phone found the person, reused the open citizenship lead, added a note and a "Website enquiry follow up" activity (type call___scheduled, due today) each time; one person, one lead, the person holds both emails |
-| 2.1 disposable email, Netlify Forms path | pass | ref NE2E-0016, submission e2e-0016 | `someone@mailinator.com`: the function rejects with `reason=disposable`; no Pipedrive call, no email. The person sees the success state (see section 4) |
-| 2.2 disposable email, fallback path | pass | ref WMV9OTB06WL | with the primary post failing, `lead.js` answers `{ok:false, reason:'disposable'}`; nothing in Pipedrive; the page shows the fallback message |
-| 2.3 honeypot filled in the page | pass | none | `company_url` set before Send: no request leaves the page at all; the person sees no change (see 7.1) |
+| 2.1 disposable email, Netlify Forms path | pass | ref NE2E-0016, submission e2e-0016 | `e2e.disposable@mailinator.com`: step 2 refuses it with "Please use an email address you check regularly." on the field (the page checks `shared/disposable-domains.json` before sending) and nothing is posted; a permanent address continues. The same data posted directly to `POST /`: the function rejects with `reason=disposable`, no Pipedrive call, no email |
+| 2.2 disposable email, fallback path | pass | ref WMV9QIPQVFX | the page's fetch of the domain list is blocked and the primary post fails, so `lead.js` is what refuses: `{ok:false, reason:'disposable'}`, nothing in Pipedrive. The page shows "Please use an email address you check regularly. Nothing has been sent yet.", returns to step 2, marks the email field and releases the Send button |
+| 2.3 honeypot filled in the page | pass | none | `company_url` set before Send: no request leaves the page; the Send button is released (no spinner, not disabled, no `aria-busy`) and the person sees the office contacts message with both telephones and the email |
 | 2.4 honeypot filled, posted to both endpoints | pass | refs NE2E-0017, WMV9OTD3JNB | `submission-created` rejects with `reason=honeypot`; `lead.js` answers `{ok:false, reason:'honeypot'}`; no API call |
 | 3.1 phone verification completed (123456) | pass | ref NE2E-0018, person 75, lead lead-76, note 77, email em_78, verification VE79, note 80 | enquiry card on the Private Office page, phone given: a code goes by WhatsApp (Twilio start), a wrong code is refused with "That code did not match", 123456 is approved; PUT person Verification Status 982 (Verified); note 80 "Phone verified ... by WhatsApp code" on the lead; the booking block follows |
 | 3.2 phone verification skipped | pass | ref NE2E-0019, person 81, deal 82, note 83, email em_84 | enquiry card on the Academy page (mobile): code sent, "Skip for now" clicked; no check call; the person stays 983 (Not Verified); the deal arrived with its one note; booking shows the tbc text |
-| 4.1 booking links carry name, email and division | pass | ref NE2E-0020, person 86, lead lead-87, note 88, email em_89 | `IHG.config.booking` overridden before Send: Dubai `https://booking.example.test/dubai?name=E2E%20Booker&email=e2e.booker%40example.com&a1=citizenship`, Lagos `https://booking.example.test/lagos?office=lagos&name=...&email=...&a1=citizenship` (its own query kept); `data-division` set on both |
+| 4.1 booking links carry name, email and division | pass | ref NE2E-0020, person 86, lead lead-87, note 88, email em_89 | `IHG.config.booking` overridden before Send: Dubai `https://booking.example.test/dubai?name=E2E%20Booker&email=e2e.booker%40example.com&a1=Imperial%20Citizenship`, Lagos `https://booking.example.test/lagos?office=lagos&name=...&email=...&a1=Imperial%20Citizenship` (its own query kept); the division goes as its name, so the booking page shows "Imperial Citizenship", not a slug; `data-division` set on both |
 | 4.2 booking tbc text while config is empty | pass | ref NE2E-0021, person 90, deal 91, note 92, email em_93 | with the shipped config: no links, two placeholders "Dubai booking page (Microsoft Bookings or Calendly)" and "Lagos booking page (Microsoft Bookings or Calendly)" on the success screen, and the same two in the Contact side column |
-| 5.1 primary POST fails | pass | ref WMV9OTHR7ZM, person 94, lead lead-95, note 96, email em_97 | `POST /` answers 500; the page posts JSON to `/.netlify/functions/lead`, which answers `{ok:true, ref:'W...'}`; the lead is created with the note marked "Direct submission (fallback endpoint)" and "Ref W..."; the person sees the success state (mobile) |
+| 5.1 primary POST fails | pass | ref WMV9QIVKJMP, person 94, lead lead-95, note 96, email em_97 | `POST /` answers 500; the page posts JSON to `/.netlify/functions/lead`, which answers `{ok:true, ref:'W...'}`; the lead is created with the note marked "Direct submission (fallback endpoint)" and "Ref W..."; the person sees the success state (mobile) |
 | 5.2 both fail | pass | none | both answer 500: the form shows "We could not send this just now..." with +971 4 546 1110, +234 902 222 2024 and info@imperialholdingsgroup.com and moves focus to it; nothing reached any API; `ihg-draft-contact` is stored; after a reload the note "We kept what you started earlier" shows and the choice, name, email, phone, firm, timeline and message are back (consent is asked again) |
 | 6.1 guide form | pass | ref NE2E-0022, person 98, lead lead-99, note 100, email em_101 | form `guide`, `lead_source=guide`, division citizenship: lead "Website: E2E Guide · Imperial Citizenship (guide)", score exploring, note "Lead source: guide", email "Your guide request"; the page says the guide is being finalised and shows the "Guide PDF to be written and approved" placeholder; no verification step (no phone) |
 | 6.2 programme fit check | pass | ref NE2E-0023, person 102, lead lead-103, note 104, email em_105 | five answers (family, nigeria, live, 3m, 500k-1m) prefill the enquiry card: division, audience clients, for_whom family, country Nigeria, timeline, budget, `lead_source=programme-fit`, `quiz_answers` JSON; after Send the lead is "... (programme fit)", [HOT] (8 points), the note carries "Programme fit answers: {...}" and "Nationality: Nigerian (no matching Pipedrive option, kept as text)", Service Requested mentions the fit check (mobile) |
-| 7.1 Send button loading state (contact form) | **FAIL** | ref NE2E-0024, person 106, lead lead-107, note 108, email em_109 | while the post is in flight the Send button is not marked loading or disabled; the hidden step 1 Continue button is. The enquiry itself arrives. See issue 1 |
+| 7.1 Send button loading state (contact form) | pass | ref NE2E-0024, person 106, lead lead-107, note 108, email em_109 | while the post is in flight the Send button (`[data-send]`) has the `loading` class, is disabled and carries `aria-busy="true"`; the hidden step 1 Continue button is untouched. The enquiry arrives |
+| 7.2 old `#/` links and `.html` copies | pass | none | `/#/contact`, `/#/about`, `/#/divisions/citizenship`, `/#/contact?about=academy`, `/about.html` and `/divisions/citizenship.html` each show their own page and title; the home markup the server sent for a hash address is replaced, because `data-prerendered` names the route the file was built for |
+| 7.3 search engine visitor is organic | pass | ref NE2E-0025, person 110, lead lead-111, note 112, email em_113 | a visit with referrer `https://www.google.com/` and no `utm_*` is tracked as `source: google.com`, `medium: organic` (a `partner.example.net` referrer stays `referral`); the note carries both and the score is hot, 9 points, with the organic point |
+| 7.4 code accepted, not yet recorded | pass | ref NE2E-0026, person 114, lead lead-115, note 116, email em_117 | the check is stubbed to answer `{verified:true, recorded:false}`: the page says "Code accepted. Thank you. We will note it on your enquiry shortly.", finishes the step, sends `phone_verified` with `recorded:false`, never checks the code again and moves on to booking; the person stays Not Verified until the team marks it |
+| 7.5 WhatsApp cannot deliver, SMS tried | pass | ref NE2E-0027, person 119, lead lead-120, note 121, email em_122, note 124 | the WhatsApp start is refused with `reason:'provider'`; the page starts by SMS itself (Twilio Channel sms), `123456` is approved, person Verified (982), note on the lead |
+| 7.6 number without its country code | pass | ref NE2E-0028, person 125, deal 126, note 127, email em_128 | phone `0802 000 0706`: `verify.js` answers `{ok:false, enabled:true, reason:'phone'}` without a Twilio call; the page says "We could not send a verification code: the number needs its country code (for example +971 or +234). We will continue without it." and shows booking; the deal arrives Not Verified (mobile) |
+| 7.7 programme fit draft survives a wander | pass | ref NE2E-0029, person 129, lead lead-130, note 131, email em_132 | fit answers plus name and email, then About and back: `lead_source=programme-fit`, `quiz_answers` and the typed fields are restored with the draft note; the lead arrives as "(programme fit)" with the answers in the note. The consent box privacy link opens in a new tab |
+| 7.8 stalled primary post abandoned after 15 s | pass | ref WMV9QJQ641U, person 133, lead lead-134, note 135, email em_136 | `POST /` is held for 19 seconds and never run: the page gives up after 15 seconds, posts to `lead.js` and shows the success state in about 16 seconds |
 
 ## 3. The six choices in detail
 
@@ -99,41 +111,35 @@ retries without, and the score stays in the title prefix and the note. Deals acc
 
 ## 4. What the person sees
 
-* Disposable email through Netlify Forms (2.1): the thank you screen ("Thank you, E2E. Your enquiry is with Imperial
-  Citizenship. One person will be your point of contact...") because Netlify accepts the post before the function
-  runs and the function always answers 200. The lead is rejected server side and nothing reaches Pipedrive; the
-  submission stays in the Netlify Forms inbox only. The person is not told the address is the problem (issue 2).
-* Disposable email through the fallback (2.2): the generic fallback message "We could not send this just now. Please
-  call or email us..." with the office numbers, because `lead.js` answers `ok:false` and the page treats every
-  `ok:false` the same way (issue 2).
-* Honeypot filled (2.3): nothing. No request leaves the page, no message appears, the Send button does not change
-  (issue 1 and 3). A bot gets no signal, which is the point; a person whose browser autofilled the hidden field would
-  be left wondering.
+* Disposable email (2.1): step 2 does not continue. The email field is marked with "Please use an email address you
+  check regularly." (the page reads the same `shared/disposable-domains.json` the function uses), so the address never
+  reaches Netlify Forms, where the function would drop it silently (it still does, as 2.1 proves by posting directly).
+* Disposable email when the page could not load the list (2.2): the fallback endpoint refuses it and the page shows
+  "Please use an email address you check regularly. Nothing has been sent yet.", goes back to step 2 with the field
+  marked and focused, and releases the Send button. Any other `ok:false` reason still shows the office contacts.
+* Honeypot filled (2.3): no request leaves the page. The Send button is released and the office contacts message is
+  shown, so a person whose browser autofilled the hidden field can still reach us; a bot gets no other signal.
 * Primary post failing (5.1): the normal thank you screen; the fallback endpoint is invisible to the person.
 * Both failing (5.2): the red bordered message with both telephone numbers and the email, focus on it for screen
   readers, and the draft restored on the next visit with "We kept what you started earlier" and "Start afresh".
 
-## 5. Issues found (not fixed here; reported for the owners of the files)
+## 5. Issues found
 
-1. **Medium. Contact form: the loading state goes to the wrong button.** `assets/js/app.js` line 1343, `finish()` in
-   `bindForms`: `form.querySelector('[data-send], button[type=submit]')` returns the first match in document order,
-   which on the three step contact form is the step 1 "Continue" button (hidden at that moment), not the Send button.
-   So Send never shows the spinner, is never disabled while the post is in flight (a double click can send the enquiry
-   twice, which the dedupe then turns into a second note and activity), `aria-busy` lands on the wrong element, and on
-   failure the `loading` class is removed from the wrong button. The enquiry card and the guide form are not affected
-   (one submit button). Test 7.1 fails on this. A fix would be `form.querySelector('[data-send]') ||
-   form.querySelector('button[type=submit]')`.
-2. **Medium. Disposable email: the person is not told.** There is no front end check against
-   `shared/disposable-domains.json`, so through Netlify Forms a disposable address gets the thank you screen while the
-   backend drops the lead (2.1), and through the fallback the person gets the generic "we could not send this" message
-   (2.2), which invites a retry that will fail again. The brief (3.3) asks to block disposable domains; the block
-   works, the message does not. Suggested: check the domain in `valid()` (`assets/js/app.js`) with the same list and
-   show "Please use a permanent email address" on the field, and in the `submitLead` error branch (line 1362) show a
-   specific message when the reason is `disposable` or `email`.
-3. **Low. Honeypot path leaves the form in limbo.** `assets/js/app.js` line 1345: `finish()` returns after marking a
-   button busy, with no reset. With issue 1 fixed, the Send button would then stay disabled and spinning for a person
-   whose browser filled `company_url`. Either reset the button state on that branch or let the post go and let the
-   function reject it (`reason=honeypot`, which 2.4 proves).
+Fixed in this round, in `assets/js/app.js` (each with a case above that fails without the fix):
+
+1. **Contact form: the loading state went to the wrong button** (`finish()` in `bindForms` picked the first submit
+   button, the hidden step 1 Continue). The control that sends is now `[data-send]`, or the form's last submit button
+   on the one step forms. Case 7.1.
+2. **Disposable email: the person was not told.** The page now checks the address against
+   `shared/disposable-domains.json` (fetched once, when the field is validated) and shows "Please use an email address
+   you check regularly." on the field before anything is sent; when the fallback endpoint answers `reason:'disposable'`
+   or `'email'`, the same message is shown with "Nothing has been sent yet." and the step with the field is shown
+   again. Cases 2.1 and 2.2.
+3. **Honeypot path left the form in limbo.** The branch now releases the button and shows the office contacts.
+   Case 2.3.
+
+Still open, for the owners of the files named:
+
 4. **Low. Stale comment in `netlify.toml`** (lines 16 to 18): it lists `PIPEDRIVE_OWNER_CLIENTS`,
    `PIPEDRIVE_OWNER_PARTNERS`, `PIPEDRIVE_OWNER_INSTITUTIONS`, `PIPEDRIVE_PIPELINE_*` and `PIPEDRIVE_STAGE_*` as
    optional environment variables; nothing reads them. Owners, pipelines and stages live in `shared/lead-routing.json`
@@ -143,7 +149,25 @@ retries without, and the score stays in the title prefix and the note. Deals acc
 6. **Info.** `lead.js` answers `{ok, ref, kind}` without the record id, by design (the page shows the reference only).
    The harness takes the id from the mock's response in 5.1.
 
-## 6. What this run cannot prove
+## 6. Decisions needed before launch (page and media)
+
+1. **Home page hero.** Production shows the fallback `assets/img/hero-alt.webp`, a 1400 by 580 crop of
+   `events/easter-polo-cup-2026/05` that carries the Imperial Citizenship crest and wordmark (they show through the
+   headline of the Group site, and the file is upscaled 1.55 times at 1440 wide), because the photographs meant for the
+   hero have no recorded consent. No own, consent-free, people-free, sister-brand-free photograph exists in the
+   repository, so the choice is the Founder's: (a) keep this backdrop as the interim hero (already marked "Final hero
+   photo" with the amber chip), or (b) record `consent: true` on `events/lagos-office-event/cover` (the photos entry
+   `hero`) in `assets/js/data.js` so the intended hero shows in production. Not re-cropped here: the source is 1400
+   wide, so any larger export is pure upscaling. If the crest must go now regardless of softness, the only in-repo
+   option is a 1400 by 360 top strip of `05.webp` at source resolution for `hero-alt.webp` and an 800 by 1000
+   left-of-crest crop for `hero-alt-m.webp`, both under 200 KB. The comment above `hero` in `assets/js/data.js`
+   records the same choice; `docs/PHOTO-SHOT-LIST.md` describes the photograph the hero is waiting for.
+2. **Hero export sizes.** The same 1400 pixel file fills a 1920 by 1080 viewport at 1.9 times. When the final hero is
+   chosen, export it at 1920 and 2560 pixels wide for desktop and 1080 for mobile, with `srcset` and `sizes`, each
+   under 200 KB, and keep the preload lines on the 1920 and 1080 files. Nothing larger can be made from the 1400
+   pixel source without upscaling, so this waits for decision 1.
+
+## 7. What this run cannot prove
 
 * Real Pipedrive ids, field keys and option ids being accepted by the live account; the live run in `docs/LEADS.md`
   section 8 covers that and records the real lead and deal ids.
@@ -153,14 +177,15 @@ retries without, and the score stays in the title prefix and the note. Deals acc
   build contract requires; the harness accepts whatever the page posts.
 * Twilio and Resend delivery, Turnstile (off in this run), and the rate limit across function instances.
 
-## 7. Re-running
+## 8. Re-running
 
 ```
 npm run test:e2e              # build, serve on 8791, run everything
 npm run test:e2e -- --no-build --only 3.1
 E2E_PORT=8792 npm run test:e2e
+node tests/e2e-leads.js --port 8882   # the port this run used
 ```
 
 Outputs: `tests/e2e-output/results.json` (every case with its assertions, mocked calls, function log lines and page
-errors), `tests/e2e-output/mock-log.json` (all 176 mocked API calls of this run) and `tests/e2e-output/summary.md`.
+errors), `tests/e2e-output/mock-log.json` (all 222 mocked API calls of this run) and `tests/e2e-output/summary.md`.
 Exit code 1 while any case fails.
