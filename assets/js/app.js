@@ -340,7 +340,7 @@ V.about = function(){
 V.divisions = function(){
   return pageHero({img:'partners', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
-    return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-img="'+IMG+d.img+'-c.webp" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
+    return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
   '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('How we work')+mask(['Come for one thing.','Find a whole house.'],'h2','d2')+'</div><p class="lead" data-r>One shared team works across every division. You never have to explain your family twice.</p></div>'+steps(D.steps)+'</div></section>'+
   '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('The houses online')+mask(['Visit a house','directly.'],'h2','d2')+'</div><p class="lead" data-r>Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch.</p></div>'+
@@ -408,7 +408,7 @@ V.article = function(slug){
   var a=null; D.insights.forEach(function(x){if(x.slug===slug) a=x;}); if(!a) return null;
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
-  return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
+  return pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
   '<section class="sec light"><div class="wrap"><article class="article" id="article">'+(a.draft?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> Final copy to be approved before publication. Author and publication date: '+tbc('to confirm')+'</div></div>':'')+'<p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
@@ -926,11 +926,10 @@ function enhance(){
     hh: app.querySelector('.hh'), dusk: app.querySelector('.hh .dusk img'), night: app.querySelector('.hh .night'), nightImg: app.querySelector('.hh .night img'), hc: app.querySelector('.hh-c'),
     pxs: app.querySelectorAll('.ph .px, .closing .px, .nf .px'),
     story: app.querySelector('.story'), chapters: app.querySelectorAll('.chapter'), media: app.querySelectorAll('.story-media figure'), dots: app.querySelectorAll('.story-dots i'), num: document.getElementById('storyNum'), cur: 0,
-    words: app.querySelectorAll('#words>span'), wordsEl: document.getElementById('words'),
-    reading: document.getElementById('reading'), article: document.getElementById('article')
+    words: app.querySelectorAll('#words>span'), wordsEl: document.getElementById('words')
   };
   if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
-  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare(); bindMedia();
+  tick(); greet(); onScroll(); bindHouses(); bindMap(); bindRail(); bindFilters(); bindForms(); bindFinder(); bindFaq(); bindShare(); bindMedia();
   body.classList.toggle('on-contact', curView==='contact');
 }
 function count(el){
@@ -941,12 +940,11 @@ function count(el){
 }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
-/* scroll: progress, header, hero dusk-to-night, parallax, chapters, lit words, reading bar */
-var lastY = 0, ticking = false, sprog = document.getElementById('sprog'), totopRing = document.getElementById('totopRing'), ftr = document.getElementById('ftr');
+/* scroll: header, hero dusk-to-night, parallax, chapters, lit words */
+var lastY = 0, ticking = false, totopRing = document.getElementById('totopRing'), ftr = document.getElementById('ftr');
 function onScroll(){
   ticking = false;
   var y = window.pageYOffset || 0, H = window.innerHeight, docH = root.scrollHeight;
-  sprog.style.transform = 'scaleX('+clamp(y/Math.max(1,docH-H),0,1).toFixed(4)+')';
   body.classList.toggle('scrolled', y > 40);
   if(y > 520 && y > lastY + 4 && !body.classList.contains('mega-open')) body.classList.add('hdr-hide');
   else if(y < lastY - 4 || y < 520) body.classList.remove('hdr-hide');
@@ -983,10 +981,6 @@ function onScroll(){
     var wr = fx.wordsEl.getBoundingClientRect(), wp = clamp((H*0.85 - wr.top)/(H*0.6),0,1), wn = fx.words.length;
     [].forEach.call(fx.words, function(s,i){ s.style.setProperty('--o', (0.18 + 0.82*clamp(wp*wn - i,0,1)).toFixed(3)); });
   }
-  if(fx.reading && fx.article){
-    var ar = fx.article.getBoundingClientRect(), rp = clamp((H*0.3 - ar.top)/Math.max(1,ar.height - H*0.5),0,1);
-    fx.reading.style.transform = 'scaleX('+rp.toFixed(4)+')';
-  }
 }
 window.addEventListener('scroll', function(){ if(!ticking){ ticking=true; requestAnimationFrame(onScroll); } }, {passive:true});
 window.addEventListener('resize', function(){ if(!ticking){ ticking=true; requestAnimationFrame(onScroll); } });
@@ -1003,16 +997,6 @@ function tick(){
 }
 function greet(){ var g=document.getElementById('greet'); if(!g) return; var h=+fmtTime('Asia/Dubai').slice(0,2); g.textContent = h<5?'Good evening.':h<12?'Good morning.':h<18?'Good afternoon.':'Good evening.'; }
 setInterval(function(){ tick(); greet(); }, 20000);
-
-/* magnetic accents (fine pointers only) */
-function bindMagnetic(scope){
-  if(reduced || !finePointer) return;
-  [].forEach.call(scope.querySelectorAll('.mag'), function(el){
-    if(el._mag) return; el._mag = true;
-    el.addEventListener('pointermove', function(e){ var r=el.getBoundingClientRect(), dx=(e.clientX-(r.left+r.width/2))/r.width, dy=(e.clientY-(r.top+r.height/2))/r.height; el.style.transition='transform .25s cubic-bezier(.16,1,.3,1)'; el.style.transform='translate3d('+(dx*10).toFixed(1)+'px,'+(dy*8).toFixed(1)+'px,0)'; });
-    el.addEventListener('pointerleave', function(){ el.style.transition='transform .7s cubic-bezier(.16,1,.3,1)'; el.style.transform=''; });
-  });
-}
 
 /* division panels */
 function bindHouses(){
@@ -1055,18 +1039,6 @@ function bindMap(){
     select('dubai');
   });
 }
-
-/* divisions index: cursor-follow image preview */
-var cprev = document.getElementById('cprev'), cimg = cprev.querySelector('img'), mx=0, my=0, px=0, py=0, cRun=false;
-function cLoop(){ px += (mx-px)*0.14; py += (my-py)*0.14; cprev.style.transform = 'translate3d('+(px+24).toFixed(1)+'px,'+(py-190).toFixed(1)+'px,0) rotate('+((mx-px)*0.03).toFixed(2)+'deg)'; if(Math.abs(mx-px)>0.4 || Math.abs(my-py)>0.4) requestAnimationFrame(cLoop); else cRun=false; }
-function bindIndex(){
-  var ix = document.getElementById('dindex'); if(!ix || reduced || !finePointer) return;
-  [].forEach.call(ix.querySelectorAll('.drow'), function(r){
-    r.addEventListener('mouseenter', function(e){ cimg.src = r.getAttribute('data-img'); if(!cprev.classList.contains('on')){ px=mx=e.clientX; py=my=e.clientY; cLoop(); } cprev.classList.add('on'); });
-    r.addEventListener('mouseleave', function(){ cprev.classList.remove('on'); });
-  });
-}
-window.addEventListener('mousemove', function(e){ mx=e.clientX; my=e.clientY; if(cprev.classList.contains('on') && !cRun){ cRun=true; requestAnimationFrame(cLoop); } }, {passive:true});
 
 /* horizontal rail: drag to scroll with a mouse; touch uses native swipe */
 var rail = {el:null, down:false, sx:0, sl:0, moved:0};
@@ -1310,7 +1282,7 @@ function showSuccess(wrap, info, anchor){
 }
 function nextSteps(wrap, info){
   var el = wrap.querySelector('[data-next-steps]'); if(!el) return;
-  function booking(){ el.insertAdjacentHTML('beforeend', bookingHTML(info)); bindMagnetic(el); }
+  function booking(){ el.insertAdjacentHTML('beforeend', bookingHTML(info)); }
   if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
   verifyStep(el, info, booking);
 }
@@ -1382,7 +1354,7 @@ function bookingHTML(info){
   var B = D.config.booking || {};
   var rows = D.contact.offices.map(function(o){
     var b = B[o.city.toLowerCase()]; if(!b) return '';
-    return b.url ? '<a class="btn sm mag" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
+    return b.url ? '<a class="btn sm" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
   }).join('');
   return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Where the booking page allows it, your name and email are filled in for you.</p><div class="btns">'+rows+'</div></div>';
 }
@@ -1689,7 +1661,6 @@ function bindFinder(){
     out.innerHTML = finderResult(per, goals);
     out.classList.remove('pop'); if(!reduced){ void out.offsetWidth; out.classList.add('pop'); }
     var rs = out.querySelector('[data-fd-reset]'); if(rs) rs.addEventListener('click', function(){ per=null; goals=[]; draw(); pers[0].focus(); });
-    bindMagnetic(out);
   }
   pers.forEach(function(b,i){
     b.addEventListener('click', function(){ var k=b.getAttribute('data-per'); per = per===k ? null : k; draw(); });
@@ -1858,7 +1829,6 @@ document.getElementById('totop').addEventListener('click', function(){ window.sc
 
 /* ---------- boot ---------- */
 buildChrome();
-bindMagnetic(document);
 mqReduce.addEventListener && mqReduce.addEventListener('change', function(e){ reduced = e.matches; render(); });
 if(HIST) window.addEventListener('popstate', function(e){ route(e.state && typeof e.state.y==='number' ? e.state.y : 0); });
 else window.addEventListener('hashchange', function(){ route(); });

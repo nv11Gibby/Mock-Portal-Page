@@ -70,17 +70,12 @@ li{max-width:46em}
 .tlink{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:500;font-size:15px;color:var(--gold-l);background-image:linear-gradient(currentColor,currentColor);background-size:0 1px;background-position:0 calc(50% + 13px);background-repeat:no-repeat;transition:background-size var(--t3) var(--e-out)}
 .tlink:hover{background-size:calc(100% - 26px) 1px}
 .light .tlink{color:var(--gold-ink)}
-.mag{will-change:transform}
 
 /* ---------- reveals (v6, UX audit item 3) ----------
    None. Headlines and [data-r] blocks are visible from the first paint and after every route change; the route
    cross-fade is the only arrival motion. mask() keeps its markup (one block span per headline line), so the lines
    still break where the copy asks. The attributes data-r and --d stay in the templates and do nothing. */
 .mask,.mask>span{display:block}
-
-/* ---------- scroll progress ---------- */
-.sprog{position:fixed;inset:0 0 auto;height:2px;z-index:120;pointer-events:none}
-.sprog i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-d),var(--gold-l));transform-origin:0 50%;transform:scaleX(0)}
 
 /* ---------- header ---------- */
 .hdr{position:fixed;inset:0 0 auto;z-index:100;transition:transform var(--t3) var(--e-out)}
@@ -125,8 +120,7 @@ li{max-width:46em}
 .mega-prev{position:relative;min-height:300px;border-radius:2px;overflow:hidden;background:var(--ink-3)}
 .mega-prev figure{position:absolute;inset:0;margin:0;opacity:0;transition:opacity var(--t3) var(--e-out)}
 .mega-prev figure.on{opacity:1}
-.mega-prev img{width:100%;height:100%;object-fit:cover;transform:scale(1.08);transition:transform 1.6s var(--e-out)}
-.mega-prev figure.on img{transform:none}
+.mega-prev img{width:100%;height:100%;object-fit:cover}
 .mega-prev figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(10,9,8,.88))}
 .mega-prev figcaption{position:absolute;left:24px;right:24px;bottom:22px;z-index:2;font-size:14.5px;color:var(--soft)}
 .mega-prev figcaption b{display:block;font-family:var(--head);font-weight:400;font-size:22px;color:var(--text);margin-bottom:4px}
@@ -218,7 +212,7 @@ li{max-width:46em}
 .wordmark img,.closing .crown,.nf .crown{aspect-ratio:320/175}
 .badge{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border:1px solid var(--line-2);border-radius:40px;font-size:12px;letter-spacing:.06em;color:var(--soft);background:rgba(14,13,11,.35)}
 .badge.gold{border-color:rgba(196,165,116,.6);color:var(--gold-l)}
-.badge.soon::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2.4s var(--e-out) infinite}
+.badge.soon::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold)}
 .light .badge{border-color:var(--l-line-2);color:var(--l-body);background:transparent}
 
 /* ---------- intro + figures ---------- */
@@ -422,9 +416,9 @@ li{max-width:46em}
 .leader h3{font-family:var(--head);font-size:20px;margin-bottom:6px}
 .leader p{font-size:14.5px;margin:0}
 
-/* ---------- divisions index (cursor preview) ---------- */
+/* ---------- divisions index ---------- */
 .dindex{border-top:1px solid var(--line)}
-.drow{position:relative;display:grid;grid-template-columns:64px minmax(0,1.15fr) minmax(0,1.5fr) minmax(0,.8fr) 28px;align-items:center;gap:24px;padding:30px 0;border-bottom:1px solid var(--line);transition:opacity var(--t3)}
+.drow{position:relative;display:grid;grid-template-columns:64px minmax(0,1.15fr) minmax(0,1.5fr) minmax(0,.8fr) 28px;align-items:center;gap:24px;padding:30px 0;border-bottom:1px solid var(--line)}
 .drow .no{font-size:13px;color:var(--dim);letter-spacing:.1em}
 .drow .nm{font-family:var(--head);font-size:clamp(30px,3.8vw,58px);line-height:1;letter-spacing:-.035em;transition:transform var(--t4) var(--e-out),color var(--t3)}
 .drow .ln{color:var(--soft);font-size:15.5px;max-width:30em}
@@ -432,13 +426,6 @@ li{max-width:46em}
 .drow .ar{color:var(--gold-l)}
 .drow:hover .nm,.drow:focus-visible .nm{transform:translateX(16px);color:var(--gold-l)}
 .drow:hover .ar,.drow:focus-visible .ar{transform:translateX(6px)}
-.dindex:hover .drow:not(:hover){opacity:.42}
-.cprev{position:fixed;left:0;top:0;z-index:80;width:300px;height:380px;pointer-events:none;visibility:hidden}
-.cprev-in{width:100%;height:100%;overflow:hidden;border-radius:2px;clip-path:inset(50% 50% 50% 50%);transition:clip-path var(--t4) var(--e-out)}
-.cprev.on{visibility:visible}
-.cprev.on .cprev-in{clip-path:inset(0)}
-.cprev img{width:100%;height:100%;object-fit:cover;transform:scale(1.25);transition:transform 1.4s var(--e-out)}
-.cprev.on img{transform:none}
 .sites{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px;background:var(--l-line);border:1px solid var(--l-line)}
 .site{display:flex;flex-direction:column;gap:10px;min-height:170px;padding:26px 24px;background:var(--paper);transition:background var(--t3)}
 .site:hover{background:#fff}
@@ -492,8 +479,7 @@ li{max-width:46em}
 .rail.drag{cursor:grabbing;scroll-snap-type:none}
 .rail>a{scroll-snap-align:start;display:block}
 .rail-img{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:2px;margin-bottom:16px;background:var(--ink-3)}
-.rail-img img{width:100%;height:100%;object-fit:cover;transition:transform 1.4s var(--e-out);pointer-events:none}
-.rail>a:hover .rail-img img{transform:scale(1.05)}
+.rail-img img{width:100%;height:100%;object-fit:cover;pointer-events:none}
 .rail-img .badge{position:absolute;left:14px;top:14px}
 .rail b{display:block;font-family:var(--head);font-weight:500;font-size:19px;margin-bottom:6px}
 .rail span{font-size:14px;color:var(--dim);display:block}
@@ -582,8 +568,6 @@ li{max-width:46em}
 .nf .crown{width:56px;margin-bottom:30px}
 .nf-links{display:flex;flex-wrap:wrap;align-items:center;gap:14px 28px;margin-top:34px}
 .nf::after{content:"404";z-index:1;position:absolute;right:-2vw;bottom:-6vw;font-family:var(--head);font-size:42vw;line-height:.8;letter-spacing:-.08em;color:transparent;-webkit-text-stroke:1px rgba(196,165,116,.2);pointer-events:none;user-select:none}
-.reading{position:fixed;left:0;right:0;top:var(--hdrH);height:2px;z-index:95;pointer-events:none;background:transparent}
-.reading i{display:block;height:100%;background:var(--gold-ink);transform-origin:left;transform:scaleX(0)}
 
 /* ---------- toast ---------- */
 .toast{position:fixed;left:50%;bottom:24px;z-index:200;max-width:min(92vw,520px);padding:14px 20px;background:var(--paper);color:var(--ink);border-radius:2px;font-size:14.5px;box-shadow:0 18px 50px rgba(0,0,0,.4);transform:translate(-50%,140%);opacity:0;transition:transform var(--t4) var(--e-out),opacity var(--t3);pointer-events:none}
@@ -713,7 +697,6 @@ li{max-width:46em}
   .ring li a{width:84px}
   .wmap-tabs button{flex-basis:50%}
 }
-@media (hover:none){ .cprev{display:none} .dindex:hover .drow:not(:hover){opacity:1} }
 
 /* ---------- reduced motion: everything still, nothing pinned ---------- */
 @media (prefers-reduced-motion:reduce){
@@ -762,13 +745,10 @@ li{max-width:46em}
 @media (max-width:640px){ .form-card{padding:22px 18px} .routing-card{padding:16px} }
 
 /* ==============================================================
-   v3 additions: grain, search, finder, FAQ, comparison,
+   v3 additions: search, finder, FAQ, comparison,
    sharing, forms, back-to-top and the mobile action bar
    ===================================================================== */
 kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 6px;border:1px solid var(--line-2);border-radius:4px;color:var(--dim);background:rgba(241,236,227,.04);line-height:1.4}
-
-/* film grain: one fixed layer, no repaint on scroll */
-.grain{position:fixed;inset:0;z-index:150;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
 /* header search */
 .srch-btn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 6px 0 14px;margin-left:6px;color:var(--soft);border-left:1px solid var(--line);transition:color var(--t2)}
@@ -980,7 +960,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .pal-body [role=option] img,.pal-ic{width:40px;height:40px}
 }
 @media print{
-  .hdr,.ftr,.grain,.totop,.mcta,.sprog,.closing,.pal,.share,.pn{display:none!important}
+  .hdr,.ftr,.totop,.mcta,.closing,.pal,.share,.pn{display:none!important}
   body,.light{background:#fff;color:#000}
 }
 
