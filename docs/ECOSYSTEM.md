@@ -99,6 +99,15 @@ logos in `assets/logos/` and the Netlify functions. What it must set:
 The programme fit check, the guide form and the citizenship copy on IHG (`fit`, `guideCopy` and the citizenship
 division entry in `data.js`) are written to be lifted as they are.
 
+The Start a relationship journey (v6, docs/RELATIONSHIP-JOURNEY.md) is part of the shared base. It is data
+(`journeys` in `data.js`: the chooser, the three paths, the closing screen, the states) rendered and bound by
+`V.contact`, `jScreens` and `bindJourney` in `app.js`, and it posts the one `contact` form of
+`shared/lead-schema.json`, so the core, the score and the routing need nothing new. A sister site reuses `journeys`
+and sets its default path and division: a link to `/contact?about=<its division>` opens the right path with the
+first screen answered (or `?journey=clients|partners|institutions` for a path alone), and it may drop the paths that
+do not apply to it from `journeys.chooser.paths`. IHG routes and hands over; the deeper journeys stay on the division
+sites. `org_type` is the one field the journey added to the schema.
+
 ## 6. Keeping the copies in sync
 
 * `shared/chrome/chrome.css` against `assets/css/site.css`: run the command in the CSS file header; it prints

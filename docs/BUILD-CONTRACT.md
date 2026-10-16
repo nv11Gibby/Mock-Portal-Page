@@ -90,23 +90,27 @@ form error announcements, contrast, alt text audit, unused assets, console error
 An empty string switches the feature off and the page shows the `tbc` text where the feature would appear.
 
 ### 4.2 Forms and fields
-Form names: `enquiry` (home and division enquiry card, also used by the programme fit check), `contact` (three steps),
-`interest` (Real Estate register interest), `guide` (name, email, consent for the citizenship guide).
+Form names: `enquiry` (the v5 home and division enquiry card; retired from the pages in v6, kept in the schema and the
+hidden forms), `contact` (since v6 the Start a relationship journey at /contact: a chooser, three paths and one closing
+screen, docs/RELATIONSHIP-JOURNEY.md; the programme fit check hands over to it), `interest` (Real Estate register
+interest), `guide` (name, email, consent for the citizenship guide).
 
 Existing fields stay exactly as they are. New fields (names are final; `shared/lead-schema.json` is the authority and
 must list them with the same names and allowed values):
 
 | field | allowed values | where |
 |---|---|---|
-| `nationality` | free text, one or more | contact step 2, enquiry |
-| `for_whom` | `myself`, `family`, `client` | contact step 2, enquiry |
-| `timeline` | `3m`, `3-12m`, `exploring` | contact step 3, enquiry |
-| `budget` | `under-250k`, `250k-500k`, `500k-1m`, `over-1m`, `undisclosed` (optional, USD bands, worded gently) | contact step 3, enquiry |
-| `firm`, `profession` | free text | shown when the choice is Partners Club or the audience is partners |
+| `nationality` | free text, one or more; optional on contact (v6) | contact: Private Clients path, citizenship and Private Office only; enquiry |
+| `for_whom` | `myself`, `family`, `client` | contact: Private Clients path; set to `client` by the Partners "Introduce a client" option; enquiry |
+| `timeline` | `3m`, `3-12m`, `exploring` | contact: every path; enquiry |
+| `budget` | `under-250k`, `250k-500k`, `500k-1m`, `over-1m`, `undisclosed` (optional, USD bands, worded gently) | contact: Private Clients path, citizenship and Real Estate only; enquiry |
+| `firm`, `profession` | free text | contact: Professional Partners (firm, profession) and Institutions (organisation, role) paths |
+| `org_type` | `government`, `mission`, `financial`, `professional`, `property`, `media`, `other` | contact: Institutions path, required (v6, the one new field) |
+| `msg` | free text | optional on contact since v6 (the structured answers carry the first conversation) |
 | `re_intent` | `buy`, `rent` | shown when the choice is Real Estate |
 | `re_area` | free text | shown when the choice is Real Estate |
 | `lead_source` | `website`, `programme-fit`, `guide` | hidden |
-| `quiz_answers` | JSON string of the five answers | hidden, programme fit only |
+| `quiz_answers` | JSON string of the five answers | hidden, programme fit only (on contact when the fit check handed over) |
 | `site` | `ihg` | hidden, from `config.site` |
 | `cf-turnstile-response` | token | hidden, only when Turnstile is on |
 
@@ -124,7 +128,9 @@ Budget labels: "Under US$250,000", "US$250,000 to 500,000", "US$500,000 to 1 mil
    division passed as query parameters: `name`, `email`, `a1` for Calendly style links; the same parameters are
    appended to any other URL), then "Read while you wait".
 5. Analytics: call `ihgTrack(name, params)` when `window.ihgTrack` exists. Names: `enquiry_submitted`,
-   `phone_verified`, `booking_click`, `whatsapp_click`, `guide_download`, `quiz_completed`.
+   `phone_verified`, `booking_click`, `whatsapp_click`, `guide_download`, `quiz_completed`; since v6 also
+   `journey_started {journey, via}`, `journey_step {journey, step}` and `journey_switched {from, to}`, and
+   `enquiry_submitted` carries `journey` and `via` on the contact form.
 
 ### 4.4 Phone verification (`netlify/functions/verify.js`)
 POST JSON. `{action:'start', phone, email, channel:'whatsapp'|'sms'}` answers `{ok, enabled, ref}`; when Twilio is

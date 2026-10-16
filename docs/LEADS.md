@@ -1,7 +1,8 @@
 # Leads: from the website to Pipedrive
 
-Every enquiry on the site (the enquiry card, the three step contact form, the Real Estate register interest form and
-the citizenship guide form) ends up in Pipedrive as a lead or a deal, with an owner, a pipeline and stage, a score,
+Every enquiry on the site (the Start a relationship journey at /contact, which posts the `contact` form; the Real
+Estate register interest form; the citizenship guide form; and the `enquiry` form, retired from the pages in v6 but
+kept in the schema and the hidden forms for the sister sites) ends up in Pipedrive as a lead or a deal, with an owner, a pipeline and stage, a score,
 a note that carries every field and every tracking value, and a confirmation email to the person. This document
 replaces the earlier PIPEDRIVE-SETUP.md and covers the whole backend: what the core does, the config files, every
 environment variable, the offline tests, and the exact steps of the real end-to-end test.
@@ -19,6 +20,7 @@ environment variable, the offline tests, and the exact steps of the real end-to-
       for an open lead or deal of the same division; otherwise create a lead or a deal per
       `shared/lead-routing.json`; write the note; add an activity for a returning person.
    4. Confirmation email when the lead is stored and the email env is set.
+   5. A copy of the stored record to Imperial OS, only when `IMPERIAL_OS_WEBHOOK_URL` is set (section 11; off today).
 4. After the success state the page may call `/.netlify/functions/verify` (`netlify/functions/verify.js`) to send a
    one-time code by WhatsApp or SMS and check it. A good code marks the person Verified in Pipedrive.
 
@@ -42,6 +44,7 @@ Files:
 | `netlify/functions/lib/turnstile.js` | Cloudflare Turnstile siteverify |
 | `netlify/functions/lib/twilio.js` | Twilio Verify REST calls |
 | `netlify/functions/lib/email.js` | Confirmation email through the Resend HTTPS API |
+| `netlify/functions/lib/imperial-os.js` | The Imperial OS handoff (section 11), off until its URL is set |
 | `netlify/functions/lib/http.js` | JSON answers, body parsing, client IP, same-origin check |
 | `shared/lead-schema.json` | The one lead schema every Imperial site posts |
 | `shared/lead-routing.json` | Owner, kind, pipeline, stage, field keys and option ids per division |
@@ -120,6 +123,8 @@ Well known throwaway email providers. Checked case-insensitively, including subd
 | Firm | Organisation, found by name or created, linked to the person and the deal |
 | Nationality, country of residence | Person fields when the text matches an option label (case-insensitive); otherwise the text stays in the note |
 | Phone | Person phone, in E.164 when a country code was given; Verification Status Not Verified (983) at creation, Verified (982) after a successful code |
+| Path and entry point (contact form, v6) | Note line `Journey: <Private Clients, Professional Partners or Institutions and Strategic Relationships> · Entry: <via>`; the path is the `audience`, the entry point is `via` in the query string of `page` ("not given" when absent) |
+| Organisation, organisation type and role (Institutions path) | Note line `Organisation: <firm> · Type: <org_type label> · Role: <profession>` in place of the Firm line; Service Requested `Organisation: <firm>, <type>` and `Exploring: <interests>`. The `org_type` words live in `shared/lead-routing.json` `labels.orgType`; no Pipedrive custom field is created |
 | Everything else, every tracking field, the message, the score reasons, the Netlify submission id or the direct reference | The note on the person and the lead or deal |
 
 Lead labels: the Leads inbox has its own label set with UUID ids, separate from the deal labels (787, 788, 827), which
@@ -146,6 +151,11 @@ open lead or deal of the same division (Division field or division name in the t
 on it; otherwise a new lead or deal is created. Either way a returning person gets an activity "Website enquiry
 follow up" (type `call___scheduled`, the account's scheduled call type; it has no plain `call` type), due today,
 assigned to the division owner.
+
+Optional, off: when `pipedrive.activity.onNew` is `true` in `shared/lead-routing.json`, a new person's record gets
+one activity too, "Reply to <first name>: first conversation" (`onNewSubject`), same type, due the next working day
+(Monday to Friday), assigned to the owner, so every record carries its own deadline (docs/RELATIONSHIP-JOURNEY.md
+5.5). TO CONFIRM with Kaylan Tarin before it is switched on: it changes what the team sees every morning.
 
 ## 4. Spam and verification
 
@@ -202,7 +212,9 @@ by the division key) and the greeting: "Dear <first name>," when the first word 
 with apostrophes or hyphens inside, up to 40 characters), otherwise "Hello,". A name such as a URL or a token with
 digits never reaches the mail, so the named mailbox cannot be used to relay text a sender chose.
 
-Three variants: an enquiry (the default), a guide request (form `guide`, title suffix "(guide)": "Thank you for
+Three variants: an enquiry (the default: "Thank you for your message. It has been received by Imperial Holdings
+Group and is with <division>; one person will be your point of contact." The e-mail goes only after the record is
+stored, so "with" is true there, unlike the page after a Netlify Forms acceptance), a guide request (form `guide`, title suffix "(guide)": "Thank you for
 requesting the guide. It is being finalised; one person ... will let you know when it is ready"; the function
 attaches nothing and promises no file, the division owner sends the approved PDF by reply, and once
 `config.guide.file` is set in data.js its URL belongs in this variant),
@@ -223,6 +235,7 @@ TO CONFIRM: the sending mailbox and its verified domain in Resend (Gilbert).
 | `VERIFY_RETRY_DELAY_MS` | Phone verification | Pause between the person lookups after a good code (section 4). Default 1500; the offline tests set 0. |
 | `LEAD_ALLOWED_ORIGINS` | Other Imperial sites | Comma separated origins allowed to call `lead` and `verify` besides the site's own origin. |
 | `LEAD_SITE` | Site key | Default `ihg`; the hidden `site` field overrides it per submission. |
+| `IMPERIAL_OS_WEBHOOK_URL`, `IMPERIAL_OS_WEBHOOK_SECRET` | The Imperial OS handoff (section 11) | Off while the URL is empty: nothing leaves the function. With the URL and no secret nothing is sent either (an unsigned post is never made). TO CONFIRM: both, with the owner of imperial-ai-control-centre. |
 
 Never put any of these in the repository or in `netlify.toml`.
 
@@ -244,7 +257,12 @@ fetched, prototype keys, `markVerified` (retries, phone first, mismatch), the di
 bodies, references), the Netlify event, the score table (including a search engine referrer), phone normalisation
 (`validate.test.js`), and the verify function (start without env, start with env, the per address and per phone
 limits, the shared bucket without an address, the email or reference requirement, Turnstile on start, provider
-errors kept out of the answer, right code, wrong code, a right code nobody holds).
+errors kept out of the answer, right code, wrong code, a right code nobody holds). Since v6 also: the Journey and
+Entry line (contact form only), the Institutions note and Service Requested, `org_type` through the field whitelist,
+the optional new-record activity (off, then on), the confirmation wording, and `imperial-os.test.js` (nothing sent
+without the env or without the secret, a record that was not stored is never sent, the record contract, the
+idempotency key and the HMAC signature, a 5xx or a network error retried once, a 4xx not retried, a failure or a
+throwing transport never changes the result, and the verification event from `markVerified`).
 
 Nothing in the tests or the code calls a live service without its env; the tests clear the env they do not want.
 
@@ -308,8 +326,49 @@ copies `netlify/functions/` and `shared/` and sets the same environment variable
 
 ## 10. TO CONFIRM
 
+* Whether `pipedrive.activity.onNew` is switched on, and its subject and due rule (Kaylan Tarin).
+* The Imperial OS receiving endpoint and secret, and the questions in section 11.
+
 * Owner user ids per division in `shared/lead-routing.json` (needs the Pipedrive user list).
 * Whether Academy enquiries belong in the Introducer Pipeline or elsewhere.
 * The sending mailbox for the confirmation email and its domain in Resend.
 * Twilio Verify service and the preferred channel (WhatsApp, SMS or both).
 * Cloudflare Turnstile keys.
+
+## 11. The Imperial OS handoff (off by default)
+
+Design: docs/RELATIONSHIP-JOURNEY.md 5.6. Pipedrive stays the system of record. `netlify/functions/lib/imperial-os.js`
+posts a copy of each stored submission, and of each good verification code, to Imperial OS, the Group's internal
+platform (the `imperial-ai-control-centre` repository), once `IMPERIAL_OS_WEBHOOK_URL` and
+`IMPERIAL_OS_WEBHOOK_SECRET` are set in the Netlify UI. Until then `notify()` answers `{sent:false, skipped:'no env'}`
+and nothing leaves the function.
+
+* **When.** At the end of `processLead()` when the submission is stored (in Pipedrive, or held as a Netlify Forms
+  submission), event `relationship.received`; and from `markVerified()` after a good code, event
+  `relationship.verified`. Rejected submissions (honeypot, disposable, rate, Turnstile) are never sent.
+* **Record** `imperial.relationship.v1`: `schema`, `key`, `event`, `site`, `form`, `journey` (the audience), `entry`
+  (`via`), `division`, `lead_source`, `status` (`synced` when Pipedrive took it, `received` when only Netlify holds
+  it), `score` (band, points, reasons), `person` (name, email, phone in E.164, country, nationality, reply_by),
+  `organisation` (name, type, role), `answers` (for_whom, timeline, budget, re_intent, re_area, interests as a list,
+  message), `consent` (given, wording `v6`, notice_version empty until counsel approves one, at, page), `attribution`
+  (the twelve tracking fields), `pipedrive` (person_id, org_id, kind, id, reused, owner_id), `verification`,
+  `timestamps` (received_at from Netlify `created_at` or the function time, processed_at, sent_at, all UTC ISO 8601),
+  `ref` and `submission_id`. The verification event carries `key`, `person` (email, phone), `pipedrive` and
+  `verification` (status, channel, at).
+* **Idempotency.** `key` is `site:form:ref` (the Netlify reference `N...` or the direct `W...`), sent again as the
+  `Idempotency-Key` header, so a retry upserts. `markVerified` has no submission reference, so the verification key
+  is `site:<kind>:<record id>:verified`.
+* **Transport.** `POST` with `Content-Type: application/json`, `Idempotency-Key`, `X-Imperial-Event` and
+  `X-Imperial-Signature: sha256=<HMAC-SHA256 of the raw body with the secret>`. Five seconds per attempt; one retry
+  after two seconds on a network error, a timeout or a 5xx; never on a 4xx. 200 or 202 is success. Anything else is
+  logged as `imperial-os notify failed reason=... key=...`, the function log line gains `os=<reason>`, and the result
+  the page sees is unchanged.
+* **Timing caveat.** When the receiver is slow, the copy can add up to about twelve seconds to the direct endpoint's
+  answer (two five-second attempts and the pause). The page abandons a post after 15 seconds and tries the next route,
+  so a receiver that is down should answer quickly (a 4xx or 5xx) rather than hang. TO CONFIRM with the receiving
+  team; the Netlify Forms path is not affected (the page has its answer before the function runs).
+* **Privacy.** The record carries personal data: Imperial OS joins the providers and the deletion process in
+  docs/PRIVACY-NOTES.md.
+* **TO CONFIRM** with the owner of imperial-ai-control-centre and counsel: the endpoint and the secret, which system
+  is the master for each field, the status flow on the Imperial OS side (acknowledged, in conversation, booked,
+  declined, client; the website never writes those), where the record is stored and for how long.
