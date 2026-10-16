@@ -1087,7 +1087,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0941 | header | nav aria-label | Main | keep |  |  |
 | C0942 | header / menu / footer | a | About | keep |  |  |
 | C0943 | header | button.mega-btn | Our ecosystem | keep |  |  |
-| C0944 | header / menu / footer | a | Our Network | edit | Our network | Title case breaks with Our ecosystem beside it; sentence case, still two words |
+| C0944 | header / menu / footer | a | Our Network | edit | Our network | Title case breaks with Our ecosystem beside it; sentence case, still two words. Since UX audit item 8 (v6/ux) only the footer carries it; the header and phone menu do not |
 | C0945 | header / menu / hero | a | Journal | keep |  |  |
 | C0946 | header / menu / footer | a | Contact | keep |  |  |
 | C0947 | header | button aria-label | Search the site, Ctrl K | keep |  |  |

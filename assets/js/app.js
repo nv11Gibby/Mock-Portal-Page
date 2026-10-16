@@ -751,9 +751,8 @@ function buildChrome(){
     '<li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>'+
       '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
       D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'"><span class="all mm-no" aria-hidden="true">'+divNo(d)+'</span><span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
-    '<li style="--i:3"><a href="#/" data-goto="network"><span>Our Network</span><span class="ix">04</span></a></li>'+
-    '<li style="--i:4"><a href="#/journal"><span>Journal</span><span class="ix">05</span></a></li>'+
-    '<li style="--i:5"><a href="#/contact"><span>Contact</span><span class="ix">06</span></a></li></ul>'+
+    '<li style="--i:3"><a href="#/journal"><span>Journal</span><span class="ix">04</span></a></li>'+
+    '<li style="--i:4"><a href="#/contact"><span>Contact</span><span class="ix">05</span></a></li></ul>'+
     '<div class="mm-foot"><a class="btn gold" href="#/contact?via=menu"><span>Start a relationship</span>'+AR+'</a><div class="mm-meta"><span>DUBAI \u00b7 LAGOS \u00b7 WORLDWIDE</span><span class="clock" data-tz="Asia/Dubai">--:--</span></div><p class="mm-hint">Swipe up or press Esc to close</p></div>';
   var credits = D.photos.filter(function(p){return !p.own;}).map(function(p){return '<li><a href="https://unsplash.com/photos/'+p.id+'" target="_blank" rel="noopener">'+esc(p.what)+'</a> by '+esc(p.by)+'</li>';}).join('');
   document.getElementById('ftr').innerHTML = '<div class="wrap"><div class="ftr-top">'+
