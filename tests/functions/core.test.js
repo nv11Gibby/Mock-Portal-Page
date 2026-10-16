@@ -456,3 +456,84 @@ test('markVerified only marks the person who holds the verified number', async (
   assert.equal(l.ok, true, JSON.stringify(l));
   assert.equal(l.personId, late.id);
 });
+
+/* v6: the Start a relationship journey (docs/RELATIONSHIP-JOURNEY.md 6.5) */
+test('journey line: the path name and the entry point from the page query string, on the contact form only', async () => {
+  assert.equal(core.journeyName('clients'), 'Private Clients');
+  assert.equal(core.journeyName('partners'), 'Professional Partners');
+  assert.equal(core.journeyName('institutions'), 'Institutions and Strategic Relationships');
+  assert.equal(core.journeyName('nobody'), '');
+  const r = await core.processLead({ form: 'contact', data: data({ about: 'citizenship', audience: 'clients', timeline: '3m', page: 'https://www.imperialholdingsgroup.com/contact?about=citizenship&via=division-hero' }), ctx: ctx() });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.ok(m.notes[0].content.indexOf('Journey: Private Clients · Entry: division-hero') > -1, m.notes[0].content);
+  /* no via in the page: the entry reads not given */
+  await core.processLead({ form: 'contact', data: data({ email: 'b@example.com', about: 'academy', audience: 'partners', firm: 'Firm', profession: 'Adviser' }), ctx: ctx() });
+  assert.ok(m.notes[1].content.indexOf('Journey: Professional Partners · Entry: not given') > -1);
+  /* the enquiry form has no journey line */
+  await core.processLead({ form: 'enquiry', data: data({ email: 'c@example.com', division: 'citizenship', audience: 'clients' }), ctx: ctx() });
+  assert.equal(m.notes[2].content.indexOf('Journey:'), -1);
+});
+
+test('institutions: organisation, type and role in the note and the service requested; org_type passes pick only with a known value', async () => {
+  const r = await core.processLead({ form: 'contact', data: data({ about: 'group', audience: 'institutions', firm: 'Example Embassy', org_type: 'mission', profession: 'Counsellor', interests: 'Investment, Diplomatic relations', timeline: '3m' }), ctx: ctx() });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.kind, 'deal');
+  assert.equal(r.audience, 'institutions');
+  const deal = m.find('POST', /\/deals$/).pop().body;
+  assert.equal(deal.pipeline_id, 26);
+  assert.ok(deal.org_id, 'the organisation is created and linked');
+  assert.equal(m.orgs[0].name, 'Example Embassy');
+  const label = routing.labels.orgType.mission;
+  assert.ok(deal[F.deal.serviceRequested].indexOf('Organisation: Example Embassy, ' + label) > -1, deal[F.deal.serviceRequested]);
+  assert.ok(deal[F.deal.serviceRequested].indexOf('Exploring: Investment, Diplomatic relations') > -1);
+  assert.equal(deal[F.deal.serviceRequested].indexOf('Partner:'), -1);
+  const note = m.notes[0].content;
+  assert.ok(note.indexOf('Organisation: Example Embassy · Type: ' + label + ' · Role: Counsellor') > -1, note);
+  assert.equal(note.indexOf('Firm: '), -1);
+  assert.ok(note.indexOf('Interests: Investment, Diplomatic relations') > -1);
+  assert.ok(note.indexOf('Journey: Institutions and Strategic Relationships') > -1);
+  /* an unknown org_type is dropped by pick, so the note says not given */
+  await core.processLead({ form: 'contact', data: data({ email: 'd@example.com', about: 'group', audience: 'institutions', firm: 'Other Org', org_type: 'spy-agency' }), ctx: ctx() });
+  assert.ok(m.notes[1].content.indexOf('Organisation: Other Org · Type: not given · Role: not given') > -1, m.notes[1].content);
+  /* partners keep the Firm line and the Partner service text */
+  await core.processLead({ form: 'contact', data: data({ email: 'e@example.com', about: 'partners-club', audience: 'partners', firm: 'Law LLP', profession: 'Lawyer', org_type: 'mission' }), ctx: ctx() });
+  assert.ok(m.notes[2].content.indexOf('Firm: Law LLP · Profession: Lawyer') > -1);
+  assert.ok(m.find('POST', /\/deals$/).pop().body[F.deal.serviceRequested].indexOf('Partner: Lawyer, Law LLP') > -1);
+});
+
+test('optional activity on a new record: off by default; on, one reply activity due the next working day with the owner', async () => {
+  assert.equal(routing.pipedrive.activity.onNew, false, 'off in the routing file');
+  await core.processLead({ form: 'contact', data: data({ about: 'citizenship', audience: 'clients' }), ctx: ctx() });
+  assert.equal(m.activities.length, 0);
+  const savedOn = routing.pipedrive.activity.onNew, savedOwner = routing.divisions['private-office'].owner;
+  routing.pipedrive.activity.onNew = true;
+  routing.divisions['private-office'].owner = 77;
+  try {
+    /* the mock clock is a Thursday; a Friday submission is due on Monday */
+    const friday = Date.UTC(2026, 9, 16, 15, 0, 0);
+    const r = await core.processLead({ form: 'contact', data: data({ email: 'new@example.com', phone: '+971 50 000 0042', name: 'Layla Example', about: 'private-office', audience: 'clients' }), ctx: ctx(), now: friday });
+    assert.equal(r.ok, true);
+    assert.equal(r.activity, true);
+    assert.equal(m.activities.length, 1);
+    const a = m.activities[0];
+    assert.equal(a.subject, 'Reply to Layla: first conversation');
+    assert.equal(a.type, routing.pipedrive.activity.type);
+    assert.equal(a.due_date, '2026-10-19');
+    assert.equal(a.user_id, 77);
+    assert.equal(a.lead_id, r.id);
+    /* a returning person still gets the returning activity only */
+    await core.processLead({ form: 'contact', data: data({ email: 'new@example.com', phone: '+971 50 000 0042', name: 'Layla Example', about: 'private-office', audience: 'clients' }), ctx: ctx(), now: friday });
+    assert.equal(m.activities.length, 2);
+    assert.equal(m.activities[1].subject, routing.pipedrive.activity.subject);
+  } finally { routing.pipedrive.activity.onNew = savedOn; routing.divisions['private-office'].owner = savedOwner; }
+  assert.equal(core.nextWorkingDay(Date.UTC(2026, 9, 14, 23, 0, 0)), '2026-10-15');
+  assert.equal(core.nextWorkingDay(Date.UTC(2026, 9, 17, 9, 0, 0)), '2026-10-19', 'Saturday to Monday');
+});
+
+test('confirmation email wording: received by Imperial Holdings Group and with the division (sent only after the record is stored)', async () => {
+  process.env.EMAIL_API_KEY = 're_test';
+  process.env.EMAIL_FROM = 'Imperial Holdings Group <enquiries@example.com>';
+  await core.processLead({ form: 'contact', data: data({ about: 'private-office', audience: 'clients' }), ctx: ctx() });
+  const t = m.emails[0].text;
+  assert.ok(t.indexOf('It has been received by Imperial Holdings Group and is with Imperial Private Office; one person will be your point of contact.') > -1, t);
+});

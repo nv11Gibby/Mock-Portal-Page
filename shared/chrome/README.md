@@ -45,7 +45,7 @@ the cross-link rules, the switches, what is still TO CONFIRM) is in `docs/ECOSYS
    |---|---|
    | `{{SITE_NAME}}` | The site's name, for example `Imperial Citizenship` |
    | `{{HOME_URL}}` | The site's home, usually `/` |
-   | `{{CONTACT_URL}}` | The site's contact page, for the Enquire now buttons |
+   | `{{CONTACT_URL}}` | The site's contact page, for the Start a relationship buttons (the templates append `?via=header`, `?via=menu` and `?via=footer`, which the page field carries into the Pipedrive note) |
    | `{{IHG_URL}}` | `https://www.imperialholdingsgroup.com` (TO CONFIRM: final domain), no trailing slash |
    | `{{IMG_DIR}}` | The folder with the five division photographs the ecosystem menu shows, for example `assets/img` (step 4) |
    | `{{LOGO_HORIZONTAL}}`, `{{LOGO_STACKED}}`, `{{LOGO_CROWN}}` | Files under `assets/logos/`, named per site in `shared/ecosystem.json`. Where `stacked` is `null` there (Partners Club, Private Office, Real Estate, Academy today), put the horizontal file in `{{LOGO_STACKED}}` too: the footer brand image is sized by height (`.ftr-brand img`), so the horizontal wordmark fits; `logoTbc` says what is still to come |

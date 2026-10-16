@@ -16,5 +16,6 @@
 # Environment variables live in Site configuration > Environment variables, never in this file. The list is in
 # docs/LEADS.md section 6: PIPEDRIVE_API_TOKEN, TURNSTILE_SECRET_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
 # TWILIO_VERIFY_SERVICE_SID, EMAIL_API_KEY, EMAIL_FROM, EMAIL_REPLY_TO, LEAD_RATE_LIMIT, LEAD_RATE_WINDOW_MINUTES,
-# LEAD_ALLOWED_ORIGINS, LEAD_SITE, VERIFY_RETRY_DELAY_MS. Owners, pipelines and stages are not environment variables:
+# LEAD_ALLOWED_ORIGINS, LEAD_SITE, VERIFY_RETRY_DELAY_MS, and for the Imperial OS handoff (off while the URL is empty,
+# docs/LEADS.md section 11) IMPERIAL_OS_WEBHOOK_URL and IMPERIAL_OS_WEBHOOK_SECRET. Owners, pipelines and stages are not environment variables:
 # they live in shared/lead-routing.json (docs/LEADS.md section 2).

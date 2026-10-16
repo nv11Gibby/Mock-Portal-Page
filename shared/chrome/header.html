@@ -7,7 +7,7 @@
      Placeholders:
        {{SITE_NAME}}         the site's name, for the logo alt text and the aria-label
        {{HOME_URL}}          the site's own home, usually /
-       {{CONTACT_URL}}       the site's own contact page (the Enquire now buttons)
+       {{CONTACT_URL}}       the site's own contact page (the Start a relationship buttons append ?via=header and ?via=menu)
        {{IHG_URL}}           the Group site, https://www.imperialholdingsgroup.com (TO CONFIRM: final domain)
        {{LOGO_HORIZONTAL}}   the site's horizontal gold wordmark, for example assets/logos/IPC-Horizontal-Gold.svg
        {{LOGO_CROWN}}        assets/logos/Imperial-Crown-Gold.svg
@@ -31,7 +31,7 @@
       <a href="{{IHG_URL}}/journal" data-nav="journal" {{ACTIVE:journal}}>Journal</a>
       <a href="{{CONTACT_URL}}" data-nav="contact" {{ACTIVE:contact}}>Contact</a>
     </nav>
-    <a class="btn line sm hdr-cta mag" href="{{CONTACT_URL}}"><span>Enquire now</span></a>
+    <a class="btn line sm hdr-cta mag" href="{{CONTACT_URL}}?via=header"><span>Start a relationship</span></a>
     <button class="wa-btn" id="waBtn" type="button" aria-label="WhatsApp us" aria-expanded="false" aria-controls="waPop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a7.4 7.4 0 0 0-6.4 11.1L2.6 17.4l3.8-1A7.4 7.4 0 1 0 10 2.6z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.4 7.1c.2-.4.4-.5.7-.5h.5l.6 1.5-.5.7c.4.9 1.1 1.6 2 2l.7-.5 1.5.7v.4c0 .4-.2.8-.7 1-1 .3-2.4-.2-3.7-1.5S7 8.2 7.4 7.1z" fill="currentColor"/></svg></button>
     <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mmenu"><span></span><span></span></button>
   </div>
@@ -77,5 +77,5 @@
     <li style="--i:3"><a href="{{IHG_URL}}/journal"><span>Journal</span><span class="ix">04</span></a></li>
     <li style="--i:4"><a href="{{CONTACT_URL}}"><span>Contact</span><span class="ix">05</span></a></li>
   </ul>
-  <div class="mm-foot"><a class="btn gold" href="{{CONTACT_URL}}"><span>Enquire now</span><svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><div class="mm-meta"><span>DUBAI &middot; LAGOS &middot; WORLDWIDE</span></div><p class="mm-hint">Press Esc to close</p></div>
+  <div class="mm-foot"><a class="btn gold" href="{{CONTACT_URL}}?via=menu"><span>Start a relationship</span><svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><div class="mm-meta"><span>DUBAI &middot; LAGOS &middot; WORLDWIDE</span></div><p class="mm-hint">Press Esc to close</p></div>
 </div></div>
