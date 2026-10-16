@@ -124,6 +124,34 @@ window.IHG = {
     secondary:{label:'Our divisions', href:'#/divisions'}
   },
 
+  /* Home page copy and structure (v6, approved option A in scratchpad v6/hero/hero-final.json; docs/PHOTOGRAPHY-PLAN.md
+     2.2 for the strip). intro: the Group intro. divisions: the headline and line each division card shows on the home
+     page (the divisions[] entries keep their own copy for the division pages); prep marks the two divisions in
+     preparation, the only cards that carry a status chip. strip: four event frames at 4:5, one per slot, each gated on
+     its own photograph's consent (alt stands in when it is cleared and the first frame is not); fewer than min cleared
+     and the whole strip is held. closing: the band above Start a Relationship, signed with the Founder's signature. */
+  home: {
+    intro: {eyebrow:'The Group', title:['One institution.','Five specialist divisions.'],
+      lead:'Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, two of them in preparation, extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person.'},
+    prepLabel:'In preparation',
+    divisions: {
+      'citizenship': {headline:'Where the Group began.', line:'The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application.'},
+      'partners-club': {headline:'For the professionals families trust.', line:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours.'},
+      'private-office': {headline:'The relationship, continued.', line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.'},
+      'real-estate': {headline:'Property in Dubai, in preparation.', line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.', prep:true},
+      'academy': {headline:'Learning and standards, in preparation.', line:'The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams.', prep:true}
+    },
+    strip: {eyebrow:'From our events', title:['Four evenings,','two cities.'], lead:'Four frames from four gatherings, in Dubai and Lagos.', min:3,
+      slots: [
+        {event:'gala-dinner-lagos', photo:'events/gala-dinner-lagos/01', alt:'events/gala-dinner-lagos/05', caption:'A speaker at the lectern at the gala dinner'},
+        {event:'grenada-51-dubai', photo:'events/grenada-51-dubai/03', alt:'events/grenada-51-dubai/02', caption:'An arrival at The Dubai EDITION'},
+        {event:'delborough-dinner', photo:'events/delborough-dinner/04', alt:'events/delborough-dinner/05', caption:'Guests greeting one another at DANI, The Delborough'},
+        {event:'lagos-office-event', photo:'events/lagos-office-event/05', alt:'events/lagos-office-event/06', caption:'The lounge at the Lagos office, Aromire Road'}
+      ]},
+    closing: {signature:'Two Cities. One Horizon.', title:['The first conversation','is for listening.'],
+      lead:'Tell us where you are, and where you would like to be. A senior adviser will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.'}
+  },
+
   /* Video (v5). One shape everywhere: {type:'video', provider:'vimeo'|'mux', id:'', poster:'<photo key>',
      captions:'assets/captions/<slug>.vtt', title:'', duration:'', tbc:'...'}. An empty id renders the poster and the
      tbc label and never a player. Players load only on click (Vimeo with dnt=1, no title, byline or portrait; related
@@ -135,21 +163,24 @@ window.IHG = {
     about: {type:'video', provider:'vimeo', id:'', poster:'people/zaid', captions:'assets/captions/about-founder.vtt', title:'Founder film', duration:'60 to 90 seconds', tbc:'Footage to be supplied'}
   },
 
-  /* Our Network: the three audiences the site is organised around, and one client journey that shows how the
-     ecosystem creates value. Photographs are from Imperial events (see events[]). */
+  /* Our Network: the three audiences the site is organised around, and one journey that shows how the houses work
+     together. The journey is an illustration in the conditional, labelled as such on the page (docs/CLAIMS-AUDIT.md C73:
+     no client story presented as real; Real Estate is not launched). No photographs: the home page's event photographs
+     live in home.strip (docs/PHOTOGRAPHY-PLAN.md 2.2). */
   network: {
+    journeyLabel:'How the houses work together',
+    journeyNote:'An illustration, not a case',
     journey: [
-      ['Citizenship','A business owner first approaches Imperial for Grenada citizenship.','citizenship'],
-      ['Property','Later, the family acquires an investment property through Imperial Real Estate.','real-estate'],
-      ['Introduction','They introduce another entrepreneur through Imperial Partners Club.','partners-club'],
-      ['Private Office','In time, the relationship broadens into a Private Office relationship.','private-office']
+      ['Citizenship','A family might first come to Imperial for a second residency or citizenship.','citizenship'],
+      ['Property','In time, the same family could look for a home in Dubai, once Imperial Real Estate launches.','real-estate'],
+      ['Introduction','They might introduce a friend, or their own adviser, through Imperial Partners Club.','partners-club'],
+      ['Private Office','Over the years, the relationship could extend into the Private Office, through one point of contact.','private-office']
     ],
     audiences: [
-      {k:'clients', t:'Private Clients', s:'Mobility, property and selected private services.', cta:'Explore Client Services', href:'#/divisions', img:'events/lagos-diplomatic-soiree-2025/03', divs:['citizenship','real-estate','private-office']},
-      {k:'partners', t:'Professional Partners', s:'Advisers, family offices, institutions and business introducers.', cta:'Explore Imperial Partners Club', href:'#/divisions/partners-club', img:'events/easter-polo-cup-2026/03', divs:['partners-club','academy']},
-      {k:'institutions', t:'Institutions & Strategic Relationships', s:'Developers, governments, service providers and strategic collaborators.', cta:'Start a Strategic Conversation', href:'#/contact?about=group&audience=institutions', img:'events/gala-dinner-lagos/01', divs:[]}
-    ],
-    photos: ['events/lagos-diplomatic-soiree-2025/02','events/grenada-51-dubai/cover','events/easter-polo-cup-2026/02','events/delborough-dinner/04']
+      {k:'clients', t:'Private Clients', s:'Mobility, property and selected private services.', cta:'Explore Client Services', href:'#/divisions', divs:['citizenship','real-estate','private-office']},
+      {k:'partners', t:'Professional Partners', s:'Advisers, family offices, institutions and business introducers.', cta:'Explore Imperial Partners Club', href:'#/divisions/partners-club', divs:['partners-club','academy']},
+      {k:'institutions', t:'Institutions & Strategic Relationships', s:'Developers, governments, service providers and strategic collaborators.', cta:'Start a Strategic Conversation', href:'#/contact?about=group&audience=institutions', divs:[]}
+    ]
   },
 
   /* Events: genuine Imperial gatherings. Photographs are from the Marketing Team SharePoint (Events folder).
@@ -189,7 +220,7 @@ window.IHG = {
      at the Insights articles were removed; the four Insights articles themselves are draft copy awaiting approval. */
   journal: [
     {kind:'Partnerships', date:'19 February 2025', iso:'2025-02-19', title:'Imperial Citizenship sponsors Grenada’s 51st Independence Day after party in Dubai', dek:'Following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai, Imperial Citizenship sponsored the evening at The Dubai EDITION.', to:'/journal/events/grenada-51-dubai', img:'events/grenada-51-dubai/cover-p', own:true, video:null},
-    {kind:'Company developments', date:null, iso:null, title:'Imperial Real Estate is licensed and preparing to launch', dek:'The Group’s fifth division will offer licensed property advisory, starting with Dubai. Interest can be registered now.', to:'/divisions/real-estate', img:'real-estate', video:null},
+    {kind:'Company developments', date:null, iso:null, title:'Imperial Real Estate is licensed and preparing to launch', dek:'The Group’s fifth division will offer licensed property advisory, starting with Dubai. Interest can be registered now.', to:'/divisions/real-estate', img:null, video:null},
     {kind:'Partnerships', date:'Easter 2026', iso:'2026', title:'Imperial Citizenship and Lagos Polo Club host the Easter Polo Cup after party', dek:'An exclusive after party at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.', to:'/journal/events/easter-polo-cup-2026', img:'events/easter-polo-cup-2026/cover-p', own:true, video:null},
     {kind:'Events', date:'2025', iso:'2025', title:'The Lagos Diplomatic Soirée 2025', dek:'Members of the diplomatic community, clients and friends of Imperial, together for an evening in Lagos.', to:'/journal/events/lagos-diplomatic-soiree-2025', img:'events/lagos-diplomatic-soiree-2025/cover-p', own:true, video:null}
   ],
@@ -209,13 +240,9 @@ window.IHG = {
   /* The six sites, from SITES above (copied from shared/ecosystem.json). */
   sites: SITES,
 
-  figures: [
-    {n:10, s:'+', l:'years of combined experience'},
-    {n:600, s:'+', l:'Client engagements'},
-    {n:2000, s:'+', l:'individuals served'},
-    {n:20, s:'+', l:'countries with relationships'},
-    {n:100, s:'+', l:'strategic relationships'}
-  ],
+  /* v6: the figures band (10+ years, 600+ engagements, 2,000+ individuals, 20+ countries, 100+ relationships) is gone
+     from the home page with its "brochure" attribution line (docs/CLAIMS-AUDIT.md C06 to C11: no source found). It comes
+     back only with a dated, CRM-derived figure and an as-at date. */
 
   ambitions: [
     ['Live','Where the family can live, travel, study and settle.'],

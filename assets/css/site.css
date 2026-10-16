@@ -1319,3 +1319,51 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .hh-ink .ink-map.wide{display:none}
   .hh-ink .ink-map.tall{display:block;width:150vw;right:-40vw;top:10%}
 }
+/* v6 home structure: typographic division cards, the journey label, the event strip, plates for uncleared covers and
+   rows, and the home closing band on the ink map */
+.house .ph-ink{background:var(--ink-3)}
+.house .ph-ink::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,0) 45%,rgba(10,9,8,.55))}
+.ink-n{position:absolute;right:-.04em;top:-.08em;font-family:var(--head);font-weight:500;font-size:clamp(150px,17vw,280px);line-height:1;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1px rgba(196,165,116,.2);transition:-webkit-text-stroke-color var(--t4)}
+.house.on .ink-n{-webkit-text-stroke-color:rgba(196,165,116,.34)}
+.house .ink-n{opacity:0;transition:opacity var(--t4) var(--e-out),-webkit-text-stroke-color var(--t4)}
+.house.on .ink-n{opacity:1}
+.house .mark{display:block;margin-bottom:14px}
+.house .mark img{width:auto;height:15px;filter:none;transform:none;opacity:.92}
+.house .mark.crown img{height:26px}
+.house .nm{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l);margin-bottom:10px}
+.house .hc h3{font-size:clamp(26px,2.5vw,38px)}
+.house .hc p{max-width:30em}
+.journey-lbl{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;margin:0 0 14px;font-size:13px;color:var(--l-muted)}
+.journey-lbl b{font-weight:500;color:var(--l-text);font-size:14px}
+.net .journey{margin-bottom:0}
+.strip .frames{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,28px)}
+.frame{display:block;color:var(--text)}
+.frame figure,.frame-plate{position:relative;margin:0;aspect-ratio:4/5;overflow:hidden;border-radius:2px;background:var(--ink-3)}
+.frame img{width:100%;height:100%;object-fit:cover;transition:transform 1.6s var(--e-out)}
+.frame:hover img{transform:scale(1.03)}
+.frame .meta{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l)}
+.frame .meta i{font-style:normal;margin:0 4px;opacity:.6}
+.frame-b{margin-top:16px}
+.frame-b .meta{margin-bottom:6px}
+.frame-b p{font-size:14.5px;color:var(--soft);margin:0}
+.frame-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,0) 28%,rgba(14,13,11,.82))}
+.frame-pt{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:20px 20px 22px}
+.frame-pt h3{font-family:var(--head);font-weight:500;font-size:clamp(22px,1.8vw,28px);line-height:1.12;letter-spacing:-.015em;margin:10px 0 8px}
+.frame-pt p{font-size:14px;color:var(--soft);margin:0 0 10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.frame-pt .tlink{font-size:14px;min-height:0}
+.plate .ink-map,.jplate .ink-map,.frame-plate .ink-map{position:absolute;inset:0;width:100%;height:100%}
+.ev figure{position:relative}
+.ev figure.ev-plate{background:var(--ink-3)}
+.plate{position:absolute;inset:0;background:var(--ink-3)}
+.plate-l{position:absolute;left:18px;bottom:16px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l)}
+.jrow figure.jplate{position:relative;display:flex;align-items:center;justify-content:center;background:var(--ink-3)}
+.jplate .jcrown{width:34px;height:auto;object-fit:contain}
+.closing .ph-ink::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(14,13,11,.3),rgba(14,13,11,.9))}
+.closing .ph-ink .ink-map{left:50%;top:50%;width:min(130%,1500px);height:auto;transform:translate(-50%,-50%)}
+.closing .eyebrow{justify-content:center}
+.home-close .lead{margin-bottom:0}
+@media (max-width:1024px){ .strip .frames{grid-template-columns:repeat(2,minmax(0,1fr))} .house .ph-ink::after{background:linear-gradient(180deg,rgba(10,9,8,0) 30%,rgba(10,9,8,.6))} .house .ink-n{opacity:1}
+  .house>a{position:relative;inset:auto;flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-end} }
+.hh-c .eyebrow{flex-wrap:wrap;row-gap:8px}
+@media (min-width:641px){ .hh-c .d1{font-size:clamp(56px,6.2vw,108px);max-width:none} }
+@media (max-width:640px){ .strip .frames{gap:10px} .ink-n{font-size:clamp(120px,36vw,180px)} }
