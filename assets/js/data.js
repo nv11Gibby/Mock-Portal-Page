@@ -456,7 +456,7 @@ window.IHG = {
       question:'I am', prompt:'Three paths; choose the one that describes you.', field:'audience',
       paths:[
         {key:'clients', audience:'clients', title:'Private Clients', text:'Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.', cta:'Continue as a private client', card:'Arrange a first conversation', divisions:['citizenship','private-office','real-estate','group']},
-        {key:'partners', audience:'partners', title:'Professional Partners', text:'Lawyers, bankers, wealth advisers and family offices who introduce clients, and teams who train with Imperial Academy.', cta:'Continue as a professional partner', card:'Discuss becoming a Partner', divisions:['partners-club','academy']},
+        {key:'partners', audience:'partners', title:'Professional Partners', text:'Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.', cta:'Continue as a professional partner', card:'Discuss becoming a Partner', divisions:['partners-club','academy']},
         {key:'institutions', audience:'institutions', title:'Institutions and Strategic Relationships', text:'Governments, missions, institutions and organisations exploring a relationship with the Group.', cta:'Continue as an institution', card:'Open a strategic conversation', divisions:['group']}
       ],
       footnote:'Not sure which? Begin as a private client and we will take it from there.'
@@ -471,7 +471,7 @@ window.IHG = {
             {name:'about', type:'choice', required:true, label:'It concerns', routingLine:'This goes to {division}.', options:[
               {v:'citizenship', l:'A second residency or citizenship', s:'For me, or for my family', routes:'Imperial Citizenship'},
               {v:'private-office', l:'Continuing support as an existing Imperial Client', s:'Imperial Private Office', routes:'Imperial Private Office'},
-              {v:'real-estate', l:'A home or property in Dubai', s:'Imperial Real Estate, launching soon', routes:'Imperial Real Estate'},
+              {v:'real-estate', l:'A home or property in Dubai', s:'Imperial Real Estate, not yet launched', routes:'Imperial Real Estate'},
               {v:'group', l:'Something broader, or I am not yet sure', s:'The Group brings in the right house', routes:'the Group'}
             ]}
           ]},
@@ -529,9 +529,9 @@ window.IHG = {
               ]},
               {name:'timeline', type:'choice', required:false, label:'How soon? (optional)', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
             ]},
-            learn:{title:'What you would like to learn', lead:'Imperial Academy trains Partner teams to explain the options accurately.', fields:[
+            learn:{title:'What you would like to learn', lead:'Imperial Academy, in development, will train Partner teams to explain the options accurately.', fields:[
               {name:'interests', type:'multi', required:false, label:'I am interested in', options:[
-                {v:'Explaining residency and citizenship options accurately', l:'Explaining residency and citizenship options accurately'}, {v:'Approved materials and the claims list', l:'Approved materials and the claims list'}, {v:'Certification for my team', l:'Certification for my team'}, {v:'Something else', l:'Something else'}
+                {v:'Explaining residency and citizenship options accurately', l:'Explaining residency and citizenship options accurately'}, {v:'Approved materials', l:'Approved materials'}, {v:'Certification for my team', l:'Certification for my team'}, {v:'Something else', l:'Something else'}
               ]},
               {name:'timeline', type:'choice', required:false, label:'How soon? (optional)', options:[{v:'3m', l:'Within 3 months'}, {v:'3-12m', l:'3 to 12 months'}, {v:'exploring', l:'Just exploring for now'}]}
             ]}
@@ -684,11 +684,11 @@ window.IHG = {
       lead: 'What we collect when you write to us, where it goes, how long we keep it, and how to ask for a copy or for deletion. Written plainly, so it can be read in a few minutes.',
       sections: [
         {h:'Who we are', body:[
-          'This website is published by Imperial Holdings Group, the parent of Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate, with offices in Dubai and Lagos.',
+          'This website is published by [[Legal entity]], trading as Imperial Holdings Group, the parent brand of Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy and Imperial Real Estate, with offices in Dubai and Lagos.',
           'The entity responsible for your information, the data controller, is [[Legal entity, registered address and data controller]]. In this notice, we and us mean that entity.'
         ]},
         {h:'What we collect', body:[
-          'You can read this site without giving us any information about yourself. We collect personal information only when you send it to us through one of our forms: the enquiry card, the three-step contact form, the Imperial Real Estate register interest form and the request for the citizenship guide.',
+          'You can read this site without giving us any information about yourself. We collect personal information only when you send it to us through one of our forms: the Start a Relationship form, the Imperial Real Estate register interest form and the request for the citizenship guide.',
           {lead:'Depending on the form, we ask for:', ul:[
             'your name and email address;',
             'your telephone number, if you choose to give it;',
@@ -696,7 +696,7 @@ window.IHG = {
             'whether you are writing as a private client, a professional partner or an institution, and who the enquiry is for: yourself, your family or a client you are introducing;',
             'what it concerns, which tells us which of our divisions should reply;',
             'when you would like to begin, and a budget range if you choose to give one;',
-            'for Partners Club enquiries, your firm and your profession;',
+            'for professional and institutional enquiries, your firm or organisation, its type, and your profession or role;',
             'for property enquiries, what you are looking for, whether you wish to buy or rent, and the area that interests you;',
             'how you would prefer to be contacted;',
             'if you came to the form from the house finder, the ambitions you chose there;',
@@ -711,15 +711,15 @@ window.IHG = {
         ]},
         {h:'Where it goes', body:[
           'Your enquiry goes first to Netlify, the company that hosts this website, which keeps a copy in its form inbox, and from there to Pipedrive, the customer relationship system we use, where it is stored. It is assigned to one named person in the relevant Imperial team: Imperial Citizenship, Imperial Private Office, Imperial Partners Club, Imperial Academy, Imperial Real Estate or the Group team. If you have written to us before, the new enquiry is added to your existing record rather than creating a second one.',
-          'Two further providers are used only when those features are switched on: an email provider, to send you a short confirmation of your enquiry, and a telephone verification provider, to send the one time code. Each receives only what its task needs: your name and email address for the confirmation, your telephone number for the code. [[Email provider (Resend in the current build) and telephone verification provider (Twilio Verify in the current build), and whether each is switched on at launch]]',
+          'Two further providers are used only when those features are switched on: an email provider, to send you a short confirmation of your enquiry, and a telephone verification provider, to send the one-time code. Each receives only what its task needs: your name and email address for the confirmation, your telephone number for the code. [[Email provider (Resend in the current build) and telephone verification provider (Twilio Verify in the current build), and whether each is switched on at launch]]',
           'We do not sell your information, and we do not share it with anyone for their own marketing. Within the Group it is visible to our team in the customer relationship system and used only by the person answering you. Where a service is delivered by one of our trusted Partners, we share what that service needs, and only with your agreement.',
           'Our offices are in the United Arab Emirates and Nigeria. The providers named above may store information outside the country you live in. [[Where each provider stores data, and the safeguards that apply, to be confirmed by counsel]]'
         ]},
         {h:'How long we keep it', body:[
-          'We keep your enquiry for [[Retention period, for example 24 months]] after our last contact with you, and then delete it, unless you have become a client, in which case your record is kept for as long as the relationship lasts and for any period the law requires afterwards.'
+          'We keep your enquiry for [[Retention period, for example 24 months]] after our last contact with you, and then delete it, unless you have become a Client, in which case your record is kept for as long as the relationship lasts and for any period the law requires afterwards.'
         ]},
         {h:'Your choices and your rights', body:[
-          'You can ask us at any time to send you a copy of the information we hold about you, to correct it, to delete it, or to stop contacting you. Write to {email} [[Dedicated privacy mailbox]] and we will reply promptly.',
+          'You can ask us at any time to send you a copy of the information we hold about you, to correct it, to delete it, or to stop contacting you. Write to [[Dedicated privacy mailbox (info@imperialholdingsgroup.com until confirmed)]] and we will reply promptly.',
           'You can withdraw your agreement to this notice at any time by writing to the same address. This does not affect anything done before you withdrew it.',
           'If you ask us to delete your information, we remove it from our systems and ask our providers to do the same, unless the law requires us to keep it, in which case we will tell you.',
           'Depending on where you live, the law may give you further rights, including the right to complain to a supervisory authority. [[Applicable data protection law and supervisory authority for each office, to be confirmed by counsel]]'
@@ -740,7 +740,7 @@ window.IHG = {
           'If this notice changes, the new version will be published on this page with the date it took effect. [[Date of the version approved by counsel]]'
         ]},
         {h:'How to contact us', body:[
-          'Write to {email} [[Dedicated privacy mailbox]], or to either office.',
+          'Write to [[Dedicated privacy mailbox (info@imperialholdingsgroup.com until confirmed)]], or to either office.',
           {offices:true}
         ]}
       ]
@@ -752,7 +752,7 @@ window.IHG = {
         {h:'About this website', body:['This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.']},
         {h:'No guarantees', body:['Imperial does not guarantee government decisions or outcomes. Final approval of any citizenship or residency application rests with the relevant government.']},
         {h:'Use of this site', body:['You may read and share what is published here for your own information. The text, photographs, logos and marks belong to Imperial Holdings Group or to those who licensed them to us. [[Full terms of use, to be drafted by counsel]]']},
-        {h:'Governing law', body:['These terms are governed by the law of [[Jurisdiction to confirm]].']}
+        {h:'Governing law', body:['These terms are governed by the law of [[Jurisdiction]].']}
       ]
     }
   },

@@ -432,7 +432,7 @@ V.realEstate = function(d){
 function registerForm(){
   return '<div class="form-card" data-form="interest"><form novalidate name="interest" method="post"><input type="hidden" name="form-name" value="interest"><label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label><div class="eyebrow">Register interest</div><h2 class="d3" style="margin-bottom:12px">Hear when it launches.</h2><p class="muted small" style="margin-bottom:28px">Tell us a little about what you are looking for. We will contact you when Imperial Real Estate launches.</p>'+
    '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
-   '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required><em class="em">Please enter a valid email address.</em></label>'+
+   '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required><em class="em">Please enter an email address we can reply to.</em></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    '<label class="field"><span>I am interested in</span><select name="interest" required><option value="">Choose one</option><option>A family home in Dubai</option><option>Property linked to UAE residency</option><option>An investment property</option><option>Not sure yet</option></select><em class="em">Please choose the closest.</em></label>'+
    '<label class="field full"><span>Anything you would like us to know <i>(optional)</i></span><textarea name="msg" rows="3"></textarea></label></div>'+
@@ -524,7 +524,7 @@ function journeyKey(q){
 function divisionName(key){ if(key==='group') return 'Imperial Holdings Group'; var d = div(key); return d ? d.name : ''; }
 /* the "(optional)" of a label in the muted style every v5 field used */
 function jLabel(t){ return esc(t).replace(/\((optional)\)/, '<i>($1)</i>'); }
-var J_ERR = {name:'Please enter your name.', email:'Please enter a valid email address.', country:'Please tell us the country.', firm:'Please tell us the name.', profession:'Please choose one, or tell us in a word or two.', interests:'Please choose at least one.'};
+var J_ERR = {about:'Please choose the closest, so that the right house can reply.', name:'Please enter your name.', email:'Please enter an email address we can reply to.', country:'Please tell us the country.', firm:'Please tell us your firm or organisation.', profession:'Please choose one, or tell us in a word or two.', interests:'Please choose at least one.'};
 function jErr(f){ return J_ERR[f.name] || (f.type==='choice' || f.type==='multi' ? 'Please choose one.' : 'Please complete this field.'); }
 function jWhen(f){ return f.when ? ' data-when="'+esc(JSON.stringify(f.when))+'"' : ''; }
 /* one choice card: the option, its sub line and, for a routing option, the house it goes to */
@@ -595,7 +595,7 @@ function jScreens(key){
 function routingLine(v, tpl){
   var d = v==='group' ? null : div(v), name = v==='group' ? 'the Group' : (d ? d.name : '');
   if(!name) return '';
-  var more = d ? (d.soon ? ' '+(D.journeys.states.received.variants['real-estate']||{}).append : '') : ' One person will read it and bring in the right house.';
+  var more = d ? (d.soon ? ' '+(D.journeys.states.received.variants['real-estate']||{}).append : '') : ' One person will read it, bring in the right house if one is needed, and reply personally.';
   return '<div>'+(d ? logoImg(d,'Black','rlogo') : '')+'<p>'+esc(tpl || 'This goes to {division}.').replace('{division}', '<strong>'+esc(name)+'</strong>')+esc(more||'')+'</p></div>';
 }
 /* Path cards. Home: the three paths of the chooser, each opening /contact on its path. Division page: one card,
@@ -712,7 +712,7 @@ function legal(kind){
   return pageHero({cls:'plain', crumb:[[isP?'Privacy':'Terms',null]], eyebrow:'Legal', title:[esc(L.title)], lead:L.lead ? esc(L.lead) : null})+
   '<section class="sec light"><div class="wrap legal"><div class="notice" data-r><span class="tbc">Placeholder</span><div><b>Awaiting legal review.</b> '+
    (isP ? 'This notice describes what the site does today and is complete in substance. Counsel reviews and approves it before launch.' : 'This page is a placeholder. The final terms of use will be drafted and approved by counsel before launch.')+
-   ' Legal entity, licence number and registered address: '+tbc('to confirm')+'</div></div>'+
+   ' Legal entity, licence number and registered address: '+tbc('Entity, licence and address')+'</div></div>'+
   '<p class="small muted legal-updated">Last updated: '+(D.legal.updated ? esc(D.legal.updated) : tbc('Date of the version approved by counsel'))+'</p>'+
   body+'</div></section>';
 }
@@ -1370,7 +1370,7 @@ function journeyLinks(info){
 function showSuccess(wrap, info, anchor){
   var t, msg, chip = '', said;
   if(info.kind==='contact'){ var rc = receivedCopy(info); t = rc.title; msg = (info.name ? 'Thank you, '+esc(info.name)+'. ' : '')+esc(rc.text); said = rc.announce; if(info.preview) chip = D.journeys.states.preview.onSend; }
-  else { t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.'; msg = info.msg; said = 'Sent. '+t; }
+  else { t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.'; msg = info.msg; said = 'Received. '+t; }
   wrap.innerHTML = successHTML(t, msg, (info.inner||'')+'<div class="next" data-next-steps></div>', chip);
   fixLinks(wrap);
   var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
@@ -1400,7 +1400,7 @@ function byName(ch){ return ch==='sms' ? 'SMS' : 'WhatsApp'; }
 function verifyHTML(phone, channel){
   var other = channel==='sms' ? 'whatsapp' : 'sms';
   return '<div class="verify" data-verify><div class="eyebrow">Verify your phone</div>'+
-    '<p>We have sent a code by '+byName(channel)+' to <b>'+esc(phone)+'</b>. Enter it to confirm the number is yours. It takes a moment and helps us reply faster.</p>'+
+    '<p>We have sent a code by '+byName(channel)+' to <b>'+esc(phone)+'</b>. Please enter it to confirm the number is yours. It takes a moment, and it means we can reach you on that number.</p>'+
     '<form class="verify-f" novalidate><label class="field"><span class="vh">Verification code</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="Code" aria-label="Verification code"></label><button class="btn gold sm" type="submit" data-verify-send><span class="lbl">Verify</span><span class="spin"></span></button></form>'+
     '<div class="form-err" role="alert" hidden></div>'+
     '<p class="xs verify-alt"><button class="tlink" type="button" data-resend>Send it again</button><button class="tlink" type="button" data-channel="'+other+'">Send it by '+byName(other)+' instead</button><button class="tlink" type="button" data-verify-skip>Skip for now</button></p></div>';
@@ -1429,7 +1429,7 @@ function verifyStep(el, info, done){
           el.innerHTML = '<p class="verified">'+TICK+'<span>'+(noted ? 'Phone verified. Thank you.' : 'Code accepted. Thank you. We will note it on your enquiry shortly.')+'</span></p>';
           announce(noted ? 'Phone verified.' : 'Code accepted.'); done(true);
         }
-        else if(r && r.reason==='expired') fail('<b>That code has expired.</b> Send it again by WhatsApp or SMS below.');
+        else if(r && r.reason==='expired') fail('<b>That code has expired.</b> Please send it again by WhatsApp or SMS below.');
         else fail('<b>That code did not match.</b> Please check it and try again, or send it again below.');
       }, function(){ fail('<b>We could not check the code just now.</b> Please try again, or skip for now.'); });
     });
@@ -1557,7 +1557,7 @@ function guideForm(){
     '<div data-r style="--d:.15s"><div class="form-card" data-form="guide" id="guide-card"><form novalidate name="guide" method="post"><input type="hidden" name="form-name" value="guide"><input type="hidden" name="lead_source" value="guide"><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="division" value="citizenship"><input type="hidden" name="routed_to" value=""><input type="hidden" name="audience" value="clients">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
     '<div class="eyebrow">Request the guide</div>'+
     '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
-    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter a valid email address.</em></label></div>'+
+    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter an email address we can reply to.</em></label></div>'+
     consentBox(C.file ? 'I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.' : 'I agree to Imperial Holdings Group contacting me about the guide, as described in the {privacy}.')+
     '<div class="form-foot"><button class="btn gold" type="submit"><span class="lbl">'+esc(C.file ? G.cta : (G.ctaSoon || G.cta))+'</span><span class="spin"></span></button><span class="xs">'+esc(G.note)+'</span></div><div class="form-err" role="alert" hidden></div></form></div></div></div></section>';
 }

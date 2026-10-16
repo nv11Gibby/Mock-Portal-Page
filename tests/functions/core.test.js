@@ -361,7 +361,7 @@ test('confirmation email: sent through Resend only with the env, from the named 
   assert.equal(interest.confirmation.sent, true);
   const itext = m.emails[2].text;
   assert.ok(itext.indexOf('registering your interest in Imperial Real Estate') > -1, itext);
-  assert.ok(itext.indexOf('has not launched yet') > -1);
+  assert.ok(itext.indexOf('has not yet launched') > -1);
   assert.equal(itext.indexOf('first conversation'), -1, 'no invitation to a first conversation for a division that has not launched');
   assert.equal(m.emails[2].subject, 'Your interest in Imperial Real Estate');
   const guide = await core.processLead({ form: 'guide', data: { name: 'Guide Reader', email: 'reader2@example.com', consent: 'yes' }, ctx: ctx() });

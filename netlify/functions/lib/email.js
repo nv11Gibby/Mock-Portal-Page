@@ -36,7 +36,7 @@ function compose(lead, from) {
   const opening = guide
     ? 'Thank you for requesting the guide. It is being finalised; one person at ' + lead.divisionName + ' will let you know when it is ready and will be your point of contact if you have questions.'
     : interest
-      ? 'Thank you for registering your interest in ' + lead.divisionName + '. It has not launched yet; we will write to you when it opens.'
+      ? 'Thank you for registering your interest in ' + lead.divisionName + '. It has not yet launched. One person will write to you when it opens.'
       : 'Thank you for your message. It has been received by Imperial Holdings Group and is with ' + lead.divisionName + '; one person will be your point of contact.';
   const next = interest
     ? 'If you would like to talk sooner, reply to this email or call the office.'

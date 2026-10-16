@@ -21,7 +21,7 @@
     "field": "audience",
     "paths": [
       {"key": "clients", "audience": "clients", "title": "Private Clients", "text": "Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.", "cta": "Continue as a private client", "divisions": ["citizenship", "private-office", "real-estate", "group"]},
-      {"key": "partners", "audience": "partners", "title": "Professional Partners", "text": "Lawyers, bankers, wealth advisers and family offices who introduce clients, and teams who train with Imperial Academy.", "cta": "Continue as a professional partner", "divisions": ["partners-club", "academy"]},
+      {"key": "partners", "audience": "partners", "title": "Professional Partners", "text": "Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.", "cta": "Continue as a professional partner", "divisions": ["partners-club", "academy"]},
       {"key": "institutions", "audience": "institutions", "title": "Institutions and Strategic Relationships", "text": "Governments, missions, institutions and organisations exploring a relationship with the Group.", "cta": "Continue as an institution", "divisions": ["group"]}
     ],
     "footnote": "Not sure which? Begin as a private client and we will take it from there.",
@@ -46,7 +46,7 @@
               "options": [
                 {"v": "citizenship", "l": "A second residency or citizenship", "s": "For me, or for my family", "routes": "Imperial Citizenship"},
                 {"v": "private-office", "l": "Continuing support as an existing Imperial Client", "s": "Imperial Private Office", "routes": "Imperial Private Office"},
-                {"v": "real-estate", "l": "A home or property in Dubai", "s": "Imperial Real Estate, launching soon", "routes": "Imperial Real Estate"},
+                {"v": "real-estate", "l": "A home or property in Dubai", "s": "Imperial Real Estate, not yet launched", "routes": "Imperial Real Estate"},
                 {"v": "group", "l": "Something broader, or I am not yet sure", "s": "The Group brings in the right house", "routes": "the Group"}
               ],
               "routingLine": "This goes to {division}.",
@@ -189,11 +189,11 @@
             },
             "learn": {
               "title": "What you would like to learn",
-              "lead": "Imperial Academy trains Partner teams to explain the options accurately.",
+              "lead": "Imperial Academy, in development, will train Partner teams to explain the options accurately.",
               "fields": [
                 {"name": "interests", "type": "multi", "required": false, "label": "I am interested in", "options": [
                   {"v": "Explaining residency and citizenship options accurately", "l": "Explaining residency and citizenship options accurately"},
-                  {"v": "Approved materials and the claims list", "l": "Approved materials and the claims list"},
+                  {"v": "Approved materials", "l": "Approved materials"},
                   {"v": "Certification for my team", "l": "Certification for my team"},
                   {"v": "Something else", "l": "Something else"}
                 ]},

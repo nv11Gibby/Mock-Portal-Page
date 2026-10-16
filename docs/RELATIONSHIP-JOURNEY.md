@@ -55,7 +55,7 @@ Shown at `/contact` when no `journey`, `audience` or `about` parameter chose the
 Three cards, one question, "I am" [audience]:
 
 - **Private Clients.** Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office. Button: Continue as a private client.
-- **Professional Partners.** Lawyers, bankers, wealth advisers and family offices who introduce clients, and teams who train with Imperial Academy. Button: Continue as a professional partner.
+- **Professional Partners.** Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy. Button: Continue as a professional partner.
 - **Institutions and Strategic Relationships.** Governments, missions, institutions and organisations exploring a relationship with the Group. Button: Continue as an institution.
 
 Footnote: "Not sure which? Begin as a private client and we will take it from there."
@@ -72,7 +72,7 @@ Opening line, under the quiet path line: *Tell us what you have in mind. We will
 
 - A second residency or citizenship. *For me, or for my family.* (citizenship)
 - Continuing support as an existing Imperial Client. *Imperial Private Office.* (private-office)
-- A home or property in Dubai. *Imperial Real Estate, launching soon.* (real-estate)
+- A home or property in Dubai. *Imperial Real Estate, not yet launched.* (real-estate)
 - Something broader, or I am not yet sure. *The Group brings in the right house.* (group)
 
 Under the chosen card a quiet line: "This goes to Imperial Citizenship." (the routing card of v5, reduced to one sentence). Skipped when `?about=` named the division; the division is then shown in the path line ("Private client · Imperial Citizenship · Change").
@@ -131,8 +131,8 @@ Why: the firm becomes the organisation record in Pipedrive, linked to the person
 - "I am interested in" [interests], choose any: Introducing clients / Approved materials for my team / Training with Imperial Academy / Co-hosting an event.
 - "How soon? (optional)" [timeline].
 
-*Train or certify my team: What you would like to learn.* "Imperial Academy trains Partner teams to explain the options accurately."
-- "I am interested in" [interests], choose any: Explaining residency and citizenship options accurately / Approved materials and the claims list / Certification for my team / Something else.
+*Train or certify my team: What you would like to learn.* "Imperial Academy, in development, will train Partner teams to explain the options accurately."
+- "I am interested in" [interests], choose any: Explaining residency and citizenship options accurately / Approved materials / Certification for my team / Something else.
 - "How soon? (optional)" [timeline].
 
 Why: interests tell the team what to prepare; the timeline is the strongest signal in the score. Neither asks anything about a third party: no client name, no client details, no head count, no budget.
