@@ -54,6 +54,10 @@ var TICK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10.5 8.2 14.
 var CROSS = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>';
 function div(k){for(var i=0;i<D.divisions.length;i++) if(D.divisions[i].key===k) return D.divisions[i]; return null;}
 function pad2(n){return (n<10?'0':'')+n;}
+/* v6 fix: a division's one status label (divisions[].status in data.js; the flagship has none), as a chip or as the
+   small line under its name in the menus, the footer and the About ring */
+function statusChip(d, cls){ return d.status ? '<span class="badge'+(d.soon?' soon':'')+(cls?' '+cls:'')+'">'+esc(d.status)+'</span>' : ''; }
+function statusSmall(d){ return d.status ? '<small>'+esc(d.status)+'</small>' : ''; }
 function photoAlt(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i].what; return '';}
 /* v6 image delivery (UX audit item 18). Every photograph carries its intrinsic width and height, so the browser
    reserves its box before the file arrives: the files come in a few fixed shapes (dimsOf). Below the fold it loads
@@ -248,15 +252,15 @@ function insightCard(a,i){
 }
 /* The five division cards (v6, docs/PHOTOGRAPHY-PLAN.md 2.2): typographic on the ink field, no thumbnails. Each card
    carries its numeral (small, and large in outline behind), the division's mark (its wordmark, or the crown for the
-   flagship), its name, the approved headline and line (D.home.divisions) and a status chip only where the division is
-   in preparation. The accordion (hover, focus, arrow keys, tap) is bindHouses(), unchanged. */
+   flagship), its name, the approved headline and line (D.home.divisions) and its status chip (every division but the
+   flagship). The accordion (hover, focus, arrow keys, tap) is bindHouses(), unchanged. */
 function houses(){
   var H = D.home.divisions;
   return '<div class="houses" id="houses">'+D.divisions.map(function(d,i){
     var c = H[d.key] || {headline:d.name, line:d.line}, cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
     return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'">'+
       inkField({n:pad2(i+1)})+'<span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
-      '<div class="hc">'+(c.prep?'<span class="badge soon">'+esc(D.home.prepLabel)+'</span>':'')+
+      '<div class="hc">'+statusChip(d)+
       '<span class="mark'+(d.logo?'':' crown')+'"><img src="'+LOGO+(d.logo ? d.logo+'-Horizontal-Gold.svg' : 'Imperial-Crown-Gold.svg')+'" alt="" loading="lazy" decoding="async"></span>'+
       '<span class="nm'+(d.logo?' vh':'')+'">'+esc(d.name)+'</span><h3>'+esc(c.headline)+'</h3><p>'+esc(c.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
   }).join('')+'</div>';
@@ -354,12 +358,12 @@ V.home = function(){
 };
 
 V.about = function(){
-  var seats = D.divisions.map(function(d,i){var a=(-90+i*72)*Math.PI/180, r=40; return '<li style="--i:'+i+';--x:'+(Math.cos(a)*r).toFixed(2)+';--y:'+(Math.sin(a)*r+4).toFixed(2)+'"><a href="#/divisions/'+d.key+'"><b>'+esc(d.short)+'</b><small>'+(d.soon?'Coming soon':esc(d.statusShort||d.status))+'</small></a></li>';}).join('');
+  var seats = D.divisions.map(function(d,i){var a=(-90+i*72)*Math.PI/180, r=40; return '<li style="--i:'+i+';--x:'+(Math.cos(a)*r).toFixed(2)+';--y:'+(Math.sin(a)*r+4).toFixed(2)+'"><a href="#/divisions/'+d.key+'"><b>'+esc(d.short)+'</b>'+statusSmall(d)+'</a></li>';}).join('');
   return pageHero({ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, crumb:[['About',null]], eyebrow:'About Imperial Holdings Group', title:['One Group.','One standard.'], lead:'Imperial began as a citizenship and residency specialist and, through its work with families and founders, is now the parent of five specialist divisions, run by one team to one standard. This is where you meet the people behind the Group.'})+
   '<section class="sec"><div class="wrap split"><div>'+eyebrow('Our story')+mask(['From one question','to five divisions.'],'h2','d2')+'</div>'+
    '<div data-r style="--d:.15s"><p class="lead">Imperial Citizenship is where we began, and it remains our main business. Working with families on residency and citizenship taught us that one application rarely answers the whole question.</p>'+
    '<p class="muted">The residency question touches the home. The home touches the school. The company touches the tax position. And the trusted professionals our Clients already rely on needed a reliable house to hand those conversations to.</p>'+
-   '<p class="muted">Imperial Holdings Group is the result: five specialist divisions at one table, two of them in preparation, sharing one team, one standard and one record of each family, so that you never have to explain your family twice.</p>'+
+   '<p class="muted">Imperial Holdings Group is the result: five specialist divisions at one table, the four beyond Citizenship each opening in its own time. They are built to share one team, one standard and one record of each family, so that you never have to explain your family twice.</p>'+
    '<p class="small muted">Founding date and milestones: '+tbc('Group history and key dates')+'</p></div></div></section>'+
 
   '<section class="sec light"><div class="wrap split"><div class="ring anim" data-r="fade" aria-label="One table: your family at the centre, one Relationship Manager, and the five divisions"><div class="ring-c"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><b>Your family</b><span class="ring-rm">One Relationship Manager</span></div><ul>'+seats+'</ul></div>'+
@@ -384,11 +388,11 @@ V.about = function(){
 V.divisions = function(){
   return pageHero({ink:{view:INK.world, points:true}, crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five divisions.','One table.'], lead:'Each division is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
-    return '<a class="drow" href="#/divisions/'+d.key+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
+    return '<a class="drow" href="#/divisions/'+d.key+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status||'')+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
   '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('How we work')+mask(['Come for one thing.','Stay with one team.'],'h2','d2')+'</div><p class="lead" data-r>One shared team works across every division. You never have to explain your family twice.</p></div>'+steps(D.steps)+'</div></section>'+
-  '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('The divisions online')+mask(['Visit a division','directly.'],'h2','d2')+'</div><p class="lead" data-r>Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch.</p></div>'+
-   '<div class="sites">'+D.sites.filter(function(s){return !s.home && !s.soon;}).map(function(s,i){return siteLink(s,'site', '<b>'+esc(s.name)+'</b><span>'+esc(s.label)+'</span>'+NE).replace('class="site"','class="site" data-r style="--d:'+(i*0.07).toFixed(2)+'s"');}).join('')+'</div></div></section>'+closing();
+  '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('The divisions online')+mask(['Visit a division','directly.'],'h2','d2')+'</div><p class="lead" data-r>Imperial Citizenship has its own website today. Links to the other four, Imperial Real Estate among them, will be added as each website is published.</p></div>'+
+   '<div class="sites">'+D.sites.filter(function(s){return !s.home;}).map(function(s,i){return siteLink(s,'site', '<b>'+esc(s.name)+'</b><span>'+esc(s.label)+'</span>'+NE).replace('class="site"','class="site" data-r style="--d:'+(i*0.07).toFixed(2)+'s"');}).join('')+'</div></div></section>'+closing();
 };
 
 function heroTitle(d){return {citizenship:['Second residency','and citizenship.'],'private-office':['One lasting','relationship.'],'partners-club':['Introduce with','confidence.'],academy:['One standard,','learned by everyone.']}[d.key];}
@@ -397,16 +401,16 @@ function ctaTitle(d){return {citizenship:['Begin with','Imperial Citizenship.'],
 function others(d){
   var list = D.divisions.filter(function(x){return x.key!==d.key;});
   return '<section class="sec line-t"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Other divisions')+mask(['One table.'],'h2','d2')+'</div><div data-r style="--d:.1s"><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div></div><div class="rail" id="rail" aria-label="Other divisions">'+
-   list.map(function(x,i){return '<a href="#/divisions/'+x.key+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><div class="rail-img">'+divInk(x)+(x.soon?'<span class="badge soon">Coming soon</span>':'')+'</div><b>'+esc(x.short)+'</b><span>'+esc(x.line)+'</span></a>';}).join('')+'</div></div></section>';
+   list.map(function(x,i){return '<a href="#/divisions/'+x.key+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><div class="rail-img">'+divInk(x)+statusChip(x)+'</div><b>'+esc(x.short)+'</b><span>'+esc(x.line)+'</span></a>';}).join('')+'</div></div></section>';
 }
 V.division = function(key){
   var d = div(key); if(!d) return null;
   if(d.soon) return V.realEstate(d);
   var logo = d.logo ? '<img class="ph-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'" data-r>' : '<div data-r style="margin-bottom:26px">'+logoImg(d,'White','')+'</div>';
-  var badge = '<div data-r style="margin-bottom:22px"><span class="badge'+(d.statusTone==='gold'?' gold':'')+'">'+esc(d.status)+'</span></div>';
+  var badge = d.status ? '<div data-r style="margin-bottom:22px">'+statusChip(d)+'</div>' : '';
   var h = pageHero({img:d.img, ink:{n:divNo(d), view:INK[DIV_INK[d.key]], points:true, cls:'div-hero'}, crumb:[['Divisions','#/divisions'],[d.short,null]], pre:logo+badge, title:heroTitle(d), lead:esc(d.line)});
   h += '<section class="sec"><div class="wrap split"><div>'+eyebrow('Overview')+'<p class="statement" data-r>'+esc(d.intro)+'</p></div>'+
-    '<div class="glance" role="region" data-r style="--d:.15s" aria-label="At a glance"><dl><dt>Division</dt><dd>'+esc(d.name)+'</dd><dt>Status</dt><dd>'+esc(d.status)+'</dd><dt>For</dt><dd>'+esc(d.who[0])+'</dd><dt>Website</dt><dd>'+(d.cta.real?'<a class="tlink" href="'+d.cta.href+'" target="_blank" rel="noopener">'+esc(d.cta.domain)+NE+'</a>':tbc(d.cta.tbc))+'</dd></dl>'+
+    '<div class="glance" role="region" data-r style="--d:.15s" aria-label="At a glance"><dl><dt>Division</dt><dd>'+esc(d.name)+'</dd>'+(d.status?'<dt>Status</dt><dd>'+esc(d.status)+'</dd>':'')+'<dt>For</dt><dd>'+esc(d.who[0])+'</dd><dt>Website</dt><dd>'+(d.cta.real?'<a class="tlink" href="'+d.cta.href+'" target="_blank" rel="noopener">'+esc(d.cta.domain)+NE+'</a>':tbc(d.cta.tbc))+'</dd></dl>'+
     '<div class="btns">'+extLink(d,'btn')+'<a class="btn line" href="#/contact?about='+d.key+'&via=division-hero"><span>Start a relationship</span></a></div></div></div></section>';
   h += '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('What we do')+mask(whatTitle(d),'h2','d2')+'</div></div><div class="does">'+
     d.does.map(function(x,i){return '<div data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(x[0])+'</h3><p>'+esc(x[1])+'</p>'+(x[2]?tbc(x[2]):'')+'</div>';}).join('')+
@@ -422,7 +426,7 @@ V.division = function(key){
   return h + others(d);
 };
 V.realEstate = function(d){
-  var h = pageHero({img:d.img, crumb:[['Divisions','#/divisions'],['Real Estate',null]], pre:'<img class="ph-logo" src="'+LOGO+'IR-Horizontal-Gold.svg" alt="Imperial Real Estate" data-r><div data-r style="margin-bottom:22px"><span class="badge soon">Coming soon</span></div>', title:['Property in Dubai,','in preparation.'], lead:'Imperial Real Estate is licensed and has not yet launched. Register your interest and we will be in touch when it opens.', after:'<div class="btns" data-r style="--d:.5s;margin-top:30px"><a class="btn" href="#/divisions/real-estate" data-scroll="register"><span>Register interest</span>'+AR+'</a><a class="btn line" href="#/contact?about=real-estate&via=division"><span>Start a relationship</span></a></div>'});
+  var h = pageHero({img:d.img, crumb:[['Divisions','#/divisions'],['Real Estate',null]], pre:'<img class="ph-logo" src="'+LOGO+'IR-Horizontal-Gold.svg" alt="Imperial Real Estate" data-r><div data-r style="margin-bottom:22px">'+statusChip(d)+'</div>', title:['Property in Dubai,','coming soon.'], lead:'Imperial Real Estate has not yet launched. Register your interest and we will be in touch when it opens.', after:'<div class="btns" data-r style="--d:.5s;margin-top:30px"><a class="btn" href="#/divisions/real-estate" data-scroll="register"><span>Register interest</span>'+AR+'</a><a class="btn line" href="#/contact?about=real-estate&via=division"><span>Start a relationship</span></a></div>'});
   h += '<section class="sec light"><div class="wrap split"><div>'+eyebrow('Overview')+'<p class="statement" data-r style="color:var(--l-text)">'+esc(d.intro)+'</p>'+
     '<h2 class="vh">What Imperial Real Estate will do</h2><div class="does two" style="margin-top:56px">'+d.does.map(function(x,i){return '<div data-r style="--d:'+(i%2*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(x[0])+'</h3><p>'+esc(x[1])+'</p></div>';}).join('')+'</div>'+
     '<div class="callout" data-r><div><b>Please note</b>'+esc(d.note)+' '+tbc('Licence number and regulator')+'</div></div></div>'+
@@ -742,7 +746,7 @@ function loadMenuImgs(scope){ [].forEach.call(scope.querySelectorAll('img[data-s
 function buildChrome(){
   document.getElementById('megaIn').innerHTML =
     '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
-    '<ul class="mega-list" id="megaList">'+D.divisions.map(function(d,i){return '<li><a class="mega-item'+(i===0?' on':'')+'" href="#/divisions/'+d.key+'" data-i="'+i+'"><span class="n">'+pad2(i+1)+'</span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.statusShort||d.status))+'</small></a></li>';}).join('')+'</ul>'+
+    '<ul class="mega-list" id="megaList">'+D.divisions.map(function(d,i){return '<li><a class="mega-item'+(i===0?' on':'')+'" href="#/divisions/'+d.key+'" data-i="'+i+'"><span class="n">'+pad2(i+1)+'</span><b>'+esc(d.name)+'</b>'+statusSmall(d)+'</a></li>';}).join('')+'</ul>'+
     '<div class="mega-prev" aria-hidden="true">'+D.divisions.map(function(d,i){return '<figure class="'+(i===0?'on':'')+'" data-i="'+i+'">'+divInk(d)+'<figcaption><b>'+esc(d.short)+'</b>'+esc(d.caption||d.line)+'</figcaption></figure>';}).join('')+'</div>'+
     '<div class="mega-sites"><span>Our websites:</span>'+D.sites.map(function(s){return siteLink(s,'', siteText(s, true));}).join('')+'</div>';
   document.getElementById('mmIn').innerHTML = '<button class="mm-search" type="button" data-palette><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="m13 13 4.5 4.5" stroke="currentColor" stroke-width="1.4"/></svg><span>Search the site</span></button><ul class="mm-links">'+
@@ -750,14 +754,14 @@ function buildChrome(){
     '<li style="--i:1"><a href="#/about"><span>About</span><span class="ix">02</span></a></li>'+
     '<li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>'+
       '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
-      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'"><span class="all mm-no" aria-hidden="true">'+divNo(d)+'</span><span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.statusShort||d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
+      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'"><span class="all mm-no" aria-hidden="true">'+divNo(d)+'</span><span><b>'+esc(d.name)+'</b>'+statusSmall(d)+'</span></a>';}).join('')+'</div></div></li>'+
     '<li style="--i:3"><a href="#/journal"><span>Journal</span><span class="ix">04</span></a></li>'+
     '<li style="--i:4"><a href="#/contact"><span>Contact</span><span class="ix">05</span></a></li></ul>'+
     '<div class="mm-foot"><a class="btn gold" href="#/contact?via=menu"><span>Start a relationship</span>'+AR+'</a><div class="mm-meta"><span>DUBAI \u00b7 LAGOS</span><span class="clock" data-tz="Asia/Dubai">--:--</span></div><p class="mm-hint">Swipe up or press Esc to close</p></div>';
   var credits = D.photos.filter(function(p){return !p.own;}).map(function(p){return '<li><a href="https://unsplash.com/photos/'+p.id+'" target="_blank" rel="noopener">'+esc(p.what)+'</a> by '+esc(p.by)+'</li>';}).join('');
   document.getElementById('ftr').innerHTML = '<div class="wrap"><div class="ftr-top">'+
     '<div class="ftr-brand"><img src="'+LOGO+'IHG-Stacked-Gold.svg" alt="Imperial Holdings Group" loading="lazy" decoding="async"><p>Two Cities. One Horizon. Five specialist divisions, one standard, and one person who knows your family.</p><a class="tlink" href="#/contact?via=footer">Start a relationship'+AR+'</a></div>'+
-    '<div><h2 class="fh">Divisions</h2><ul>'+D.divisions.map(function(d){return '<li><a href="#/divisions/'+d.key+'">'+esc(d.name)+(d.soon?' <small>Soon</small>':'')+'</a></li>';}).join('')+'</ul></div>'+
+    '<div><h2 class="fh">Divisions</h2><ul>'+D.divisions.map(function(d){return '<li><a href="#/divisions/'+d.key+'">'+esc(d.name)+(d.status?' '+statusSmall(d):'')+'</a></li>';}).join('')+'</ul></div>'+
     '<div><h2 class="fh">The Group</h2><ul><li><a href="#/about">About</a></li><li><a href="#/divisions">Our ecosystem</a></li><li><a href="#/" data-goto="network">Our network</a></li><li><a href="#/journal">Journal</a></li><li><a href="#/contact">Contact</a></li><li><a href="#/contact?faq=0">Questions</a></li><li><button class="flink" type="button" data-palette>Search <kbd class="kb">'+KBD+'</kbd></button></li></ul></div>'+
     '<div><h2 class="fh">Offices</h2>'+D.contact.offices.map(function(o){return '<div class="off"><b>'+esc(o.city)+'</b>'+esc(o.role)+'<br>'+o.lines.map(esc).join('<br>')+'<br><a href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>';}).join('')+'<div class="off"><a href="mailto:'+D.contact.email+'">'+esc(D.contact.email)+'</a>'+(D.contact.emailTbc?' '+tbc(D.contact.emailTbc):'')+'</div></div>'+
     '<div><h2 class="fh">Websites</h2><ul>'+D.sites.map(function(s){return '<li>'+siteLink(s,'', siteText(s, false))+'</li>';}).join('')+'</ul></div>'+
@@ -1927,7 +1931,7 @@ function finderResult(per, goals){
     '<ol class="fd-list">'+ranked.map(function(d,i){
       var why = F.why[d.key]||{}, lines = goals.map(function(g){ return why[g]; }).filter(Boolean).filter(function(v,j,a){ return a.indexOf(v)===j; });
       if(!lines.length) lines=[why._ || d.line];
-      return '<li class="'+(i===0?'lead-house':'')+'" style="--i:'+i+'"><a href="#/divisions/'+d.key+'"><span class="fd-k">'+(i===0?'Start here':'Also at the table')+(d.soon?' \u00b7 Coming soon':'')+'</span><b>'+esc(d.name)+'</b><ul>'+lines.slice(0,2).map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'</ul><span class="fd-go" aria-hidden="true">'+AR+'</span></a></li>';
+      return '<li class="'+(i===0?'lead-house':'')+'" style="--i:'+i+'"><a href="#/divisions/'+d.key+'"><span class="fd-k">'+(i===0?'Start here':'Also at the table')+(d.status?' \u00b7 '+esc(d.status):'')+'</span><b>'+esc(d.name)+'</b><ul>'+lines.slice(0,2).map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'</ul><span class="fd-go" aria-hidden="true">'+AR+'</span></a></li>';
     }).join('')+'</ol>'+
     '<div class="fd-cta">'+cta+'<button class="tlink" type="button" data-fd-reset>Start afresh</button></div>'+
     '<p class="xs fd-note">A starting point, not advice. One Relationship Manager brings in each division when it is needed.</p>';
@@ -1983,7 +1987,7 @@ function compare(){
     ['How it starts', function(d){ return d.how ? esc(d.how[0][0])+': '+esc(d.start||d.how[0][1]) : 'Register interest ahead of launch.'; }],
     ['Online', function(d){ var s=site[d.name]; return s && !s.soon ? (s.real ? '<a class="ul" href="'+s.href+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>' : tbc('Website address')) : '<span class="muted">At launch</span>'; }]
   ];
-  function badge(d){ return '<span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span>'; }
+  function badge(d){ return statusChip(d); }
   function row(r){ return '<tr><th scope="row">'+r[0]+'</th>'+ds.map(function(d){ return '<td>'+r[1](d)+'</td>'; }).join('')+'</tr>'; }
   /* phones get the same data as one card per house (item 9); the table stays from 761 px */
   var cards = '<ul class="cmp-cards" data-r aria-label="The five Imperial divisions compared">'+ds.map(function(d){
@@ -2045,7 +2049,7 @@ function palIndex(){
   D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
-  D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:'', kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
+  D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:'', kw:[d.short, d.status||''].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
   D.insights.forEach(function(a){ if(a.draft) return; add({k:'Insight', t:a.title, s:a.dek, u:'/insights/'+a.slug, img:a.img, kw:a.cat}); });
   D.faq.forEach(function(f,i){ add({k:'Question', t:f.q, s:f.a, u:'/contact?faq='+i}); });
   D.journeys.chooser.paths.forEach(function(p){ add({k:'Enquiry', t:'Start a relationship: '+p.title, s:p.text, u:'/contact?journey='+p.key+'&via=palette', kw:'enquire enquiry contact '+p.divisions.join(' ')}); });

@@ -9,14 +9,16 @@
    hand, because data.js is a plain script and cannot fetch. key is the site key in shared/lead-schema.json. real:true
    only where the URL is live. home:true is this site: it links to its own home page, since the production domain is
    TO CONFIRM. soon:true is a division that has not launched. Division pages reuse these entries for their website
-   call to action (siteCta). The ecosystem menu and the footer list all six. */
+   call to action (siteCta). The ecosystem menu and the footer list all six. v6 fix: no tagline here (nothing on this
+   site renders one); shared/ecosystem.json carries the taglines for the sister sites. Each division's status label
+   lives in one place only, divisions[].status below. */
 var SITES = [
-  {key:'ihg', name:'Imperial Holdings Group', short:'Holdings Group', home:true, href:'#/', url:'https://www.imperialholdingsgroup.com', real:false, tbc:'Final production domain (imperialholdingsgroup.com) to confirm', label:'imperialholdingsgroup.com', role:'The parent of five specialist divisions, led from Dubai and Lagos', tagline:'Two Cities. One Horizon.', journalFeed:'/journal/feed.xml'},
-  {key:'citizenship', name:'Imperial Citizenship', short:'Citizenship', href:'https://imperialcitizenship.com', url:'https://imperialcitizenship.com', real:true, label:'imperialcitizenship.com', role:'The flagship: second residency and citizenship by investment, from first conversation to completed application', tagline:'Global mobility. Greater possibilities.'},
-  {key:'partners-club', name:'Imperial Partners Club', short:'Partners Club', href:'#', url:'', real:false, tbc:'Imperial Partners Club website link', label:'Website to confirm', role:'Opening in stages: for the lawyers, bankers, advisers and family offices who introduce families to us', tagline:'A global network for growth. Together further.'},
-  {key:'private-office', name:'Imperial Private Office', short:'Private Office', href:'#', url:'', real:false, tbc:'Imperial Private Office website link', label:'Website to confirm', role:'By invitation, being established: one lasting relationship for families with multi-country lives', tagline:'Personalised solutions for exceptional clients.'},
-  {key:'real-estate', name:'Imperial Real Estate', short:'Real Estate', href:'#', url:'', real:false, soon:true, tbc:'Imperial Real Estate website link (at launch)', label:'Website to confirm', role:'Coming soon: licensed property advisory, starting with Dubai', tagline:'Curated properties. Enduring value.'},
-  {key:'academy', name:'Imperial Academy', short:'Academy', href:'#', url:'', real:false, tbc:'Imperial Academy website link', label:'Website to confirm', role:'Learning and standards, in development: training and certification for the people who do this work', tagline:'Education. Talent. Leadership. A stronger tomorrow.'}
+  {key:'ihg', name:'Imperial Holdings Group', short:'Holdings Group', home:true, href:'#/', url:'https://www.imperialholdingsgroup.com', real:false, tbc:'Final production domain (imperialholdingsgroup.com) to confirm', label:'imperialholdingsgroup.com', role:'The parent of five specialist divisions, led from Dubai and Lagos', journalFeed:'/journal/feed.xml'},
+  {key:'citizenship', name:'Imperial Citizenship', short:'Citizenship', href:'https://imperialcitizenship.com', url:'https://imperialcitizenship.com', real:true, label:'imperialcitizenship.com', role:'The flagship: second residency and citizenship by investment, from first conversation to completed application',},
+  {key:'partners-club', name:'Imperial Partners Club', short:'Partners Club', href:'#', url:'', real:false, tbc:'Imperial Partners Club website link', label:'Website to confirm', role:'Opening in stages: for the lawyers, bankers, advisers and family offices who introduce families to us',},
+  {key:'private-office', name:'Imperial Private Office', short:'Private Office', href:'#', url:'', real:false, tbc:'Imperial Private Office website link', label:'Website to confirm', role:'Being established: one lasting relationship for families with multi-country lives'},
+  {key:'real-estate', name:'Imperial Real Estate', short:'Real Estate', href:'#', url:'', real:false, soon:true, tbc:'Imperial Real Estate website link (at launch)', label:'Website to confirm', role:'Coming soon: licensed property advisory, starting with Dubai',},
+  {key:'academy', name:'Imperial Academy', short:'Academy', href:'#', url:'', real:false, tbc:'Imperial Academy website link', label:'Website to confirm', role:'Learning and standards, in development: training and certification for the people who do this work',}
 ];
 function siteOf(key){ for(var i = 0; i < SITES.length; i++){ if(SITES[i].key === key) return SITES[i]; } return null; }
 /* A division page's "visit the website" call to action, taken from the site entry so the link, the domain shown and
@@ -122,20 +124,19 @@ window.IHG = {
 
   /* Home page copy and structure (v6, approved option A in scratchpad v6/hero/hero-final.json; docs/PHOTOGRAPHY-PLAN.md
      2.2 for the strip). intro: the Group intro. divisions: the headline and line each division card shows on the home
-     page (the divisions[] entries keep their own copy for the division pages); prep marks the two divisions in
-     preparation, the only cards that carry a status chip. strip: four event frames at 4:5, one per slot, each gated on
+     page (the divisions[] entries keep their own copy for the division pages). v6 fix: every card except the flagship
+     carries its division's status chip, from divisions[].status. strip: four event frames at 4:5, one per slot, each gated on
      its own photograph's consent (alt stands in when it is cleared and the first frame is not); fewer than min cleared
      and the whole strip is held. closing: the band above Start a Relationship, signed with the Founder's signature. */
   home: {
     intro: {eyebrow:'The Group', title:['One institution.','Five specialist divisions.'],
-      lead:'Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, two of them in preparation, extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person.'},
-    prepLabel:'In preparation',
+      lead:'Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, each opening in its own time, will extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person.'},
     divisions: {
       'citizenship': {headline:'Where the Group began.', line:'The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application.'},
       'partners-club': {headline:'For the professionals families trust.', line:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours.'},
       'private-office': {headline:'The relationship, continued.', line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.'},
-      'real-estate': {headline:'Property in Dubai, in preparation.', line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.', prep:true},
-      'academy': {headline:'Learning and standards, in preparation.', line:'The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams.', prep:true}
+      'real-estate': {headline:'Property in Dubai, coming soon.', line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.'},
+      'academy': {headline:'Learning and standards, in development.', line:'The Group’s learning arm, in development: training and certification to one shared standard, for our own people and for Partner teams.'}
     },
     strip: {eyebrow:'From our events', title:['Four evenings,','two cities.'], lead:'Four frames from four gatherings, in Dubai and Lagos.', min:3,
       slots: [
@@ -217,7 +218,7 @@ window.IHG = {
      at the Insights articles were removed; the four Insights articles themselves are draft copy awaiting approval. */
   journal: [
     {kind:'Events', date:'19 February 2025', iso:'2025-02-19', title:'Imperial Citizenship sponsors Grenada’s 51st Independence Day after party in Dubai', dek:'Following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai, Imperial Citizenship sponsored the evening at The Dubai EDITION.', to:'/journal/events/grenada-51-dubai', img:'events/grenada-51-dubai/cover-p', own:true, video:null},
-    {kind:'Company developments', date:null, iso:null, title:'Imperial Real Estate is licensed and preparing to launch', dek:'The Group’s fifth division will offer licensed property advisory, starting with Dubai. Interest can be registered now.', to:'/divisions/real-estate', img:null, video:null},
+    {kind:'Company developments', date:null, iso:null, title:'Imperial Real Estate is coming soon', dek:'The Group’s fifth division will offer property advisory, starting with Dubai. Interest can be registered now.', to:'/divisions/real-estate', img:null, video:null},
     {kind:'Events', date:'Easter 2026', iso:'2026', title:'Imperial Citizenship hosts the Easter Polo Cup after party at Lagos Polo Club', dek:'An after party at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.', to:'/journal/events/easter-polo-cup-2026', img:'events/easter-polo-cup-2026/cover-p', own:true, video:null},
     {kind:'Events', date:'2025', iso:'2025', title:'The Lagos Diplomatic Soirée 2025', dek:'An evening in Lagos for Clients, partners and friends of Imperial.', to:'/journal/events/lagos-diplomatic-soiree-2025', img:'events/lagos-diplomatic-soiree-2025/cover-p', own:true, video:null}
   ],
@@ -278,9 +279,11 @@ window.IHG = {
     {city:'Lagos', role:'Office', lines:['8 Aromire Road, Ikoyi','Lagos 106104','Nigeria'], tel:'+234 902 222 2024', tz:'Africa/Lagos'}
   ]},
 
+  /* status: the one status label of each division, used everywhere it shows (home cards, menus, footer, /divisions,
+     the finder, the comparison, the division pages, About). The flagship is operating and carries none. */
   divisions: [
     {
-      key:'citizenship', name:'Imperial Citizenship', tag:'Global mobility. Greater possibilities.', short:'Citizenship', logo:null, img:null, status:'The flagship', statusTone:'gold',
+      key:'citizenship', name:'Imperial Citizenship', short:'Citizenship', logo:null, img:null, status:null,
       desc:'Imperial Citizenship, flagship of Imperial Holdings Group: second residency and citizenship by investment, from first conversation to completed application.',
       line:'The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application.',
       intro:'Imperial Citizenship is where the Group began, and it remains our main business. It advises families and founders on second residency and citizenship by investment, and carries each application from the first conversation to completion.',
@@ -301,7 +304,7 @@ window.IHG = {
       cta:siteCta('citizenship', 'Visit imperialcitizenship.com')
     },
     {
-      key:'partners-club', name:'Imperial Partners Club', tag:'A global network for growth. Together further.', short:'Partners Club', logo:'IPC', img:null, status:'Opening in stages', statusTone:'ink',
+      key:'partners-club', name:'Imperial Partners Club', short:'Partners Club', logo:'IPC', img:null, status:'Opening in stages',
       caption:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms.',
       desc:'Imperial Partners Club: for the lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms. Your Client stays yours.',
       line:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours.',
@@ -325,7 +328,7 @@ window.IHG = {
       cta:siteCta('partners-club', 'Visit the Partners Club website')
     },
     {
-      key:'private-office', name:'Imperial Private Office', tag:'Personalised solutions for exceptional clients.', short:'Private Office', logo:'IPO', img:null, status:'By invitation, being established', statusTone:'ink',
+      key:'private-office', name:'Imperial Private Office', short:'Private Office', logo:'IPO', img:null, status:'Being established',
       caption:'Ongoing support for existing Imperial Clients after the first service is complete.',
       desc:'Imperial Private Office, being established for existing Imperial Clients: one point of contact for the wider needs of a family with a multi-country life.',
       line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.',
@@ -347,7 +350,7 @@ window.IHG = {
       cta:siteCta('private-office', 'Visit the Private Office website')
     },
     {
-      key:'real-estate', name:'Imperial Real Estate', tag:'Curated properties. Enduring value.', short:'Real Estate', logo:'IR', img:'real-estate', status:'Coming soon', statusTone:'soon', soon:true,
+      key:'real-estate', name:'Imperial Real Estate', short:'Real Estate', logo:'IR', img:'real-estate', status:'Coming soon', soon:true,
       desc:'Imperial Real Estate, not yet launched: property advisory for Dubai, working with Imperial Citizenship where a home and residency meet. Register your interest.',
       line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.',
       intro:'Imperial Real Estate will offer licensed property advisory, starting with Dubai: search, selection and purchase support, through to handover. It will work alongside Imperial Citizenship where property and residency meet.',
@@ -360,14 +363,14 @@ window.IHG = {
         ['Property and residency','Coordinated with Imperial Citizenship where a property links to UAE residency.']
       ],
       who:['Imperial Clients choosing a home in Dubai.','Families whose residency plans include property.','Selected direct buyers.'],
-      note:'Imperial Real Estate is licensed and has not yet launched. Licence details will be published at launch.',
+      note:'Imperial Real Estate has not yet launched. Licence details will be published at launch.',
       cta:null
     },
     {
-      key:'academy', name:'Imperial Academy', tag:'Education. Talent. Leadership. A stronger tomorrow.', short:'Academy', logo:'IA', img:null, status:'Learning and standards, in development', statusShort:'In development', statusTone:'ink',
+      key:'academy', name:'Imperial Academy', short:'Academy', logo:'IA', img:null, status:'In development',
       caption:'Learning and standards, in development: training and certification for the people who do this work.',
       desc:'Imperial Academy, the learning arm of Imperial Holdings Group, in development: training and certification to one standard for our people and Partner teams.',
-      line:'The Group\'s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams.',
+      line:'The Group\u2019s learning arm, in development: training and certification to one shared standard, for our own people and for Partner teams.',
       intro:'Imperial Academy is the Group\u2019s learning arm. It is building one shared standard of training and certification for our own people, which will extend to Partner teams. Courses for a wider audience will follow later.',
       card:'Our learning arm, in development. It is building one shared standard of training and certification for our own people, which will extend to Partner teams.',
       bullets:['Team training','Partner Academy, to follow','Certification'],
@@ -630,7 +633,7 @@ window.IHG = {
       'private-office':{_:'One point of contact for a multi-country family.', live:'Relocation, and the right schools near the right home.', build:'Coordination of company formation through qualified specialists.', structure:'Tax residency and structuring, coordinated with qualified specialists.', invest:'Introductions to private banks where a relationship fits the plan.', protect:'Structuring coordinated with tax and legal specialists.', experience:'Events and introductions that come with a wider life.'},
       'partners-club':{_:'Introduce a Client with clear written terms. Your Client stays your Client.'},
       academy:{_:'Training and certification to one shared standard, in development.'},
-      'real-estate':{_:'Licensed property advisory in Dubai, launching soon.', live:'A family home in Dubai, near the right schools.', invest:'Search, selection and purchase support in Dubai.'}
+      'real-estate':{_:'Property advisory in Dubai, coming soon.', live:'A family home in Dubai, near the right schools.', invest:'Search, selection and purchase support in Dubai.'}
     }
   },
 
@@ -766,7 +769,7 @@ window.IHG = {
     {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you.'},
     {q:'What happens to the information I share?', a:'It is used to respond to you, kept in our customer relationship system, and shared only where a service requires it. Private matters stay private. You can ask for a copy, or for deletion, at any time.', to:'/privacy', tl:'Privacy notice'},
     {q:'I am a lawyer, banker or adviser. Can I introduce a client?', a:'Yes. Introductions are governed by a written agreement that sets out exactly how they work, you receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
-    {q:'Is Imperial Real Estate open yet?', a:'Not yet. Imperial Real Estate is licensed and has not launched. You can register your interest and we will contact you when it opens.', to:'/divisions/real-estate', tl:'Register interest'},
+    {q:'Is Imperial Real Estate open yet?', a:'Not yet. Imperial Real Estate is coming soon. You can register your interest and we will contact you when it opens.', to:'/divisions/real-estate', tl:'Register interest'},
     {q:'Where are you based?', a:'Our headquarters is in Dubai and we have an office in Lagos. We work with Partners, advisers and specialists in the Caribbean, Europe and the Gulf.'}
   ]
 };
