@@ -228,8 +228,6 @@ window.IHG = {
     ],
     regions:[
       {k:'eu', x:760, y:124, name:'Europe'},
-      {k:'us', x:340, y:170, name:'The United States'},
-      {k:'as', x:1150, y:204, name:'Asia'},
       {k:'cb', x:470, y:256, name:'The Caribbean'}
     ]},
 
@@ -268,7 +266,7 @@ window.IHG = {
 
   leadership: [
     {name:'Zaid Al Hindi', initials:'ZA', role:'Founder and Group Chief Executive Officer', area:'Imperial Holdings Group', img:'zaid'},
-    {name:'Hekma Iskandarani', initials:'HI', role:'Group Chief Operating Officer', area:'Imperial Holdings Group', img:'hekma'},
+    {name:'Hekma Iskandarani', initials:'HI', role:'Group Chief Operating Officer', roleTbc:true, area:'Imperial Holdings Group', img:'hekma'},
     {role:'Divisional leadership', area:'Citizenship, Private Office, Partners Club, Academy and Real Estate'}
   ],
 
@@ -317,6 +315,7 @@ window.IHG = {
       ],
       who:['Introducers who are often asked about life and investment abroad.','Advisers: lawyers, private bankers, family offices and the other professionals a family already relies on.','Service-line Partners who deliver specialist work for Imperial Clients.'],
       howTitle:'Four steps. No surprises.',
+      start:'Tell us what your Client is considering. We ask for their details only once you have their permission and written terms are in place.',
       how:[['Introduce','Share your Client\u2019s details, with their permission, through one simple form.'],['We advise','A Relationship Manager meets your Client and explains their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Terms honoured','Terms are honoured exactly as set out in your written agreement, and your Client stays your Client.']],
       standards:['Partners do not act or sign on the Group\u2019s behalf.','We never guarantee citizenship, visa, residency, investment or tax outcomes.','We claim no influence with, or shortcuts through, any government.','Client information is shared only with consent, and only where a service needs it.','Every Client-facing document is approved by Imperial before use.','Regulated advice is given only by qualified specialists.'],
       note:'Your reputation travels with ours. Every Partner agrees to these standards, and so do we.',
@@ -328,13 +327,13 @@ window.IHG = {
       line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.',
       intro:'Imperial Private Office is being established to look after Imperial Clients once their first service is complete: a single point of contact for the wider needs of a multi-country family, delivered through trusted Partners and qualified specialists.',
       card:'One point of contact for our existing Clients: relocation, schools, introductions, and the coordination of qualified specialists.',
-      bullets:['Relocation and schools','Structuring, through specialists','Private banks and private equity'],
+      bullets:['Relocation and schools','Structuring, through specialists','Banking introductions'],
       does:[
         ['Relocation','Moving the household, and settling in well, wherever the family chooses to live.'],
         ['Schools','Finding the right schools for the children, near the right home.'],
         ['Company formation','Company formation and the structure behind a family\u2019s interests.'],
         ['Tax residency and structuring','Coordinated with qualified tax and legal specialists.'],
-        ['Private banks and private equity','Introductions to private banks where a relationship fits the plan.'],
+        ['Banking introductions','Introductions to private banks where a relationship fits the plan.'],
         ['Events and introductions','Invitations to the occasions, and introductions to the people, that come with a wider life.']
       ],
       who:['Existing Imperial Clients and their families.','Completed Imperial Citizenship Clients, who may be invited to join.','Families whose lives, assets and businesses span several countries.'],
@@ -365,11 +364,11 @@ window.IHG = {
       line:'The Group\'s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams.',
       intro:'Imperial Academy is the Group\u2019s learning and education arm. It trains and certifies our own people in one shared standard, and helps Partner teams explain the options accurately. Courses for a wider audience will follow later.',
       card:'Our learning arm, in development. It is building one shared standard of training and certification for our own people, which will extend to Partner teams.',
-      bullets:['Team training','Partner Academy','Certification'],
+      bullets:['Team training','Partner Academy, to follow','Certification'],
       does:[
         ['One shared standard','Every role will learn the same institution before specialising: how we work, how we protect Client and Partner trust, and how we keep information private.'],
         ['Role certification','People will be certified as ready before they take on greater responsibility.'],
-        ['Partner Academy','Training for Partner teams, so they can explain the options accurately and use approved materials.'],
+        ['Partner Academy, to follow','Training for Partner teams, so they can explain the options accurately and use approved materials.'],
         ['Future talent','A route into the Group for people selected on ability and character.', 'Programme details and launch timing to confirm'],
         ['Wider courses','Learning for selected external audiences, later.', 'Scope and timing to confirm']
       ],

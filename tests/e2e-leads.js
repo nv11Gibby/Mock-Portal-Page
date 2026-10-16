@@ -849,10 +849,10 @@ test('7.2 old #/ links and the .html copies land on their page, not on the home 
   assert.equal(seen['/#/contact'].path, '/contact', 'the hash is rewritten to the path');
   assert.ok(seen['/#/contact'].contact && !seen['/#/contact'].home, '/#/contact shows the journey, not the home hero: ' + JSON.stringify(seen['/#/contact']));
   assert.ok(/^Start a relationship/.test(seen['/#/contact'].title), 'contact title: ' + seen['/#/contact'].title);
-  assert.ok(/One house/.test(seen['/#/about'].h1) && !seen['/#/about'].home, '/#/about shows the About page: ' + JSON.stringify(seen['/#/about']));
+  assert.ok(/One Group/.test(seen['/#/about'].h1) && !seen['/#/about'].home, '/#/about shows the About page: ' + JSON.stringify(seen['/#/about']));
   assert.ok(/Second residency/.test(seen['/#/divisions/citizenship'].h1), '/#/divisions/citizenship shows the division page: ' + JSON.stringify(seen['/#/divisions/citizenship']));
   assert.equal(seen['/#/contact?about=academy'].about, 'academy', 'a hash link with a query keeps its choice');
-  assert.ok(!seen['/about.html'].nf && /One house/.test(seen['/about.html'].h1), '/about.html is the About page, not the not-found view: ' + JSON.stringify(seen['/about.html']));
+  assert.ok(!seen['/about.html'].nf && /One Group/.test(seen['/about.html'].h1), '/about.html is the About page, not the not-found view: ' + JSON.stringify(seen['/about.html']));
   assert.ok(!seen['/divisions/citizenship.html'].nf && /Second residency/.test(seen['/divisions/citizenship.html'].h1), '/divisions/citizenship.html is the division page: ' + JSON.stringify(seen['/divisions/citizenship.html']));
   t.ids = {};
   t.detail = urls.map(function (u) { return u + ' -> ' + seen[u].path + ' "' + seen[u].title + '"'; }).join('; ');
@@ -953,7 +953,7 @@ test('7.7 programme fit answers survive a wander round the site: the journey dra
   assert.equal(link.target, '_blank', 'the privacy link in the consent box opens in a new tab'); assert.ok(/noopener/.test(link.rel));
   /* away to About through the header, then back */
   await click(page.locator('.nav a[data-nav="about"]'));
-  await page.waitForFunction(function () { return location.pathname === '/about' && /One house/.test(((document.querySelector('#app h1') || {}).textContent || '')); }, null, { timeout: 10000 });
+  await page.waitForFunction(function () { return location.pathname === '/about' && /One Group/.test(((document.querySelector('#app h1') || {}).textContent || '')); }, null, { timeout: 10000 });
   await page.goBack();
   await page.waitForFunction(function () { return location.pathname === '/contact' && !!document.querySelector('#cf form .cf-step.on'); }, null, { timeout: 10000 });
   const back = await page.evaluate(function () {

@@ -10,7 +10,7 @@ var routes = ['/', '/about', '/divisions', '/divisions/citizenship', '/divisions
 /* what a route must show, beyond loading cleanly */
 var expect = {
   '/#/contact': function(i){ return i.contactForm ? '' : 'no contact form (home markup kept after the #/ rewrite)'; },
-  '/#/about': function(i){ return /One house/.test(i.h1 || '') ? '' : 'About heading missing (home markup kept after the #/ rewrite)'; }
+  '/#/about': function(i){ return /One Group/.test(i.h1 || '') ? '' : 'About heading missing (home markup kept after the #/ rewrite)'; }
 };
 (async function(){
   var browser = await chromium.launch(), results = [], fails = 0;
