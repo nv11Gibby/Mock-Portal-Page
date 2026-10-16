@@ -15,9 +15,9 @@ posts nothing and shows "Preview: nothing was sent". The site is not ready for t
 to go live. Before that, counsel must approve the privacy notice and the terms and supply the legal entity, registered
 address and licence line that every page shows as To confirm; the Group mailbox and the WhatsApp numbers shown on every
 page must be confirmed as working; enquiries must reach named owners in Pipedrive, proved by the real end-to-end test;
-the production domain must be confirmed; the four division website links must be filled or hidden; and three copy
-defects must be corrected (Hekma Iskandarani's title, the "two of them in preparation" line, the Private Office line on
-the home page). Then, once Zaid Alhindi, Founder and CEO, has approved the site, Gilbert Ferrer, Technology and AI Lead,
+the production domain must be confirmed; and the four division website links must be filled or hidden. The three copy
+defects this audit found (Hekma Iskandarani's title, the "two of them in preparation" line, the Private Office line on
+the home page) were fixed on 16 October 2026 (B9 to B11). Then, once Zaid Alhindi, Founder and CEO, has approved the site, Gilbert Ferrer, Technology and AI Lead,
 and Kaylan Tarin, Head of Systems, Intelligence and Digital Product, link the domain, and only after that is `LAUNCH=1`
 set.
 
