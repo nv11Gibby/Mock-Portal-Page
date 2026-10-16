@@ -9,9 +9,9 @@ technical issues"), read with section 6 (credibility).
 
 The site is ready for Founder review as a prototype. Every automated check passes on both builds, there are 0 broken
 internal links, anchors or assets, no production page claims a guaranteed outcome, influence, a price, a processing
-time or a delivery that did not happen, and 101 of the 103 audited claims now read as docs/CLAIMS-AUDIT.md decided. One
-caution for the review itself: on the preview build the Real Estate interest and guide forms still post and confirm
-(D2), so reviewers should use the Start a Relationship journey, which is guarded. The site is not ready for the domain
+time or a delivery that did not happen, and 101 of the 103 audited claims now read as docs/CLAIMS-AUDIT.md decided. On the
+preview build the Real Estate interest and guide forms used to post and confirm (D2); since 0054fc5 every form there
+posts nothing and shows "Preview: nothing was sent". The site is not ready for the domain
 to go live. Before that, counsel must approve the privacy notice and the terms and supply the legal entity, registered
 address and licence line that every page shows as To confirm; the Group mailbox and the WhatsApp numbers shown on every
 page must be confirmed as working; enquiries must reach named owners in Pipedrive, proved by the real end-to-end test;
@@ -46,9 +46,9 @@ invented to fill a value.
 | B6 | Enquiries reach a named person: `PIPEDRIVE_API_TOKEN` in Netlify, the Pipedrive owner user id for each of the six routes, the Academy route decision, the Hot, Warm and Cold labels in the Leads inbox, and the real end-to-end test of docs/LEADS.md section 8 run once with approval | Without the token every submission is held only in the Netlify Forms inbox, which nobody is named to watch. The offline test (40 cases, mocked services) passes; the live path has not been proved. | Kaylan Tarin, Head of Systems, Intelligence and Digital Product (owners, labels, test); Gilbert Ferrer (token); Zaid Alhindi (owners) | shared/lead-routing.json lines 123 to 169 (`ownerTbc`, `divisionNote`); Netlify environment |
 | B7 | Production domain | `config.siteUrl` (`https://www.imperialholdingsgroup.com`, TO CONFIRM) writes every canonical, `og:url`, social image URL, sitemap entry, feed link and the JSON-LD ids. A different domain means a rebuild with the right value before indexing. | Gilbert Ferrer | `assets/js/data.js` line 29; shared/ecosystem.json line 12; `sites[ihg]` in data.js |
 | B8 | The four division website links | 209 links on 25 pages point at `#`, carry `aria-disabled` and a "To confirm" mark (mega menu, footer, division pages, comparison table). docs/LAUNCH-NOTES.md lists this as a blocker. Fill Partners Club, Private Office and Academy, or hide them; Real Estate may stay a placeholder until it launches. | Gilbert Ferrer | `sites[]` and each division's `cta` in data.js; shared/ecosystem.json; then `node tests/links.js` |
-| B9 | Hekma Iskandarani's title | The About leadership card shows the amber chip "Group Chief Operating Officer". Claim C28 records that title as wrong (the mandate of 28 September 2026 says Board Member, Strategic Relationships). The chip makes the wrong title the visible text. Defect D1. | Zaid Alhindi confirms the title; then a one-line fix | `assets/js/data.js` line 269 (and line 102, the photo note) |
-| B10 | Home and About say "two of them in preparation" | Only Real Estate and Academy are labelled in preparation; Partners Club is "Opening in stages" (pilot not started) and Private Office "By invitation, being established" (go-live not started). Read together, the line implies two divisions are operating that are not. Brief section 4: "Do not imply that services are operational if they are still being developed." Defect D3. | Zaid Alhindi approves the wording | `assets/js/data.js` line 130; `assets/js/app.js` line 362 |
-| B11 | Private Office line on the home page | "Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions" is present tense, drops "being established", and lists structuring without "through specialists" (claims C59 and C61 softened this on the division page, not here). Defect D4. | Zaid Alhindi approves the wording | `assets/js/data.js` lines 135 and 330 |
+| B9 | Hekma Iskandarani's title | The About leadership card shows the amber chip "Group Chief Operating Officer". Claim C28 records that title as wrong (the mandate of 28 September 2026 says Board Member, Strategic Relationships). The chip makes the wrong title the visible text. Defect D1. | Zaid Alhindi confirms the title; then a one-line fix | `assets/js/data.js` line 269 (and line 102, the photo note) (fixed on v6/fix in 3dbda99 (the chip reads "Title"; the title itself still needs Zaid Alhindi)) |
+| B10 | Home and About say "two of them in preparation" | Only Real Estate and Academy are labelled in preparation; Partners Club is "Opening in stages" (pilot not started) and Private Office "By invitation, being established" (go-live not started). Read together, the line implies two divisions are operating that are not. Brief section 4: "Do not imply that services are operational if they are still being developed." Defect D3. | Zaid Alhindi approves the wording | `assets/js/data.js` line 130; `assets/js/app.js` line 362 (fixed on v6/fix in 02b284a (one status per division; wording to approve)) |
+| B11 | Private Office line on the home page | "Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions" is present tense, drops "being established", and lists structuring without "through specialists" (claims C59 and C61 softened this on the division page, not here). Defect D4. | Zaid Alhindi approves the wording | `assets/js/data.js` lines 135 and 330 (fixed on v6/fix in 798a745 (future tense, structuring through qualified specialists; wording to approve)) |
 
 ## 2. Can launch as a visible placeholder
 
@@ -96,7 +96,7 @@ both builds, and on the client-side strings in `dist/assets/js/data.js` and `app
 | Action | Count | Holds in dist | Notes |
 |---|---|---|---|
 | Remove | 2 | 2 | C11 (brochure attribution) and the figures band are gone; C73 is now "How the houses work together. An illustration, not a case", in the conditional |
-| Hold | 13 | 12 | C06 to C10 (no figure or counter remains: no "10+", "600+", "2,000+", "20+", "100+"); C14 (no United States or Asia); C24 (email carries the chip and is left out of every JSON-LD block); C25 (entity placeholder); C76 (the three untitled guests carry a title chip); C77, C78, C81 (softened descriptions, facts To confirm). **C28 does not hold**: the wrong title is the visible chip text (B9, D1) |
+| Hold | 13 | 12 | C06 to C10 (no figure or counter remains: no "10+", "600+", "2,000+", "20+", "100+"); C14 (no United States or Asia); C24 (email carries the chip and is left out of every JSON-LD block); C25 (entity placeholder); C76 (the three untitled guests carry a title chip); C77, C78, C81 (softened descriptions, facts To confirm). **C28 did not hold**: the wrong title was the visible chip text (B9, D1; fixed in 3dbda99) |
 | Soften | 28 | 27 in full, 1 in part | Every proposed wording is present (for example "an office in Lagos", "Beyond the two cities", "Caribbean, Europe and the Gulf", "Opening in stages", "being established", "Structuring, through specialists", "will be certified as ready", "Partner Academy, to follow", "Diplomatic occasions"), and none of the old phrases remain. C50 is softened in part: the Partners Club "How it works" outcome and the draft article still say "Terms are honoured exactly as set out in your written agreement" (data.js line 321); the named Partner Agreement is gone, as the audit asked. Acceptable while introducer agreements exist; for the Founder to confirm |
 | Keep | 60 | 60 | Unchanged and present |
 
@@ -123,9 +123,9 @@ page of both builds (visible text, attributes, head tags, JSON-LD).
   25 pages and `/terms`), "Can you guarantee ... No one honestly can", "We claim no influence with, or shortcuts
   through, any government", "Do you give tax, legal or investment advice?" with its answer. No price, processing time,
   reply time, eligibility, delivery or partnership claim anywhere.
-* `avoid`: 0 matches on any page. In the source, the Professional Partners profession list offers "Wealth adviser"
-  (data.js line 512, a job title, shown only on the journey's second screen), and the unused `tag` values in data.js and
-  the published `shared/ecosystem.json` taglines carry "solutions" and "Curated" (P27).
+* `avoid`: 0 matches on any page. In the source, the Professional Partners profession list offered "Wealth adviser"
+  (now "Financial adviser", 56e3ccb), and the unused `tag` values in data.js and the published `shared/ecosystem.json`
+  taglines carried "solutions" and "Curated" (P27; removed or replaced by the division headlines in 02b284a).
 * `npm run check` (no em dash in any form): passes, 78 files.
 
 ### 3.4 Privacy, terms, indexing and consent
@@ -213,8 +213,8 @@ index is the largest) and 20 to 26 KB gzip. Scripts: `app.js` 148 KB and `data.j
   loads. The only console error in the whole run is the 500 the e2e test provokes on purpose (case 8.3).
 * JavaScript off: every page tested (`/`, `/about`, `/divisions/citizenship`, `/divisions/real-estate`, `/journal`,
   `/contact`) answers 200 and paints its heading and full text from the prerendered markup (3.5 to 7.6 thousand
-  characters), with the page's own form visible. The `noscript` banner nevertheless says "This website needs
-  JavaScript to display", which is no longer true (D5).
+  characters), with the page's own form visible. The `noscript` banner said "This website needs
+  JavaScript to display", which was no longer true (D5, fixed in 56e3ccb).
 
 ### 5.4 Host behaviour (to confirm after the first deploy; cannot be seen from a local server)
 
@@ -235,11 +235,9 @@ index is the largest) and 20 to 26 KB gzip. Scripts: `app.js` 148 KB and `data.j
   direct endpoint, which answers only once Pipedrive took the record, "Received, and with {division}" and the reference
   (e2e case 8.3). A refused address says "Nothing has been sent yet". No confirmation email, verification or booking
   is claimed when it is switched off.
-* Preview build, journey: nothing is posted; the closing screen shows "Preview build: nothing is sent from this
-  preview" and the confirmation is labelled "Preview of the confirmation. Nothing was sent." (e2e case 8.4).
-* Preview build, Real Estate interest and citizenship guide forms: they do post, and show "Your interest in Imperial
-  Real Estate is registered" or the guide message with no preview label (D2). Whether the Render preview answers a
-  POST to `/` with a success decides whether a reviewer is told something was registered when it was not.
+* Preview build, all three forms (journey, Real Estate interest, citizenship guide): nothing is posted; each shows the
+  neutral panel "Preview: nothing was sent" with "On the live site, this is where the confirmation appears once
+  Imperial has received your message." (e2e case 8.4; D2 fixed in 0054fc5).
 
 ### 5.6 The Imperial OS webhook timing risk (docs/LEADS.md section 11)
 
@@ -301,17 +299,18 @@ function. Owner: Gilbert Ferrer with the owner of imperial-ai-control-centre.
 
 ## 8. Defects found
 
-Nothing was fixed in this round. Each defect is in the source, with its line on commit 29b461f.
+Nothing was fixed in the review round; each defect is listed with its line on commit 29b461f. All seven were fixed on
+branch v6/fix (Status column).
 
-| # | Defect | File and line | Effect |
-|---|---|---|---|
-| D1 | Hekma Iskandarani's role is the wrong title wrapped in a chip: `role:'Group Chief Operating Officer', roleTbc:true` renders the chip text "Group Chief Operating Officer" | `assets/js/data.js` line 269 (also the photo note at line 102, and the search keyword "coo" at `assets/js/app.js` line 2044) | A title recorded as wrong (claim C28) is the visible text on `/about`. The chip should read "Title" until the Founder confirms one |
-| D2 | The Real Estate interest form and the citizenship guide form post on a preview build; only the journey checks `PREVIEW` | `assets/js/app.js` lines 1655 and 1679 (the journey's guard is at line 1883) | On the preview, a reviewer can be told "Your interest in Imperial Real Estate is registered" when nothing was stored (confirmed against a local server that answers POST with 200) |
-| D3 | "two of them in preparation" | `assets/js/data.js` line 130; `assets/js/app.js` line 362 | Implies two more divisions operate than do (B10) |
-| D4 | Private Office line on the home page keeps the pre-audit present tense and lists structuring without specialists | `assets/js/data.js` lines 135 and 330 | Ahead of the record (B11; claims C59, C61) |
-| D5 | The `noscript` banner says "This website needs JavaScript to display" | `index.html` line 94 | Untrue since prerendering: every page reads without JavaScript. Something like "Some features need JavaScript" would be accurate |
-| D6 | The guide success state reads "Thank you, Test. Thank you. The guide is being finalised ..." | `assets/js/app.js` line 1373 with `assets/js/data.js` line 672 | "Thank you" twice |
-| D7 | Partners Club outcome line keeps "Terms are honoured exactly as set out in your written agreement" | `assets/js/data.js` line 321 (and the draft article) | Claim C50 softened in part only; for the Founder to confirm or align with "governed by a written agreement" |
+| # | Defect | File and line | Effect | Status |
+|---|---|---|---|---|
+| D1 | Hekma Iskandarani's role is the wrong title wrapped in a chip: `role:'Group Chief Operating Officer', roleTbc:true` renders the chip text "Group Chief Operating Officer" | `assets/js/data.js` line 269 (also the photo note at line 102, and the search keyword "coo" at `assets/js/app.js` line 2044) | A title recorded as wrong (claim C28) is the visible text on `/about`. The chip should read "Title" until the Founder confirms one | Fixed in 3dbda99: the chip reads "Title"; the photo note and the "coo" keyword are gone |
+| D2 | The Real Estate interest form and the citizenship guide form post on a preview build; only the journey checks `PREVIEW` | `assets/js/app.js` lines 1655 and 1679 (the journey's guard is at line 1883) | On the preview, a reviewer can be told "Your interest in Imperial Real Estate is registered" when nothing was stored (confirmed against a local server that answers POST with 200) | Fixed in 0054fc5: the PREVIEW guard sits in the shared submit path, so the journey, the Real Estate interest form and the guide form all show the neutral "Preview: nothing was sent" panel and post nothing (e2e 8.4 covers all three) |
+| D3 | "two of them in preparation" | `assets/js/data.js` line 130; `assets/js/app.js` line 362 | Implies two more divisions operate than do (B10) | Fixed in 02b284a: one status per division from data.js; the home line reads "Four further divisions, each opening in its own time" |
+| D4 | Private Office line on the home page keeps the pre-audit present tense and lists structuring without specialists | `assets/js/data.js` lines 135 and 330 | Ahead of the record (B11; claims C59, C61) | Fixed in 798a745: "Being established to support existing Imperial Clients after their first service ... with structuring through qualified specialists", on home and the division page |
+| D5 | The `noscript` banner says "This website needs JavaScript to display" | `index.html` line 94 | Untrue since prerendering: every page reads without JavaScript. Something like "Some features need JavaScript" would be accurate | Fixed in 56e3ccb: "Some features, such as search and the forms, need JavaScript", with both phone numbers |
+| D6 | The guide success state reads "Thank you, Test. Thank you. The guide is being finalised ..." | `assets/js/app.js` line 1373 with `assets/js/data.js` line 672 | "Thank you" twice | Fixed in 0054fc5: the guide message no longer opens with a second "Thank you" |
+| D7 | Partners Club outcome line keeps "Terms are honoured exactly as set out in your written agreement" | `assets/js/data.js` line 321 (and the draft article) | Claim C50 softened in part only; for the Founder to confirm or align with "governed by a written agreement" | Fixed in 798a745: "Terms will be set out in a written agreement, and kept to." (future tense, here and in the draft article) |
 
 ## 9. How this was measured
 

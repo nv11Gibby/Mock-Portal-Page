@@ -33,7 +33,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0012 | hero | span.cue | Scroll | delete |  | UX audit item 23: the decorative scroll cue is removed (v6/ux) |
 | C0013 | the Group | eyebrow | The Group | keep |  |  |
 | C0014 | the Group | h2.d2 | A house for a life across borders. | edit | One institution. Five specialist divisions. | hero-final Group intro headline, verbatim |
-| C0015 | the Group | lead paragraph | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. We help families and their advisers decide where they live, what they own and what they leave behind. | edit | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, two of them in preparation, extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person. | hero-final Group intro, verbatim |
+| C0015 | the Group | lead paragraph | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. We help families and their advisers decide where they live, what they own and what they leave behind. | edit | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, two of them in preparation, extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person. | hero-final Group intro, verbatim v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0016 | the Group / leadership | text link | About the Group | keep |  |  |
 | C0017 | the Group | span | years of combined experience | remove |  | figures band removed per claims C06 to C10: no dated source for the figure; reinstate only as a sentence with an as-at date |
 | C0018 | the Group | span | Client engagements | remove |  | figures band removed per claims C06 to C10: no dated source for the figure; reinstate only as a sentence with an as-at date |
@@ -53,15 +53,15 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0032 | ecosystem | span.tlink | Discover Partners Club | keep |  |  |
 | C0033 | ecosystem | span.vl | Private Office | keep |  |  |
 | C0034 | ecosystem | h3 | Imperial Private Office | edit | The relationship, continued. | hero-final division headline; the label above and the Discover link keep the name |
-| C0035 | ecosystem | p | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | hero-final division line, verbatim; says it serves existing Clients after the first service |
+| C0035 | ecosystem | p | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | hero-final division line, verbatim; says it serves existing Clients after the first service v6 fix 798a745: "Being established to support existing Imperial Clients after their first service", structuring through qualified specialists. |
 | C0036 | ecosystem | span.tlink | Discover Private Office | keep |  |  |
 | C0037 | ecosystem | span.vl | Real Estate | keep |  |  |
-| C0038 | ecosystem | h3 | Imperial Real Estate | edit | Property in Dubai, in preparation. | hero-final division headline; says in preparation |
+| C0038 | ecosystem | h3 | Imperial Real Estate | edit | Property in Dubai, in preparation. | hero-final division headline; says in preparation v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0039 | ecosystem | p | Licensed property advisory, starting with Dubai. | edit | Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now. | hero-final division line, verbatim; not yet launched, interest can be registered |
 | C0040 | ecosystem | span.tlink | Register interest | keep |  |  |
 | C0041 | ecosystem | span.vl | Academy | keep |  |  |
-| C0042 | ecosystem | h3 | Imperial Academy | edit | Learning and standards, in preparation. | hero-final division headline; says in preparation |
-| C0043 | ecosystem | p | Learning, training and certification for the people who do this work. | edit | The Group's learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | hero-final division line, verbatim; in preparation, not operating |
+| C0042 | ecosystem | h3 | Imperial Academy | edit | Learning and standards, in preparation. | hero-final division headline; says in preparation v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
+| C0043 | ecosystem | p | Learning, training and certification for the people who do this work. | edit | The Group's learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | hero-final division line, verbatim; in preparation, not operating v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0044 | ecosystem | span.tlink | Discover Academy | keep |  |  |
 | C0045 | ecosystem | span | Hover, focus or tap a division to open it. | keep |  |  |
 | C0046 | network | eyebrow | Our Network | edit | Our network | eyebrows are sentence case in the source |
@@ -120,15 +120,15 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0094 | our story | h2.d2 | From one question to a whole house. | edit | From one question to five divisions. | 'house' is body copy only; the headline keeps its shape and names the five divisions plainly |
 | C0095 | our story | lead paragraph | Imperial Citizenship is where we began, and it remains our main business. Working with families on residency and citizenship taught us that one transaction rarely solves the whole problem. | edit | Imperial Citizenship is where we began, and it remains our main business. Working with families on residency and citizenship taught us that one application rarely answers the whole question. | 'transaction' and 'solves the whole problem' read transactionally; 'one application rarely answers the whole question' says the same thing warmly and sets up the next paragraph |
 | C0096 | our story | p.muted | The residency question touches the home. The home touches the school. The company touches the tax position. And the trusted professionals our Clients already rely on needed a reliable house to hand those conversations to. | keep |  |  |
-| C0097 | our story | p.muted | Imperial Holdings Group is the result: five specialist houses at one table, sharing one team, one standard and one record of each family, so that you never have to explain your family twice. | edit | Imperial Holdings Group is the result: five specialist divisions at one table, two of them in preparation, sharing one team, one standard and one record of each family, so that you never have to explain your family twice. | claims C34: the sentence implied all five operate; 'two of them in preparation' follows the decided group intro, and the formal word replaces 'houses' in the Group statement |
+| C0097 | our story | p.muted | Imperial Holdings Group is the result: five specialist houses at one table, sharing one team, one standard and one record of each family, so that you never have to explain your family twice. | edit | Imperial Holdings Group is the result: five specialist divisions at one table, two of them in preparation, sharing one team, one standard and one record of each family, so that you never have to explain your family twice. | claims C34: the sentence implied all five operate; 'two of them in preparation' follows the decided group intro, and the formal word replaces 'houses' in the Group statement v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0098 | our story | note (p.small) | Founding date and milestones: To confirm: Group history and key dates | keep |  |  |
-| C0099 | how we work | div aria-label | One table: your family at the centre, one Relationship Manager, and the five houses | edit | One table: your family at the centre, one Relationship Manager, and the five divisions | aria-label for screen readers: the formal word 'divisions' is plainer than the warm synonym |
+| C0099 | how we work | div aria-label | One table: your family at the centre, one Relationship Manager, and the five houses | edit | One table: your family at the centre, one Relationship Manager, and the five divisions | aria-label for screen readers: the formal word 'divisions' is plainer than the warm synonym v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0100 | how we work | b | Your family | keep |  |  |
-| C0101 | how we work | span.ring-rm | One Relationship Manager | keep |  |  |
+| C0101 | how we work | span.ring-rm | One Relationship Manager | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0102 | how we work | a > b | Citizenship | keep |  |  |
 | C0103 | how we work | h2.d2 | One team. One point of contact. | keep |  |  |
 | C0104 | how we work | lead paragraph | Our people work across the Group rather than inside a single division, so knowledge and standards travel with your family. | keep |  |  |
-| C0105 | how we work | p | One Relationship Manager brings each house in when it is needed, together with qualified specialists for regulated matters such as tax, legal and investment. Where a service is best delivered by a trusted Partner, we coordinate it for you, so you still have one person to call. | keep |  |  |
+| C0105 | how we work | p | One Relationship Manager brings each house in when it is needed, together with qualified specialists for regulated matters such as tax, legal and investment. Where a service is best delivered by a trusted Partner, we coordinate it for you, so you still have one person to call. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0106 | our values | eyebrow | Our values | keep |  |  |
 | C0107 | our values | h2.d2 | Wealthy in restraint. Rich in detail. | edit | Restrained in manner. Exact in detail. | 'wealthy' is an avoided word even as wordplay; the new pair keeps the shape and says restraint and exactness without a wealth reference |
 | C0108 | our values | lead paragraph | The same standard in every house. We explain the process before we talk about outcomes, so you always know where you stand. | edit | The same standard in every division, whichever you come to first. Five values hold it in place. | the second sentence repeated the first value word for word on the same screen; the lead now introduces the five values instead |
@@ -137,7 +137,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0111 | our values | h3.h4 | Everything in writing | keep |  |  |
 | C0112 | our values | p | Options, costs and timelines are set out in writing, option by option, before you decide. | keep |  |  |
 | C0113 | our values | h3.h4 | One named person | keep |  |  |
-| C0114 | our values | p | One Relationship Manager across every house. You never have to explain your family twice. | keep |  |  |
+| C0114 | our values | p | One Relationship Manager across every house. You never have to explain your family twice. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0115 | our values | h3.h4 | Discretion | keep |  |  |
 | C0116 | our values | p | Private matters stay private. Information is shared only where a service requires it. | keep |  |  |
 | C0117 | our values | h3.h4 | For the long term | keep |  |  |
@@ -147,7 +147,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0121 | our word | div.plist-h | We will | keep |  |  |
 | C0122 | our word | list item > span | Tell you plainly what is possible, and what is not. | keep |  |  |
 | C0123 | our word | list item > span | Give honest timelines, and update them as things move. | keep |  |  |
-| C0124 | our word | list item > span | Give you one named Relationship Manager. | keep |  |  |
+| C0124 | our word | list item > span | Give you one named Relationship Manager. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0125 | our word | list item > span | Keep private matters private. | keep |  |  |
 | C0126 | our word | list item > span | Stay after the paperwork is done. | keep |  |  |
 | C0127 | our word | div.plist-h | We never will | keep |  |  |
@@ -175,11 +175,11 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | ID | Section | Element | Current | Action | Proposed | Why |
 |---|---|---|---|---|---|---|
 | C0146 | meta | page title | Divisions · Imperial Holdings Group | keep |  |  |
-| C0147 | meta | meta description | Citizenship, Private Office, Partners Club, Academy and Real Estate: five specialist houses at one table, with one Relationship Manager across all five. | edit | The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one Relationship Manager across all five. | uses the formal word and the division short names; the one-Relationship-Manager promise is verified (claims C39); under 160 characters |
+| C0147 | meta | meta description | Citizenship, Private Office, Partners Club, Academy and Real Estate: five specialist houses at one table, with one Relationship Manager across all five. | edit | The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one Relationship Manager across all five. | uses the formal word and the division short names; the one-Relationship-Manager promise is verified (claims C39); under 160 characters v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0148 | hero | span | Divisions | keep |  |  |
 | C0149 | hero | eyebrow | Our divisions | keep |  |  |
 | C0150 | hero | h1.d1 | Five houses. One table. | edit | Five divisions. One table. | the guide's own example of the two-line headline; 'house' is body copy only |
-| C0151 | hero | lead paragraph | Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five. | edit | Each division is a specialist. Together they sit at one table, with one Relationship Manager across all five. | the guide's example lead, keeping the verified Relationship Manager promise; 'house' is body copy only |
+| C0151 | hero | lead paragraph | Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five. | edit | Each division is a specialist. Together they sit at one table, with one Relationship Manager across all five. | the guide's example lead, keeping the verified Relationship Manager promise; 'house' is body copy only v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0152 | division index | a.drow > span | Citizenship | keep |  |  |
 | C0153 | division index | a.drow > span | Second residency and citizenship by investment, from first conversation to completed application. | edit | The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application. | the decided Citizenship line from hero-final.json, used verbatim (the same data string as the home ecosystem) |
 | C0154 | division index | a.drow > span | The flagship | keep |  |  |
@@ -187,13 +187,13 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0156 | division index | a.drow > span | The network of lawyers, bankers, wealth advisers and family offices who introduce families to us. | edit | Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours. | the decided Partners Club line from hero-final.json, verbatim; drops 'wealth advisers' (avoided word) and carries the Partner promise |
 | C0157 | division index | a.drow > span | For professionals | edit | Opening in stages | claims C49: the Partners Club network is at pilot stage, so the status says so (as the division page and menu now do) |
 | C0158 | division index | a.drow > span | Private Office | keep |  |  |
-| C0159 | division index | a.drow > span | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the decided Private Office line from hero-final.json, verbatim |
+| C0159 | division index | a.drow > span | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the decided Private Office line from hero-final.json, verbatim v6 fix 798a745: "Being established to support existing Imperial Clients after their first service", structuring through qualified specialists. |
 | C0160 | division index | a.drow > span | For existing Clients | edit | By invitation, being established | claims C59: go-live has not started; the status says so (as the division page and menu now do) |
 | C0161 | division index | a.drow > span | Real Estate | keep |  |  |
 | C0162 | division index | a.drow > span | Licensed property advisory, starting with Dubai. | edit | Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now. | the decided Real Estate line from hero-final.json, verbatim: says plainly that it has not launched and that interest can be registered |
 | C0163 | division index | a.drow > span | Coming soon | keep |  | editor: kept as Coming soon: the Real Estate status chip in the already-edited divisions group (C1242) says Coming soon, and the index, compare row and finder use the same status words as the division page and the menu; writer proposed: 'Coming soon' is a retail phrase; 'in preparation' is the decided wording for Real Estate (hero-final headline) and matches the ecosystem menu |
 | C0164 | division index | a.drow > span | Academy | keep |  |  |
-| C0165 | division index | a.drow > span | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the decided Academy line from hero-final.json, verbatim: says it is in preparation |
+| C0165 | division index | a.drow > span | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the decided Academy line from hero-final.json, verbatim: says it is in preparation v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0166 | division index | a.drow > span | Learning and standards | edit | Learning and standards, in development | claims C68: the Academy is internal and in development; the status says so (as the division page now does) |
 | C0167 | finder | eyebrow | Not sure where to start? | edit | Where to begin | an eyebrow is a two-to-four-word label, not a question; this names the section |
 | C0168 | finder | h2.d2 | Find your house. | edit | Find the right division. | 'house' is body copy only; matches the search palette entry for the finder |
@@ -226,10 +226,10 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0195 | finder | div aria-label | Your table | keep |  |  |
 | C0196 | finder | h3 | Your table | keep |  |  |
 | C0197 | finder | p | Choose who this is for, or what matters most, and we will show which houses would sit at your table. | edit | Choose who this is for, or what matters most, and we will show which divisions would sit at your table. | 'houses' becomes 'divisions' throughout the finder, so the result reads as the formal choice it is |
-| C0198 | finder | note (p.xs) | A starting point, not advice. Your Relationship Manager confirms the right house in the first conversation. | edit | A starting point, not advice. Your Relationship Manager confirms the right division in the first conversation. | 'house' becomes 'division' to match the rest of the finder |
+| C0198 | finder | note (p.xs) | A starting point, not advice. Your Relationship Manager confirms the right house in the first conversation. | edit | A starting point, not advice. Your Relationship Manager confirms the right division in the first conversation. | 'house' becomes 'division' to match the rest of the finder v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0199 | compare | eyebrow | At a glance | keep |  |  |
 | C0200 | compare | h2.d2 | Five houses, side by side. | edit | Five divisions, side by side. | 'houses' is body copy only; the headline keeps its shape |
-| C0201 | compare | lead paragraph | Who each house is for and what it covers. Whichever you start with, the same Relationship Manager brings in the others. | edit | Who each division is for, what it covers and where it stands today. Whichever you start with, the same Relationship Manager brings in the others. | adds 'where it stands today', since the status row now says which divisions operate and which are in preparation |
+| C0201 | compare | lead paragraph | Who each house is for and what it covers. Whichever you start with, the same Relationship Manager brings in the others. | edit | Who each division is for, what it covers and where it stands today. Whichever you start with, the same Relationship Manager brings in the others. | adds 'where it stands today', since the status row now says which divisions operate and which are in preparation v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0202 | compare | div aria-label | Divisions compared, scrolls sideways | keep |  |  |
 | C0203 | compare | caption.vh | The five Imperial houses compared | edit | The five Imperial divisions compared | screen reader caption: the formal word is the plain one |
 | C0204 | compare | th > a | Citizenship | keep |  |  |
@@ -280,12 +280,12 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0249 | how we work | h3.h3 | One conversation | keep |  |  |
 | C0250 | how we work | p | Tell us about your family and your plans once. No forms, no pressure, and no decision on the first call. | edit | Tell us about your family and your plans once. No forms, no pressure, and no decision in the first conversation. | editor: call is the word the guide sets aside for the first contact; the first conversation is the house phrase |
 | C0251 | how we work | h3.h3 | The right house | edit | The right division | a step heading; 'house' is body copy only |
-| C0252 | how we work | p | Your Relationship Manager brings in each house, and qualified specialists, when they are needed. Never before. | keep |  |  |
+| C0252 | how we work | p | Your Relationship Manager brings in each house, and qualified specialists, when they are needed. Never before. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0253 | how we work | h3.h3 | One person, for the long term | keep |  |  |
 | C0254 | how we work | p | One named person stays with you after the paperwork is done: renewals, property, the next family member. | keep |  |  |
 | C0255 | the houses online | eyebrow | The houses online | edit | The divisions online | eyebrow label; 'houses' is body copy only |
 | C0256 | the houses online | h2.d2 | Visit a house directly. | edit | Visit a division directly. | 'house' is body copy only; the headline keeps its shape |
-| C0257 | the houses online | lead paragraph | Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch. | keep |  |  |
+| C0257 | the houses online | lead paragraph | Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch. | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0258 | the houses online | a.site > b | Imperial Citizenship | keep |  |  |
 | C0259 | the houses online | a.site > span | imperialcitizenship.com | keep |  |  |
 | C0260 | the houses online | a.site > b | Imperial Partners Club | keep |  |  |
@@ -300,7 +300,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0269 | finder | result reason (li) | Second residency and citizenship by investment, compared side by side. | keep |  |  |
 | C0270 | finder | result reason (li) | Residency and citizenship routes for the whole family. | keep |  |  |
 | C0271 | finder | result reason (li) | UAE business set-up advisory and a regional base. | keep |  |  |
-| C0272 | finder | result reason (li) | A Global Mobility Strategy across several countries. | keep |  |  |
+| C0272 | finder | result reason (li) | A Global Mobility Strategy across several countries. | keep |  | v6 fix 56e3ccb: sentence case. |
 | C0273 | finder | result reason (li) | A second citizenship or residency as a lasting option. | keep |  |  |
 | C0274 | finder | result reason (li) | Fewer visas to plan a life around. | keep |  |  |
 | C0275 | finder | result reason (li) | One point of contact for a multi-country family. | keep |  |  |
@@ -317,7 +317,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0286 | finder | result reason (li) | Search, selection and purchase support in Dubai. | keep |  |  |
 | C0287 | finder | button link (gold) | Start the conversation | edit | Start a relationship | the journey spec names the finder result button 'Start a relationship'; it opens the three-path journey with the division and goals prefilled |
 | C0288 | finder | text button | Start over | edit | Start afresh | the guide's label for clearing a kept draft; matches the fit check on the Citizenship page |
-| C0289 | finder | note (p.xs) | A starting point, not advice. One Relationship Manager brings in each house when it is needed. | edit | A starting point, not advice. One Relationship Manager brings in each division when it is needed. | 'house' becomes 'division' to match the rest of the finder |
+| C0289 | finder | note (p.xs) | A starting point, not advice. One Relationship Manager brings in each house when it is needed. | edit | A starting point, not advice. One Relationship Manager brings in each division when it is needed. | 'house' becomes 'division' to match the rest of the finder v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 
 ## /divisions/citizenship (108 strings, 8 changed)
 
@@ -345,7 +345,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0309 | what we do | h3.h3 | European residency | keep |  |  |
 | C0310 | what we do | p | Residency routes in Europe. | keep |  |  |
 | C0311 | what we do | placeholder chip | To confirm: Approved European programmes to confirm | keep |  |  |
-| C0312 | what we do | h3.h3 | Global Mobility Strategy | keep |  |  |
+| C0312 | what we do | h3.h3 | Global Mobility Strategy | keep |  | v6 fix 56e3ccb: sentence case. |
 | C0313 | what we do | p | Advisory for families planning across several countries at once. | keep |  |  |
 | C0314 | what we do | h3.h3 | UAE business set-up | keep |  |  |
 | C0315 | what we do | p | Advisory for founders establishing a presence in the UAE. | keep |  |  |
@@ -468,11 +468,11 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0427 | how it works | h3.h3 | Introduce | keep |  |  |
 | C0428 | how it works | p | Share your Client’s details, with their permission, through one simple form. | edit | Tell us about the introduction, with your Client’s permission. Their details follow once written terms are in place. | the journey asks nothing about the Client up front; the step now agrees with it and with the consent standard |
 | C0429 | how it works | h3.h3 | We advise | keep |  |  |
-| C0430 | how it works | p | A Relationship Manager meets your Client and explains their options plainly. | keep |  |  |
+| C0430 | how it works | p | A Relationship Manager meets your Client and explains their options plainly. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0431 | how it works | h3.h3 | You stay informed | keep |  |  |
 | C0432 | how it works | p | Clear updates on each introduction, at every stage. | keep |  |  |
-| C0433 | how it works | h3.h3 | Outcome | edit | Terms honoured | editor: 'As agreed' is a fragment, not a step name; 'Terms honoured' names the step in two words and keeps 'Outcome' out of a list that refuses to promise outcomes. Writer: 'Outcome' sat awkwardly beside a list that says we never guarantee outcomes |
-| C0434 | how it works | p | Terms are honoured exactly as set out in your written agreement. | edit | Terms are honoured exactly as set out in your written agreement, and your Client stays your Client. | editor: claims C50 drops the Partner Agreement name, which this line never carried, and C50's own wording keeps 'exactly', so the current promise stands; the Partner promise from hero-final.json is added as the writer proposed |
+| C0433 | how it works | h3.h3 | Outcome | edit | Terms honoured | editor: 'As agreed' is a fragment, not a step name; 'Terms honoured' names the step in two words and keeps 'Outcome' out of a list that refuses to promise outcomes. Writer: 'Outcome' sat awkwardly beside a list that says we never guarantee outcomes v6 fix 798a745: future tense, "Terms will be set out in a written agreement, and kept to." |
+| C0434 | how it works | p | Terms are honoured exactly as set out in your written agreement. | edit | Terms are honoured exactly as set out in your written agreement, and your Client stays your Client. | editor: claims C50 drops the Partner Agreement name, which this line never carried, and C50's own wording keeps 'exactly', so the current promise stands; the Partner promise from hero-final.json is added as the writer proposed v6 fix 798a745: future tense, "Terms will be set out in a written agreement, and kept to." |
 | C0435 | how it works | eyebrow | Shared standards | keep |  |  |
 | C0436 | how it works | h3.d3 | Your reputation travels with ours. | keep |  |  |
 | C0437 | how it works | list item > span | Partners do not act or sign on the Group’s behalf. | keep |  |  |
@@ -483,7 +483,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0442 | how it works | list item > span | Regulated advice is given only by qualified specialists. | keep |  |  |
 | C0443 | how it works | div | Please note Your reputation travels with ours. Every Partner agrees to these standards, and so do we. | edit | Please note Your reputation travels with ours. Every Partner is asked to agree to these standards in writing, and we hold ourselves to the same. | claims C57: agreement depends on the Partner Agreement, which counsel has not yet reviewed, so Partners are 'asked to agree in writing' |
 | C0444 | cta band | h2.d2 | Introduce with confidence. | keep |  |  |
-| C0445 | cta band | lead paragraph | The Imperial Partners Club website is in preparation. In the meantime, speak to us and we will connect you. | keep |  |  |
+| C0445 | cta band | lead paragraph | The Imperial Partners Club website is in preparation. In the meantime, speak to us and we will connect you. | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 
 ## /divisions/private-office (39 strings, 11 changed)
 
@@ -493,7 +493,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0447 | meta | meta description | One lasting relationship for families with multi-country lives. | edit | Imperial Private Office, being established for existing Imperial Clients: one point of contact for the wider needs of a family with a multi-country life. | claims C59: the division is being established; the description now names it, its status and its audience, under 160 characters |
 | C0448 | hero | img alt text | Imperial Private Office | keep |  |  |
 | C0449 | hero | h1.d1 | One lasting relationship. | keep |  |  |
-| C0450 | hero | lead paragraph | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the division line decided in hero-final.json, used verbatim |
+| C0450 | hero | lead paragraph | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the division line decided in hero-final.json, used verbatim v6 fix 798a745: "Being established to support existing Imperial Clients after their first service", structuring through qualified specialists. |
 | C0451 | overview | statement paragraph | Imperial Private Office looks after Imperial Clients once their first service is complete. It is a single point of contact for the wider needs of a multi-country family, delivered through trusted Partners and qualified specialists. | edit | Imperial Private Office is being established to look after Imperial Clients once their first service is complete: a single point of contact for the wider needs of a multi-country family, delivered through trusted Partners and qualified specialists. | claims C59: go-live has not started, so the present tense becomes 'is being established' |
 | C0452 | overview | dd | Imperial Private Office | keep |  |  |
 | C0453 | overview | dd | For existing Clients | edit | By invitation, being established | claims C59: the status says the division is by invitation and being established |
@@ -527,7 +527,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0481 | how it works | p | We stay with it until it is done, and note what comes next. | keep |  |  |
 | C0482 | how it works | div | Please note Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists. | keep |  |  |
 | C0483 | cta band | h2.d2 | Continue with Private Office. | keep |  |  |
-| C0484 | cta band | lead paragraph | The Imperial Private Office website is in preparation. In the meantime, speak to us and we will connect you. | keep |  |  |
+| C0484 | cta band | lead paragraph | The Imperial Private Office website is in preparation. In the meantime, speak to us and we will connect you. | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 
 ## /divisions/real-estate (35 strings, 8 changed)
 
@@ -537,7 +537,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0486 | meta | meta description | Licensed property advisory, starting with Dubai. | edit | Imperial Real Estate, not yet launched: property advisory for Dubai, working with Imperial Citizenship where a home and residency meet. Register your interest. | the description now names the division, says it has not launched and gives the next step, under 160 characters |
 | C0487 | hero | span | Real Estate | keep |  |  |
 | C0488 | hero | img alt text | Imperial Real Estate | keep |  |  |
-| C0489 | hero | h1.d1 | Licensed property advisory, starting with Dubai. | edit | Property in Dubai, in preparation. | the current headline led with the licence claim before its details are published and ran to three lines; the card headline from hero-final.json says plainly where the division stands |
+| C0489 | hero | h1.d1 | Licensed property advisory, starting with Dubai. | edit | Property in Dubai, in preparation. | the current headline led with the licence claim before its details are published and ran to three lines; the card headline from hero-final.json says plainly where the division stands v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0490 | hero | lead paragraph | Imperial Real Estate is licensed and has not yet launched. Register your interest and we will be in touch when it opens. | keep |  |  |
 | C0491 | hero | button link > span | Register interest | keep |  |  |
 | C0492 | overview | statement paragraph | Imperial Real Estate will offer licensed property advisory, starting with Dubai: search, selection and purchase support, through to handover. It will work alongside Imperial Citizenship where property and residency meet. | keep |  |  |
@@ -578,7 +578,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0522 | hero | span | Academy | keep |  |  |
 | C0523 | hero | img alt text | Imperial Academy | keep |  |  |
 | C0524 | hero | h1.d1 | One standard, learned by everyone. | keep |  |  |
-| C0525 | hero | lead paragraph | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the division line decided in hero-final.json, used verbatim |
+| C0525 | hero | lead paragraph | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the division line decided in hero-final.json, used verbatim v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0526 | overview | statement paragraph | Imperial Academy is the Group’s learning and education arm. It trains and certifies our own people in one shared standard, and helps Partner teams explain the options accurately. Courses for a wider audience will follow later. | edit | Imperial Academy is the Group’s learning arm. It is building one shared standard of training and certification for our own people, which will extend to Partner teams. Courses for a wider audience will follow later. | claims C68: the Academy is internal and in development, so 'trains and certifies' becomes 'is building' |
 | C0527 | overview | dd | Imperial Academy | keep |  |  |
 | C0528 | overview | dd | Learning and standards | edit | Learning and standards, in development | claims C68: the status carries 'in development' |
@@ -612,7 +612,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0556 | how it works | p | Development continues as people take on more. | keep |  |  |
 | C0557 | how it works | div | Please note Academy certification is internal to Imperial. It is not a replacement for professional licensing. | keep |  |  |
 | C0558 | cta band | h2.d2 | Learn the Imperial standard. | edit | Training to one standard. | "Learn" invites the reader to a division in development; the new line describes it |
-| C0559 | cta band | lead paragraph | The Imperial Academy website is in preparation. In the meantime, speak to us and we will connect you. | keep |  |  |
+| C0559 | cta band | lead paragraph | The Imperial Academy website is in preparation. In the meantime, speak to us and we will connect you. | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 
 ## /journal (14 strings, 7 changed)
 
@@ -629,7 +629,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0568 | events | note (p.xs) | Photographs of guests appear once they have confirmed they are happy to be featured. | keep |  |  |
 | C0569 | journal | lead paragraph | Company developments, selected insights and partnerships. | edit | Company developments and selected insights. | claims C82 and C83: partnerships has no record |
 | C0570 | journal | div.meta | Company developments | keep |  |  |
-| C0571 | journal | h3 | Imperial Real Estate is licensed and preparing to launch | keep |  |  |
+| C0571 | journal | h3 | Imperial Real Estate is licensed and preparing to launch | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C0572 | journal | p | The Group’s fifth division will offer licensed property advisory, starting with Dubai. Interest can be registered now. | keep |  |  |
 | C0573 | events | lead paragraph (variant) | Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. One cover photograph for each, and a gallery inside. | edit | Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos. One cover photograph for each, and a gallery inside. | claims C82: the same softening on the variant shown once every event has consent |
 
@@ -836,7 +836,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0730 | article | h2 | One table | keep |  |  |
 | C0731 | article | p | Imperial’s houses sit at one table, so the person advising on your residency already knows about the home, the company and the school. | keep |  |  |
 | C0732 | article | h2 | One person | keep |  |  |
-| C0733 | article | p | One Relationship Manager brings each house in when it is needed, and qualified specialists for regulated matters such as tax, legal and investment. | keep |  |  |
+| C0733 | article | p | One Relationship Manager brings each house in when it is needed, and qualified specialists for regulated matters such as tax, legal and investment. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0734 | article | pull quote | You never have to explain your family twice. | keep |  |  |
 
 ## /insights/your-client-stays-your-client (12 strings, 4 changed)
@@ -851,7 +851,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0740 | article | p.article-dek | For lawyers, bankers, wealth advisers and family offices, an introduction should protect the relationship, not put it at risk. | edit | For lawyers, bankers, advisers and family offices, an introduction should protect the relationship, not put it at risk. | 'wealth' is an avoided word; the professions are named without it, as the Partners Club line now does |
 | C0741 | article | p | Professional advisers are often the first people a Client asks about living or investing abroad. The question is who to hand that conversation to without worrying about it. | keep |  |  |
 | C0742 | article | h2 | Four steps | keep |  |  |
-| C0743 | article | p | Introduce, with your Client’s permission, through one simple form. A Relationship Manager meets your Client and explains their options plainly. You receive clear updates at every stage. Terms are honoured exactly as set out in your written agreement. | edit | Tell us about the introduction, with your Client’s permission. A Relationship Manager meets your Client and explains their options plainly. We tell you where the introduction stands, at every stage. The terms of your written agreement are honoured exactly as set out. | editor: the first step now matches the edited Partners Club page (divisions C0428), where details follow once written terms are in place; claims C50 and C51 as the writer had them; writer: claims C50 and C51: updates are told, not seen in a portal, and the written agreement is not named as the Partner Agreement before counsel approves it |
+| C0743 | article | p | Introduce, with your Client’s permission, through one simple form. A Relationship Manager meets your Client and explains their options plainly. You receive clear updates at every stage. Terms are honoured exactly as set out in your written agreement. | edit | Tell us about the introduction, with your Client’s permission. A Relationship Manager meets your Client and explains their options plainly. We tell you where the introduction stands, at every stage. The terms of your written agreement are honoured exactly as set out. | editor: the first step now matches the edited Partners Club page (divisions C0428), where details follow once written terms are in place; claims C50 and C51 as the writer had them; writer: claims C50 and C51: updates are told, not seen in a portal, and the written agreement is not named as the Partner Agreement before counsel approves it v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. v6 fix 798a745: future tense, "Terms will be set out in a written agreement, and kept to." |
 | C0744 | article | h2 | Shared standards | keep |  |  |
 | C0745 | article | p | We never guarantee citizenship, visa, residency, investment or tax outcomes, and we claim no influence with any government. Every Client-facing document is checked against an approved claims list. | edit | We never guarantee citizenship, visa, residency, investment or tax outcomes, and we claim no influence with any government. Every Client-facing document is approved by Imperial before use. | claims C102: no approved claims list exists yet; the denials stay as they are |
 | C0746 | article | pull quote | Your reputation travels with ours. | keep |  |  |
@@ -932,11 +932,11 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0811 | questions | h3 | Do I need any documents for a first conversation? | keep |  |  |
 | C0812 | questions | p | No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared. | keep |  |  |
 | C0813 | questions | h3 | Will I have to deal with several people across the houses? | keep |  |  |
-| C0814 | questions | p | No. One Relationship Manager is your point of contact across every house, and brings each one in when it is needed. You never have to explain your family twice. | keep |  |  |
+| C0814 | questions | p | No. One Relationship Manager is your point of contact across every house, and brings each one in when it is needed. You never have to explain your family twice. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0815 | questions | h3 | Can you guarantee that an application will be approved? | keep |  |  |
 | C0816 | questions | p | No one honestly can. Final approval of any citizenship or residency application always rests with the relevant government. We tell you that at the start, and keep you informed at every stage. | keep |  |  |
 | C0817 | questions | h3 | Do you give tax, legal or investment advice? | keep |  |  |
-| C0818 | questions | p | Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you. | keep |  |  |
+| C0818 | questions | p | Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0819 | questions | h3 | What happens to the information I share? | keep |  |  |
 | C0820 | questions | p | It is used to respond to you, kept in our customer relationship system, and shared only where a service requires it. Private matters stay private. You can ask for a copy, or for deletion, at any time. | keep |  |  |
 | C0821 | questions | text link | Privacy notice | keep |  |  |
@@ -1058,7 +1058,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0922 | meta | page title | Page not found · Imperial Holdings Group | keep |  |  |
 | C0923 | meta | meta description | Imperial Holdings Group: five specialist divisions, one standard, and one person who knows your family. Led from Dubai and Lagos. | keep |  |  |
 | C0924 | 404 | eyebrow | Page not found | keep |  |  |
-| C0925 | 404 | h1.d2 | This page has moved, or never existed. | keep |  |  |
+| C0925 | 404 | h1.d2 | This page has moved, or never existed. | keep |  | v6 fix 56e3ccb: "This page has moved, or is no longer here." |
 | C0926 | 404 | lead paragraph | Let us take you somewhere useful. | keep |  |  |
 | C0927 | 404 | button link (gold) > span | Home | keep |  |  |
 | C0928 | 404 | text link | Our divisions | keep |  |  |
@@ -1109,7 +1109,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0963 | header | toast placeholder text | Imperial Real Estate website link (at launch) | keep |  |  |
 | C0964 | menu / ecosystem | eyebrow | Our ecosystem | keep |  |  |
 | C0965 | menu | div.d3 | Five divisions. One table. | keep |  |  |
-| C0966 | menu | p | One Relationship Manager across all five. | keep |  |  |
+| C0966 | menu | p | One Relationship Manager across all five. | keep |  | v6 fix 798a745: public copy says one named person; Relationship Manager stays internal. |
 | C0967 | menu / ecosystem / other houses | text link | All divisions | keep |  |  |
 | C0968 | menu | a.mega-item > b | Imperial Citizenship | keep |  |  |
 | C0969 | menu | a.mega-item > small | The flagship | keep |  |  |
@@ -1123,7 +1123,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0977 | menu | a.mega-item > small | Learning and standards | edit | In development | Academy status softened per claims C68 (the Academy is internal and in development); two words, parallel with In preparation beside it; the caption below keeps Learning and standards |
 | C0978 | menu | figure caption | Citizenship Second residency and citizenship by investment, from first conversation to completed application. | keep |  |  |
 | C0979 | menu | figure caption | Partners Club The network of lawyers, bankers, wealth advisers and family offices who introduce families to us. | edit | Partners Club Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms. | editor: the caption now opens with the hero-final Partners Club line, as the division cards in the divisions group do (C1227), cut to one sentence for a menu caption; the status sits in the label above it; writer: Division line softened per claims C49 (the network is not yet built); wealth is an avoided word, dropped as the decided home line drops it |
-| C0980 | menu | figure caption | Private Office One lasting relationship for families with multi-country lives. | edit | Private Office Ongoing support for existing Imperial Clients after the first service is complete. | editor: claims C59: the present-tense line was ahead of the record; the caption takes the opening of the hero-final Private Office line, as the divisions group does (C1230), and the status sits in the label above it |
+| C0980 | menu | figure caption | Private Office One lasting relationship for families with multi-country lives. | edit | Private Office Ongoing support for existing Imperial Clients after the first service is complete. | editor: claims C59: the present-tense line was ahead of the record; the caption takes the opening of the hero-final Private Office line, as the divisions group does (C1230), and the status sits in the label above it v6 fix 798a745: "Being established to support existing Imperial Clients after their first service", structuring through qualified specialists. |
 | C0981 | menu | figure caption | Real Estate Licensed property advisory, starting with Dubai. | keep |  |  |
 | C0982 | menu | figure caption | Academy Learning, training and certification for the people who do this work. | edit | Academy Learning and standards, in development: training and certification for the people who do this work. | editor: the writer's line ended 'who do this work, in development', which reads as if the people were in development; the status now opens the line, in the claims C68 wording (Learning and standards, in development), and matches the sister-site role C1401. Writer: present tense overstated per claims C68; the same promise, dated honestly |
 | C0983 | menu | span | The houses online: | edit | Our websites: | House is the warm synonym for body copy only; a menu label names the thing plainly |
@@ -1156,7 +1156,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C1010 | menu | button aria-label | Close menu | keep |  |  |
 | C1011 | footer | p | Two cities. One horizon. Five specialist divisions, one standard, and one person who knows your family. | edit | Two Cities. One Horizon. Five specialist divisions, one standard, and one person who knows your family. | The secondary signature keeps its registered title case; the rest of the line is verified (claims C01) and stays |
 | C1012 | footer | h2.fh | Divisions | keep |  |  |
-| C1013 | footer | a > small (chip) | Soon | keep |  |  |
+| C1013 | footer | a > small (chip) | Soon | keep |  | v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 | C1014 | footer | h2.fh | The Group | keep |  |  |
 | C1015 | footer | a | Our ecosystem | keep |  |  |
 | C1016 | footer | a | Events and Journal | edit | Journal | The guide's footer names the section; events live inside the Journal, so the longer label added nothing |
@@ -1512,7 +1512,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | ID | Section | Element | Current | Action | Proposed | Why |
 |---|---|---|---|---|---|---|
 | C1229 | other houses | b | Private Office | keep |  |  |
-| C1230 | other houses | span | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the division line decided in hero-final.json, used verbatim |
+| C1230 | other houses | span | One lasting relationship for families with multi-country lives. | edit | Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact. | the division line decided in hero-final.json, used verbatim v6 fix 798a745: "Being established to support existing Imperial Clients after their first service", structuring through qualified specialists. |
 
 ## /divisions/citizenship, /divisions/partners-club, /divisions/private-office, /divisions/real-estate, /divisions/academy, /journal/events/delborough-dinner, /insights, /insights/everything-in-writing (1 strings, 0 changed)
 
@@ -1525,7 +1525,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | ID | Section | Element | Current | Action | Proposed | Why |
 |---|---|---|---|---|---|---|
 | C1235 | other houses | b | Academy | keep |  |  |
-| C1236 | other houses | span | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the division line decided in hero-final.json, used verbatim |
+| C1236 | other houses | span | Learning, training and certification for the people who do this work. | edit | The Group’s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams. | the division line decided in hero-final.json, used verbatim v6 fix 02b284a: one status per division from data.js (Opening in stages, Being established, Coming soon, In development; none for Citizenship). |
 
 ## /divisions/partners-club, /divisions/private-office, /divisions/real-estate, /divisions/academy (2 strings, 1 changed)
 
@@ -1580,7 +1580,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C1248 | leadership | div.role | Founder and Group Chief Executive Officer | keep |  |  |
 | C1249 | leadership | h3 | Zaid Al Hindi | keep |  |  |
 | C1250 | leadership | img alt text | Hekma Iskandarani | keep |  |  |
-| C1251 | leadership | div.role | Group Chief Operating Officer | hold | To confirm: Title | editor: claims C28 holds the title; the chip names what is missing and leaves the mandate wording (Board Member, Strategic Relationships) for the Founder to confirm rather than printing an internal record on the page; writer: claims C28: no record names a Group Chief Operating Officer |
+| C1251 | leadership | div.role | Group Chief Operating Officer | hold | To confirm: Title | editor: claims C28 holds the title; the chip names what is missing and leaves the mandate wording (Board Member, Strategic Relationships) for the Founder to confirm rather than printing an internal record on the page; writer: claims C28: no record names a Group Chief Operating Officer v6 fix 3dbda99: now applied, the chip reads "Title". |
 | C1252 | leadership | h3 | Hekma Iskandarani | keep |  |  |
 | C1284 | presence | svg aria-label | Map: headquarters in Dubai, a regional hub in Lagos, and relationships across Europe, the United States, Asia and the Caribbean | edit | Map: headquarters in Dubai, an office in Lagos, and relationships across the Caribbean, Europe and the Gulf | claims C13, C14 and C22: describes what the map shows while the United States and Asia are held |
 | C1285 | presence | span.wmap-lbl | Dubai | keep |  |  |
@@ -1852,11 +1852,11 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 
 | ID | Section | Element | Current | Action | Proposed | Why |
 |---|---|---|---|---|---|---|
-| C1384 | divisions | division tagline (tag) | Global mobility. Greater possibilities. | keep |  |  |
-| C1385 | divisions | division tagline (tag) | A global network for growth. Together further. | keep |  |  |
+| C1384 | divisions | division tagline (tag) | Global mobility. Greater possibilities. | keep |  | v6 fix 02b284a: tagline removed or replaced by the division headline. |
+| C1385 | divisions | division tagline (tag) | A global network for growth. Together further. | keep |  | v6 fix 02b284a: tagline removed or replaced by the division headline. |
 | C1386 | divisions | division tagline (tag) | Personalised solutions for exceptional clients. | hold | To confirm: Imperial Private Office tagline, retained as registered or revised by the Founder | The guide's open decision: the registered line uses solutions, an avoided word; not rendered on this site |
 | C1387 | divisions | division tagline (tag) | Curated properties. Enduring value. | hold | To confirm: Imperial Real Estate tagline, retained as registered or revised by the Founder | The same open decision in the guide; curated is allowed in a tagline, so the Founder may well retain it; not rendered on this site |
-| C1388 | divisions | division tagline (tag) | Education. Talent. Leadership. A stronger tomorrow. | keep |  |  |
+| C1388 | divisions | division tagline (tag) | Education. Talent. Leadership. A stronger tomorrow. | keep |  | v6 fix 02b284a: tagline removed or replaced by the division headline. |
 | C1389 | divisions | division card copy (card) | Our flagship house. Residency and citizenship by investment, compared side by side and carried from first conversation to completed application. | keep |  |  |
 | C1390 | divisions | division card copy (card) | Our Partner network across industries: introducers, advisers and service-line Partners. Your Client stays your Client. | edit | Our Partner network, opening in stages: introducers, advisers and service-line Partners. Your Client stays your Client. | Claims C49: the network is at pilot stage; the card says so in three words and keeps the promise that matters |
 | C1391 | divisions | division card copy (card) | A concierge for our existing Clients: relocation, schools, structuring, banking and introductions, through one point of contact. | edit | One point of contact for our existing Clients: relocation, schools, introductions, and the coordination of qualified specialists. | Claims C60 wording: concierge is an avoided word, and structuring and banking read as services of its own |

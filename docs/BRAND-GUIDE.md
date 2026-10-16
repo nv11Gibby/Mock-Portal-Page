@@ -70,7 +70,7 @@ The five qualities as rules, each with a wrong and a right example.
 | second passport, golden visa | second citizenship; the programme's official name |
 | lead, prospect, funnel (public copy) | enquiry; conversation; journey |
 
-To confirm: two division taglines ("Personalised solutions for exceptional clients.", "Curated properties. Enduring value.") and the Easter Polo Cup copy ("an exclusive after party") use listed words. The Founder retains the taglines as registered lines or approves a revision; the event copy drops "exclusive".
+To confirm: two division taglines ("Personalised solutions for exceptional clients.", "Curated properties. Enduring value.") and the Easter Polo Cup copy ("an exclusive after party") use listed words. The Founder retains the taglines as registered lines or approves a revision; the event copy drops "exclusive". (v6 fix 02b284a: the site no longer shows division taglines; each division is introduced by its headline. If the Founder retains them as registered lines, they return through data.js.)
 
 **Capitalisation.** Client and Partner take a capital when they mean Imperial's; lower case in the general sense. Relationship Manager, Partner Agreement, the Founder, the Group (meaning IHG), the Journal. Division names in full on first mention, then Citizenship, Partners Club, Private Office, Real Estate, the Academy. "Citizenship by investment" lower case; programme names as the government writes them; eyebrows in sentence case in the source.
 
