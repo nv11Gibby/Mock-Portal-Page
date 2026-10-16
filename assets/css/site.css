@@ -45,6 +45,7 @@ li{max-width:46em}
 .light .xs,.light .muted{color:var(--l-muted)}
 .tbc-mark{display:inline-block;flex:none;border:1px dashed currentColor;padding:0 6px;border-radius:2px;font-size:11px;font-weight:500;letter-spacing:.04em;line-height:1.7;text-transform:none;white-space:nowrap}
 a[aria-disabled=true]{cursor:help}
+.btn[aria-disabled=true]{flex-wrap:wrap;row-gap:4px;column-gap:10px;white-space:normal;text-align:center;padding-top:8px;padding-bottom:8px}
 .tbc{display:inline-block;border:1px dashed var(--gold);color:var(--gold-l);padding:0 8px;border-radius:2px;font-size:.82em;line-height:1.7;font-family:var(--sans);letter-spacing:0;text-transform:none;vertical-align:baseline}
 .light .tbc{border-color:var(--gold-ink);color:var(--gold-ink)}
 .sample{display:inline-block;background:var(--gold);color:var(--ink);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:2px 9px;border-radius:2px}
