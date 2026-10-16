@@ -329,7 +329,7 @@ V.home = function(){
 
   /* Our Network (v6): the journey is an illustration in the conditional and says so (docs/CLAIMS-AUDIT.md C73); no
      photograph grid and no audience card images (docs/PHOTOGRAPHY-PLAN.md 2.2); the text and the links stay */
-  '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our Network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The steps below are an illustration of how one might unfold, each step taken with the others in view.</p></div>'+
+  '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The steps below are an illustration of how one might unfold, each step taken with the others in view.</p></div>'+
    '<p class="journey-lbl" data-r><b>'+esc(N.journeyLabel)+'</b><span>'+esc(N.journeyNote)+'</span></p>'+
    '<ol class="journey" aria-label="'+esc(N.journeyLabel)+': '+esc(N.journeyNote).toLowerCase()+'">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
    '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
@@ -338,12 +338,12 @@ V.home = function(){
      leadership block has left the home page (About carries the two portraits, section 5 of the plan) */
   eventStrip()+
 
-  '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Gatherings','worth the evening.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
+  '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Relationships,','in person.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
    '<div class="evgrid two">'+ev.map(eventCard).join('')+'</div></div></section>'+
   /* one video block on the home page, only once a clip exists (first event or journal video with an id) */
   (hv ? '<section class="sec light home-vid" id="film"><div class="wrap"><div class="sec-head"><div>'+eyebrow('On film')+mask(['The evening,','in motion.'],'h2','d2')+'</div></div>'+videoBlock(hv,'')+'</div></section>' : '')+
 
-  '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: company developments, insights and selected events.</p></div>'+
+  '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: company developments, insights and selected events.</p></div>'+
    '<div class="jlist">'+rows.map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
   /* v6 (UX audit item 22): the map lives on About only; the home page no longer repeats it */
@@ -484,7 +484,7 @@ V.journal = function(){
   '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Where the','network meets.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. '+(allOk ? 'One cover photograph for each, and a gallery inside.' : 'Galleries open as guests confirm they are happy to be featured.')+'</p></div>'+
    '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
    '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
-  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments and selected insights.</p></div></div>'+
+  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments and selected insights.</p></div></div>'+
    '<div class="jlist">'+rows.map(journalRow).join('')+'</div></div></section>'+closing();
 };
 V.event = function(slug){
