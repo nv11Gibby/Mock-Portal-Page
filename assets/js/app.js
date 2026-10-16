@@ -346,7 +346,7 @@ V.home = function(){
   '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and partnerships.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: genuine company developments, insights, partnerships and selected events.</p></div>'+
    '<div class="jlist">'+rows.map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
-  '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Global presence')+mask(['Led from Dubai','and Lagos.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Headquarters in Dubai, a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.</p></div>'+mapBlock()+'</div></section>'+
+  /* v6 (UX audit item 22): the map lives on About only; the home page no longer repeats it */
 
   /* the closing band above Start a Relationship: the signature, the approved closing headline and copy, on the ink map */
   homeClosing()+
@@ -378,7 +378,7 @@ V.about = function(){
 
   '<section class="sec light founder-film" id="founder-film"><div class="wrap split"><div>'+eyebrow('Founder film')+mask(['The founder,','on film.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s">A short film with the founder, 60 to 90 seconds, is planned for this page. '+tbc('Footage to be supplied')+'</p></div>'+videoBlock(VID.about,'')+'</div></section>'+
 
-  '<section class="sec deep"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Where we work')+mask(['Led from Dubai.','At home worldwide.'],'h2','d2')+'</div></div>'+mapBlock()+'</div></section>'+closing();
+  '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Where we work')+mask(['Led from Dubai.','At home worldwide.'],'h2','d2')+'</div></div>'+mapBlock()+'</div></section>'+closing();
 };
 
 V.divisions = function(){
@@ -2039,7 +2039,7 @@ function palIndex(){
   add({k:'Page', t:'Insights', s:'Notes from the house', u:'/insights', kw:'articles blog guidance insights'});
   add({k:'Page', t:'Start a relationship', s:'Three paths; one person reads your message and replies personally', u:'/contact?via=palette', kw:'contact enquiry enquire call email phone get in touch book speak message send'});
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
-  add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
+  add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/about', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
   D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});

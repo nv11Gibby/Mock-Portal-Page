@@ -167,6 +167,8 @@ a[aria-disabled=true]{cursor:help}
 
 /* ---------- sections ---------- */
 .sec{position:relative;padding:var(--sec) 0}
+/* the home page (the only view with #top) runs its sections closer together (UX audit item 22) */
+#top~.sec{padding:clamp(88px,10vw,152px) 0}
 .sec.tight{padding:clamp(64px,8vw,112px) 0}
 .sec.line-t{border-top:1px solid var(--line)}
 .sec.deep{background:var(--ink-2)}
