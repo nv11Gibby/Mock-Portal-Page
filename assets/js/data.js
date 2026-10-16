@@ -280,6 +280,7 @@ window.IHG = {
   divisions: [
     {
       key:'citizenship', name:'Imperial Citizenship', tag:'Global mobility. Greater possibilities.', short:'Citizenship', logo:null, img:null, status:'The flagship', statusTone:'gold',
+      desc:'Imperial Citizenship, flagship of Imperial Holdings Group: second residency and citizenship by investment, from first conversation to completed application.',
       line:'The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application.',
       intro:'Imperial Citizenship is where the Group began, and it remains our main business. It advises families and founders on second residency and citizenship by investment, and carries each application from the first conversation to completion.',
       card:'Our flagship house. Residency and citizenship by investment, compared side by side and carried from first conversation to completed application.',
@@ -301,6 +302,7 @@ window.IHG = {
     {
       key:'partners-club', name:'Imperial Partners Club', tag:'A global network for growth. Together further.', short:'Partners Club', logo:'IPC', img:null, status:'Opening in stages', statusTone:'ink',
       caption:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms.',
+      desc:'Imperial Partners Club: for the lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms. Your Client stays yours.',
       line:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours.',
       intro:'Imperial Partners Club is being built as our Partner network across industries, beginning with a first cohort of Partners. Lawyers, bankers, advisers and family offices are often the first people a Client asks about living or investing abroad. Partners Club is the house they can hand that conversation to.',
       card:'Our Partner network, opening in stages: introducers, advisers and service-line Partners. Your Client stays your Client.',
@@ -316,14 +318,15 @@ window.IHG = {
       who:['Introducers who are often asked about life and investment abroad.','Advisers: lawyers, private bankers, family offices and the other professionals a family already relies on.','Service-line Partners who deliver specialist work for Imperial Clients.'],
       howTitle:'Four steps. No surprises.',
       start:'Tell us what your Client is considering. We ask for their details only once you have their permission and written terms are in place.',
-      how:[['Introduce','Share your Client\u2019s details, with their permission, through one simple form.'],['We advise','A Relationship Manager meets your Client and explains their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Terms honoured','Terms are honoured exactly as set out in your written agreement, and your Client stays your Client.']],
+      how:[['Introduce','Tell us about the introduction, with your Client\u2019s permission. Their details follow once written terms are in place.'],['We advise','A Relationship Manager meets your Client and explains their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Terms honoured','Terms are honoured exactly as set out in your written agreement, and your Client stays your Client.']],
       standards:['Partners do not act or sign on the Group\u2019s behalf.','We never guarantee citizenship, visa, residency, investment or tax outcomes.','We claim no influence with, or shortcuts through, any government.','Client information is shared only with consent, and only where a service needs it.','Every Client-facing document is approved by Imperial before use.','Regulated advice is given only by qualified specialists.'],
-      note:'Your reputation travels with ours. Every Partner agrees to these standards, and so do we.',
+      note:'Your reputation travels with ours. Every Partner is asked to agree to these standards in writing, and we hold ourselves to the same.',
       cta:siteCta('partners-club', 'Visit the Partners Club website')
     },
     {
       key:'private-office', name:'Imperial Private Office', tag:'Personalised solutions for exceptional clients.', short:'Private Office', logo:'IPO', img:null, status:'By invitation, being established', statusTone:'ink',
       caption:'Ongoing support for existing Imperial Clients after the first service is complete.',
+      desc:'Imperial Private Office, being established for existing Imperial Clients: one point of contact for the wider needs of a family with a multi-country life.',
       line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.',
       intro:'Imperial Private Office is being established to look after Imperial Clients once their first service is complete: a single point of contact for the wider needs of a multi-country family, delivered through trusted Partners and qualified specialists.',
       card:'One point of contact for our existing Clients: relocation, schools, introductions, and the coordination of qualified specialists.',
@@ -331,7 +334,7 @@ window.IHG = {
       does:[
         ['Relocation','Moving the household, and settling in well, wherever the family chooses to live.'],
         ['Schools','Finding the right schools for the children, near the right home.'],
-        ['Company formation','Company formation and the structure behind a family\u2019s interests.'],
+        ['Company formation','The structure behind a family\u2019s interests, coordinated through qualified specialists.'],
         ['Tax residency and structuring','Coordinated with qualified tax and legal specialists.'],
         ['Banking introductions','Introductions to private banks where a relationship fits the plan.'],
         ['Events and introductions','Invitations to the occasions, and introductions to the people, that come with a wider life.']
@@ -344,6 +347,7 @@ window.IHG = {
     },
     {
       key:'real-estate', name:'Imperial Real Estate', tag:'Curated properties. Enduring value.', short:'Real Estate', logo:'IR', img:'real-estate', status:'Coming soon', statusTone:'soon', soon:true,
+      desc:'Imperial Real Estate, not yet launched: property advisory for Dubai, working with Imperial Citizenship where a home and residency meet. Register your interest.',
       line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.',
       intro:'Imperial Real Estate will offer licensed property advisory, starting with Dubai: search, selection and purchase support, through to handover. It will work alongside Imperial Citizenship where property and residency meet.',
       card:'Licensed property advisory, starting with Dubai: search, selection and purchase support. Not yet launched.',
@@ -361,8 +365,9 @@ window.IHG = {
     {
       key:'academy', name:'Imperial Academy', tag:'Education. Talent. Leadership. A stronger tomorrow.', short:'Academy', logo:'IA', img:null, status:'Learning and standards, in development', statusShort:'In development', statusTone:'ink',
       caption:'Learning and standards, in development: training and certification for the people who do this work.',
+      desc:'Imperial Academy, the learning arm of Imperial Holdings Group, in development: training and certification to one standard for our people and Partner teams.',
       line:'The Group\'s learning arm, in preparation: training and certification to one shared standard, for our own people and for Partner teams.',
-      intro:'Imperial Academy is the Group\u2019s learning and education arm. It trains and certifies our own people in one shared standard, and helps Partner teams explain the options accurately. Courses for a wider audience will follow later.',
+      intro:'Imperial Academy is the Group\u2019s learning arm. It is building one shared standard of training and certification for our own people, which will extend to Partner teams. Courses for a wider audience will follow later.',
       card:'Our learning arm, in development. It is building one shared standard of training and certification for our own people, which will extend to Partner teams.',
       bullets:['Team training','Partner Academy, to follow','Certification'],
       does:[
@@ -651,7 +656,7 @@ window.IHG = {
       {k:'timeline', q:'When would you like to begin?', from:'timeline'},
       {k:'budget', q:'Is there a budget in mind?', from:'budget', skip:'I would rather not say yet'}
     ],
-    done:{title:'Thank you.', text:'Your answers travel with you. Add your name and your email on the next page, and one person will reply.', cta:'Continue to your message'}
+    done:{title:'Thank you.', text:'Your answers will prefill your message, so the first conversation starts in the right place. Add your name and email, and one person will reply personally.', cta:'Continue to your message'}
   },
 
   /* Downloadable guide (citizenship page). The file itself is config.guide.file; while it is empty the page shows config.guide.tbc. */

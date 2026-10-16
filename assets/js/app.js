@@ -392,8 +392,8 @@ V.divisions = function(){
 };
 
 function heroTitle(d){return {citizenship:['Second residency','and citizenship.'],'private-office':['One lasting','relationship.'],'partners-club':['Introduce with','confidence.'],academy:['One standard,','learned by everyone.']}[d.key];}
-function whatTitle(d){return {citizenship:['Residency and citizenship,','compared side by side.'],'private-office':['Everything a wider','life needs.'],'partners-club':['Built for the people','who introduce.'],academy:['What the','Academy does.']}[d.key]||['What we do.'];}
-function ctaTitle(d){return {citizenship:['Begin with','Imperial Citizenship.'],'private-office':['Continue with','Private Office.'],'partners-club':['Introduce with','confidence.'],academy:['Learn the','Imperial standard.']}[d.key]||[esc(d.name)];}
+function whatTitle(d){return {citizenship:['Residency and citizenship,','compared side by side.'],'private-office':['What a wider','life needs.'],'partners-club':['Built for the people','who introduce.'],academy:['What the','Academy will do.']}[d.key]||['What we do.'];}
+function ctaTitle(d){return {citizenship:['Begin with','Imperial Citizenship.'],'private-office':['Continue with','Private Office.'],'partners-club':['Introduce with','confidence.'],academy:['Training to','one standard.']}[d.key]||[esc(d.name)];}
 function others(d){
   var list = D.divisions.filter(function(x){return x.key!==d.key;});
   return '<section class="sec line-t"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Other divisions')+mask(['One table.'],'h2','d2')+'</div><div data-r style="--d:.1s"><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div></div><div class="rail" id="rail" aria-label="Other divisions">'+
@@ -422,7 +422,7 @@ V.division = function(key){
   return h + others(d);
 };
 V.realEstate = function(d){
-  var h = pageHero({img:d.img, crumb:[['Divisions','#/divisions'],['Real Estate',null]], pre:'<img class="ph-logo" src="'+LOGO+'IR-Horizontal-Gold.svg" alt="Imperial Real Estate" data-r><div data-r style="margin-bottom:22px"><span class="badge soon">Coming soon</span></div>', title:['Licensed property','advisory, starting','with Dubai.'], lead:'Imperial Real Estate is licensed and has not yet launched. Register your interest and we will be in touch when it opens.', after:'<div class="btns" data-r style="--d:.5s;margin-top:30px"><a class="btn" href="#/divisions/real-estate" data-scroll="register"><span>Register interest</span>'+AR+'</a><a class="btn line" href="#/contact?about=real-estate&via=division"><span>Start a relationship</span></a></div>'});
+  var h = pageHero({img:d.img, crumb:[['Divisions','#/divisions'],['Real Estate',null]], pre:'<img class="ph-logo" src="'+LOGO+'IR-Horizontal-Gold.svg" alt="Imperial Real Estate" data-r><div data-r style="margin-bottom:22px"><span class="badge soon">Coming soon</span></div>', title:['Property in Dubai,','in preparation.'], lead:'Imperial Real Estate is licensed and has not yet launched. Register your interest and we will be in touch when it opens.', after:'<div class="btns" data-r style="--d:.5s;margin-top:30px"><a class="btn" href="#/divisions/real-estate" data-scroll="register"><span>Register interest</span>'+AR+'</a><a class="btn line" href="#/contact?about=real-estate&via=division"><span>Start a relationship</span></a></div>'});
   h += '<section class="sec light"><div class="wrap split"><div>'+eyebrow('Overview')+'<p class="statement" data-r style="color:var(--l-text)">'+esc(d.intro)+'</p>'+
     '<h2 class="vh">What Imperial Real Estate will do</h2><div class="does two" style="margin-top:56px">'+d.does.map(function(x,i){return '<div data-r style="--d:'+(i%2*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(x[0])+'</h3><p>'+esc(x[1])+'</p></div>';}).join('')+'</div>'+
     '<div class="callout" data-r><div><b>Please note</b>'+esc(d.note)+' '+tbc('Licence number and regulator')+'</div></div></div>'+
@@ -435,7 +435,7 @@ function registerForm(){
    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required><em class="em">Please enter a valid email address.</em></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
    '<label class="field"><span>I am interested in</span><select name="interest" required><option value="">Choose one</option><option>A family home in Dubai</option><option>Property linked to UAE residency</option><option>An investment property</option><option>Not sure yet</option></select><em class="em">Please choose the closest.</em></label>'+
-   '<label class="field full"><span>Anything else <i>(optional)</i></span><textarea name="msg" rows="3"></textarea></label></div>'+
+   '<label class="field full"><span>Anything you would like us to know <i>(optional)</i></span><textarea name="msg" rows="3"></textarea></label></div>'+
    consentBox('I agree to Imperial Holdings Group contacting me about Imperial Real Estate, as described in the {privacy}.')+
    '<div class="form-foot"><button class="btn" type="submit"><span class="lbl">Register interest</span><span class="spin"></span></button><span class="xs">We use these details only to contact you about Imperial Real Estate.</span></div><div class="form-err" role="alert" hidden></div></form></div>';
 }
@@ -787,7 +787,7 @@ function resolve0(r){
   if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Imperial Holdings Group: five specialist divisions, led from Dubai and Lagos. Citizenship, Private Office, Partners Club, Academy and Real Estate.'};
   if(p[0]==='about' && p.length===1) return {html:V.about(), title:'About', nav:'about', view:'about', desc:'Imperial began as a citizenship and residency specialist and is now the parent of five divisions, run by one team to one standard. The people behind the Group.'};
   if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one Relationship Manager across all five.'};
-  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.line}; }
+  if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.desc||d.line}; }
   if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Company developments, insights and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
@@ -1508,7 +1508,7 @@ function fitCheck(){
       return '<div class="fit-q'+(i===0?' on':'')+'" data-q="'+i+'" data-k="'+esc(q.k)+'"><h3 class="h3" tabindex="-1">'+esc(q.q)+'</h3><div class="fd-pers fit-opts">'+opts.map(function(o){ return '<button type="button" data-opt="'+esc(o.v)+'"'+(o.set?' data-set="'+esc(JSON.stringify(o.set))+'"':'')+'><b>'+esc(o.l)+'</b>'+(o.s?'<small>'+esc(o.s)+'</small>':'')+'</button>'; }).join('')+'</div>'+
         '<div class="fit-nav">'+(i>0?'<button class="tlink" type="button" data-fit-back>'+BACK+'<span>Back</span></button>':'')+(q.skip?'<button class="tlink" type="button" data-opt="undisclosed" data-set="'+esc(JSON.stringify({budget:'undisclosed'}))+'">'+esc(q.skip)+'</button>':'')+'</div></div>';
     }).join('')+
-    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold" href="#/contact?about=citizenship&via=fit" data-fit-go><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start over</button></div></div>'+
+    '<div class="fit-done" tabindex="-1"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><h3>'+esc(F.done.title)+'</h3><p>'+esc(F.done.text)+'</p><div class="btns"><a class="btn gold" href="#/contact?about=citizenship&via=fit" data-fit-go><span>'+esc(F.done.cta)+'</span>'+AR+'</a><button class="tlink" type="button" data-fit-reset>Start afresh</button></div></div>'+
     '</div></div></section>';
 }
 function bindFit(){
