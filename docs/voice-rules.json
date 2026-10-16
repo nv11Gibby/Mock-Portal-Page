@@ -105,7 +105,7 @@
   "capitalise": [
     {"word": "Client", "rule": "Capital when it means a person Imperial serves; lower case in the general sense, as in the form option 'A client I am introducing'"},
     {"word": "Partner", "rule": "Capital when it means a member of Imperial Partners Club; lower case for 'partner with us' as a verb and for a spouse"},
-    {"word": "Relationship Manager", "rule": "Always capitalised; the named point of contact"},
+    {"word": "Relationship Manager", "rule": "Always capitalised; internal documents and Pipedrive notes only. Public copy says one named person (v6 fix)"},
     {"word": "Partner Agreement", "rule": "Always capitalised; the written terms"},
     {"word": "the Founder", "rule": "Capital when it means Imperial's Founder; lower case for 'families and founders'"},
     {"word": "the Group", "rule": "Capital when it means Imperial Holdings Group; 'a group of five divisions' lower case"},
@@ -156,7 +156,10 @@
     {"label": "Read the article", "next_step": "Opens an Insights article", "where": "Insights cards; 'Read the draft' while unapproved"},
     {"label": "Introduce a Client", "next_step": "Opens the Partners Club introduction form", "where": "Partners Club site"},
     {"label": "Become a Partner", "next_step": "Opens the Partner application", "where": "Partners Club site"},
-    {"label": "Start a strategic conversation", "next_step": "Opens Contact on the institutions path", "where": "Event pages, the third audience card"},
+    {"label": "Arrange a first conversation", "next_step": "Opens Contact on the Private Clients path", "where": "The Private Clients path everywhere: the /contact chooser, the home path card, the division page card"},
+    {"label": "Discuss becoming a Partner", "next_step": "Opens Contact on the Professional Partners path", "where": "The Professional Partners path everywhere: the /contact chooser, the home path card, the Partners Club page card"},
+    {"label": "Open a strategic conversation", "next_step": "Opens Contact on the Institutions path", "where": "The Institutions and Strategic Relationships path everywhere: the /contact chooser, the home path card, the event pages"},
+    {"label": "Ask about training your team", "next_step": "Opens Contact on the Professional Partners path with Train or certify my team chosen", "where": "Imperial Academy page card"},
     {"label": "WhatsApp Dubai", "next_step": "Opens the WhatsApp chat", "where": "Contact and the header sheet; office name in the label"},
     {"label": "Home", "next_step": "Opens the home page", "where": "404 and error pages"}
   ],

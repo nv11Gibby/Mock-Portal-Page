@@ -237,7 +237,7 @@ function closing(){
   return '<section class="closing">'+inkField({view:INK.cities, points:true, arc:true})+'<div class="closing-c wrap">'+
     '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175" data-r>'+
     mask(['The first conversation','is for listening.'],'h2','d2')+
-    '<p class="lead" data-r style="--d:.2s">Tell us where you are, and where you would like to be. A senior adviser will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.</p>'+
+    '<p class="lead" data-r style="--d:.2s">Tell us where you are, and where you would like to be. One named person will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.</p>'+
     '<div class="btns" data-r style="--d:.3s"><a class="btn gold" href="#/contact?via=close"><span>Start a relationship</span>'+AR+'</a><a class="btn line" href="#/about"><span>About the Group</span></a></div></div></section>';
 }
 function promise(){
@@ -366,10 +366,10 @@ V.about = function(){
    '<p class="muted">Imperial Holdings Group is the result: five specialist divisions at one table, the four beyond Citizenship each opening in its own time. They are built to share one team, one standard and one record of each family, so that you never have to explain your family twice.</p>'+
    '<p class="small muted">Founding date and milestones: '+tbc('Group history and key dates')+'</p></div></div></section>'+
 
-  '<section class="sec light"><div class="wrap split"><div class="ring anim" data-r="fade" aria-label="One table: your family at the centre, one Relationship Manager, and the five divisions"><div class="ring-c"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><b>Your family</b><span class="ring-rm">One Relationship Manager</span></div><ul>'+seats+'</ul></div>'+
+  '<section class="sec light"><div class="wrap split"><div class="ring anim" data-r="fade" aria-label="One table: your family at the centre, one named person, and the five divisions"><div class="ring-c"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><b>Your family</b><span class="ring-rm">One named person</span></div><ul>'+seats+'</ul></div>'+
    '<div>'+eyebrow('How we work')+mask(['One team.','One point of contact.'],'h2','d2')+
    '<p class="lead" data-r style="--d:.15s">Our people work across the Group rather than inside a single division, so knowledge and standards travel with your family.</p>'+
-   '<p data-r style="--d:.2s">One Relationship Manager brings each house in when it is needed, together with qualified specialists for regulated matters such as tax, legal and investment. Where a service is best delivered by a trusted Partner, we coordinate it for you, so you still have one person to call.</p>'+
+   '<p data-r style="--d:.2s">One named person brings each house in when it is needed, together with qualified specialists for regulated matters such as tax, legal and investment. Where a service is best delivered by a trusted Partner, we coordinate it for you, so you still have one person to call.</p>'+
    '<div class="btns" data-r style="--d:.25s"><a class="btn" href="#/contact"><span>Start a relationship</span>'+AR+'</a></div></div></div></section>'+
 
   '<section class="sec"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our values')+mask(['Restrained in manner.','Exact in detail.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">The same standard in every division, whichever you come to first. Five values hold it in place.</p></div>'+
@@ -386,7 +386,7 @@ V.about = function(){
 };
 
 V.divisions = function(){
-  return pageHero({ink:{view:INK.world, points:true}, crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five divisions.','One table.'], lead:'Each division is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
+  return pageHero({ink:{view:INK.world, points:true}, crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five divisions.','One table.'], lead:'Each division is a specialist. Together they sit at one table, with one named person for each relationship.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
     return '<a class="drow" href="#/divisions/'+d.key+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status||'')+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
@@ -421,7 +421,7 @@ V.division = function(key){
     (d.standards?'<div style="margin-top:clamp(64px,7vw,100px)" class="split"><div>'+eyebrow('Shared standards')+'<h3 class="d3" data-r>Your reputation travels with ours.</h3></div><ul class="plist yes" data-r>'+d.standards.map(function(t){return '<li>'+TICK+'<span>'+esc(t)+'</span></li>';}).join('')+'</ul></div>':'')+
     '<div class="callout" data-r><div><b>Please note</b>'+esc(d.note)+'</div></div></div></section>';
   h += (d.key==='citizenship' ? fitCheck()+guideForm() : '')+enquiryBlock(d.key);
-  h += '<section class="sec deep"><div class="wrap cta-band"><div>'+(d.logo?'<img class="div-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="" data-r>':'<div data-r style="margin-bottom:30px">'+logoImg(d,'Gold','')+'</div>')+mask(ctaTitle(d),'h2','d2')+'<p class="lead" data-r style="margin-top:22px">'+(d.cta.real?(d.key==='citizenship'?'Programmes, eligibility and the team behind them':'Services, the team and how to begin')+', on the '+esc(d.cta.siteName)+' website.':'The '+esc(d.name)+' website is in preparation. In the meantime, speak to us and we will connect you.')+'</p></div>'+
+  h += '<section class="sec deep"><div class="wrap cta-band"><div>'+(d.logo?'<img class="div-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="" data-r>':'<div data-r style="margin-bottom:30px">'+logoImg(d,'Gold','')+'</div>')+mask(ctaTitle(d),'h2','d2')+'<p class="lead" data-r style="margin-top:22px">'+(d.cta.real?(d.key==='citizenship'?'Programmes, eligibility and the team behind them':'Services, the team and how to begin')+', on the '+esc(d.cta.siteName)+' website.':'The '+esc(d.name)+' website is not yet published. In the meantime, speak to us and we will connect you.')+'</p></div>'+
     '<div class="btns" data-r>'+extLink(d,'btn gold')+'<a class="btn line" href="#/contact?about='+d.key+'&via=division-close"><span>Start a relationship</span></a></div></div></section>';
   return h + others(d);
 };
@@ -505,7 +505,7 @@ V.event = function(slug){
     (e.tbc?'<p class="xs ev-tbc" data-r style="margin-top:24px">'+e.tbc.map(tbc).join('')+'</p>':'')+
     (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+
     '<div class="ev-share" data-r>'+shareBar(e, 'event')+'</div></div>'+
-   '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?journey=institutions&via=event"><span>Start a relationship with the Group</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
+   '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?journey=institutions&via=event"><span>'+esc(pathOf('institutions').card)+'</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
   /* the heading says what is on the page: pictures while the gallery shows, the clip while only the video slot does */
   '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(ok ? ['The evening,','in pictures.'] : (e.video && e.video.id) ? ['The evening,','on film.'] : e.video ? ['Film and photographs','to follow.'] : ['Photographs','to follow.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
     (e.video ? videoBlock(e.video, 'gal-vid', cv) : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
@@ -608,9 +608,11 @@ function enquiryBlock(pre){
   var J = D.journeys, C = J.chooser;
   if(pre){
     var pk = J.prefill.byDivision[pre] || 'clients', p = pathOf(pk), j = journeyOf(pk), name = divisionName(pre);
-    return '<section class="sec light enq" id="enquire"><div class="wrap split"><div>'+eyebrow(J.divisionCard.eyebrow)+mask(splitTitle(J.divisionCard.title.replace('{division}', name)),'h2','d2')+
-      '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(j.opening)+'</p></div>'+
-      '<div class="paths one" data-r style="--d:.15s"><a class="path-c" href="#/contact?about='+esc(pre)+'&via=division"><span class="ix">'+esc(p.title)+'</span><b>'+esc(name)+'</b><span class="path-t">'+esc(p.text)+'</span><span class="btn gold"><span>'+esc(p.card)+'</span>'+AR+'</span></a></div></div></section>';
+    /* a division with its own card (the Academy) keeps its own words; the others take their path's */
+    var own = (J.divisionCard.byDivision || {})[pre] || {}, title = own.title ? splitTitle(own.title) : splitTitle(J.divisionCard.title.replace('{division}', name));
+    return '<section class="sec light enq" id="enquire"><div class="wrap split"><div>'+eyebrow(J.divisionCard.eyebrow)+mask(title,'h2','d2')+
+      '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(own.opening || j.opening)+'</p></div>'+
+      '<div class="paths one" data-r style="--d:.15s"><a class="path-c" href="#/contact?about='+esc(pre)+'&via=division"><span class="ix">'+esc(own.label || p.title)+'</span><b>'+esc(name)+'</b><span class="path-t">'+esc(own.text || p.text)+'</span><span class="btn gold"><span>'+esc(own.card || p.card)+'</span>'+AR+'</span></a></div></div></section>';
   }
   return '<section class="sec light enq" id="enquire"><div class="wrap"><div class="sec-head"><div>'+eyebrow(C.eyebrow)+mask(C.title,'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">'+esc(C.lead)+'</p></div>'+
     '<div class="paths">'+C.paths.map(function(p,i){ return '<a class="path-c" href="#/contact?journey='+esc(p.key)+'&via=home-paths" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><b>'+esc(p.title)+'</b><span class="path-t">'+esc(p.text)+'</span><span class="btn'+(i===0?' gold':' line')+'"><span>'+esc(p.card)+'</span>'+AR+'</span></a>'; }).join('')+'</div>'+
@@ -678,7 +680,7 @@ V.contact = function(q){
    /* the chooser, screen 0: three path cards; a quiet line with a Change link once a path is chosen */
    '<div class="jp-line" data-path-line'+(jn?'':' hidden')+'><span>Path: <b data-path-name>'+esc(jn?jn.name:'')+'</b></span><button class="tlink" type="button" data-choose>'+esc(J.closing.summary.change)+'</button></div>'+
    '<div class="cf-step jp-chooser'+(jn?'':' on')+'" data-step="0" data-screen="'+esc(C.id)+'"><h2 tabindex="-1">'+esc(C.question)+'</h2><p>'+esc(C.prompt)+'</p>'+
-   '<div class="jp-paths" role="group" aria-label="'+esc(C.question)+'">'+C.paths.map(function(p,i){ return '<button type="button" class="jp-card" data-path="'+esc(p.key)+'"><span class="ix">'+pad2(i+1)+'</span><b>'+esc(p.title)+'</b><span class="jp-text">'+esc(p.text)+'</span><span class="jp-cta">'+esc(p.cta)+AR+'</span></button>'; }).join('')+'</div>'+
+   '<div class="jp-paths" role="group" aria-label="'+esc(C.question)+'">'+C.paths.map(function(p,i){ return '<button type="button" class="jp-card" data-path="'+esc(p.key)+'"><span class="ix">'+pad2(i+1)+'</span><b>'+esc(p.title)+'</b><span class="jp-text">'+esc(p.text)+'</span><span class="jp-cta">'+esc(p.card)+AR+'</span></button>'; }).join('')+'</div>'+
    '<p class="xs jp-foot">'+esc(C.footnote)+'</p></div>'+
    '<div data-screens>'+(key ? jScreens(key) : '')+'</div>'+
    /* one error box for every screen, outside them so it stays in view when a screen is shown again (a refused address sends the person back to the closing screen) */
@@ -745,7 +747,7 @@ function menuImg(k, v){return '<img src="'+PIXEL+'" data-src="'+IMG+k+(v||'')+'.
 function loadMenuImgs(scope){ [].forEach.call(scope.querySelectorAll('img[data-src]'), function(i){ i.src=i.getAttribute('data-src'); i.removeAttribute('data-src'); }); }
 function buildChrome(){
   document.getElementById('megaIn').innerHTML =
-    '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
+    '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One named person for each relationship.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
     '<ul class="mega-list" id="megaList">'+D.divisions.map(function(d,i){return '<li><a class="mega-item'+(i===0?' on':'')+'" href="#/divisions/'+d.key+'" data-i="'+i+'"><span class="n">'+pad2(i+1)+'</span><b>'+esc(d.name)+'</b>'+statusSmall(d)+'</a></li>';}).join('')+'</ul>'+
     '<div class="mega-prev" aria-hidden="true">'+D.divisions.map(function(d,i){return '<figure class="'+(i===0?'on':'')+'" data-i="'+i+'">'+divInk(d)+'<figcaption><b>'+esc(d.short)+'</b>'+esc(d.caption||d.line)+'</figcaption></figure>';}).join('')+'</div>'+
     '<div class="mega-sites"><span>Our websites:</span>'+D.sites.map(function(s){return siteLink(s,'', siteText(s, true));}).join('')+'</div>';
@@ -790,7 +792,7 @@ function resolve0(r){
   var p = r.parts;
   if(p.length===0) return {html:V.home(), title:null, nav:'home', view:'home', desc:'Imperial Holdings Group: five specialist divisions, led from Dubai and Lagos. Citizenship, Private Office, Partners Club, Academy and Real Estate.'};
   if(p[0]==='about' && p.length===1) return {html:V.about(), title:'About', nav:'about', view:'about', desc:'Imperial began as a citizenship and residency specialist and is now the parent of five divisions, run by one team to one standard. The people behind the Group.'};
-  if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one Relationship Manager across all five.'};
+  if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one named person for each relationship.'};
   if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.desc||d.line}; }
   if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Company developments, insights and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
@@ -1924,7 +1926,7 @@ function finderResult(per, goals){
   if(P) Object.keys(P.w).forEach(function(k){ sc[k]+=P.w[k]; });
   goals.forEach(function(g){ var w=F.goals[g]; Object.keys(w).forEach(function(k){ sc[k]+=w[k]; }); });
   var ranked = D.divisions.filter(function(d){ return sc[d.key]>0; }).sort(function(a,b){ return sc[b.key]-sc[a.key] || D.divisions.indexOf(a)-D.divisions.indexOf(b); }).slice(0,3);
-  if(!ranked.length) return '<div class="fd-empty"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><h3>Your table</h3><p>Choose who this is for, or what matters most, and we will show which divisions would sit at your table.</p><p class="xs">A starting point, not advice. Your Relationship Manager confirms the right division in the first conversation.</p></div>';
+  if(!ranked.length) return '<div class="fd-empty"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><h3>Your table</h3><p>Choose who this is for, or what matters most, and we will show which divisions would sit at your table.</p><p class="xs">A starting point, not advice. The person who replies confirms the right division in the first conversation.</p></div>';
   var top = ranked[0], q = 'about='+top.key+(goals.length?'&goals='+goals.join(','):'');
   var cta = top.soon ? '<a class="btn gold" href="#/divisions/real-estate"><span>Register interest</span>'+AR+'</a>' : '<a class="btn gold" href="#/contact?'+q+'&via=finder"><span>Start a relationship</span>'+AR+'</a>';
   return '<div class="fd-top"><span class="eyebrow">Your table</span><span class="fd-count">'+ranked.length+' of 5 divisions</span></div>'+
@@ -1934,7 +1936,7 @@ function finderResult(per, goals){
       return '<li class="'+(i===0?'lead-house':'')+'" style="--i:'+i+'"><a href="#/divisions/'+d.key+'"><span class="fd-k">'+(i===0?'Start here':'Also at the table')+(d.status?' \u00b7 '+esc(d.status):'')+'</span><b>'+esc(d.name)+'</b><ul>'+lines.slice(0,2).map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'</ul><span class="fd-go" aria-hidden="true">'+AR+'</span></a></li>';
     }).join('')+'</ol>'+
     '<div class="fd-cta">'+cta+'<button class="tlink" type="button" data-fd-reset>Start afresh</button></div>'+
-    '<p class="xs fd-note">A starting point, not advice. One Relationship Manager brings in each division when it is needed.</p>';
+    '<p class="xs fd-note">A starting point, not advice. One named person brings in each division when it is needed.</p>';
 }
 function bindFinder(){
   var f = document.getElementById('finder'); if(!f) return;
@@ -1994,7 +1996,7 @@ function compare(){
     return '<li class="cmp-card"><h3><a href="#/divisions/'+d.key+'">'+esc(d.short)+AR+'</a></h3>'+badge(d)+
       '<dl>'+rows.map(function(r){ return '<dt>'+r[0]+'</dt><dd>'+r[1](d)+'</dd>'; }).join('')+'</dl></li>';
   }).join('')+'</ul>';
-  return '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('At a glance')+mask(['Five divisions,','side by side.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Who each division is for, what it covers and where it stands today. Whichever you start with, the same Relationship Manager brings in the others.</p></div>'+
+  return '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('At a glance')+mask(['Five divisions,','side by side.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Who each division is for, what it covers and where it stands today. Whichever you start with, the same named person brings in the others.</p></div>'+
     '<div class="cmp-wrap" data-r tabindex="0" role="region" aria-label="Divisions compared, scrolls sideways"><table class="cmp"><caption class="vh">The five Imperial divisions compared</caption><thead><tr><td></td>'+ds.map(function(d){ return '<th scope="col"><a href="#/divisions/'+d.key+'">'+esc(d.short)+AR+'</a>'+badge(d)+'</th>'; }).join('')+'</tr></thead><tbody>'+
     rows.map(row).join('')+
     '</tbody></table></div><p class="xs cmp-hint" aria-hidden="true">Swipe sideways to compare</p>'+cards+'</div></section>';

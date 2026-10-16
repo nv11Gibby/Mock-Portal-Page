@@ -134,7 +134,7 @@ window.IHG = {
     divisions: {
       'citizenship': {headline:'Where the Group began.', line:'The flagship, and often the first step: second residency and citizenship by investment, carried from first conversation to completed application.'},
       'partners-club': {headline:'For the professionals families trust.', line:'Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms, with clear updates. Your Client stays yours.'},
-      'private-office': {headline:'The relationship, continued.', line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.'},
+      'private-office': {headline:'The relationship, continued.', line:'Being established to support existing Imperial Clients after their first service: relocation, schools and introductions, with structuring through qualified specialists, all through one point of contact.'},
       'real-estate': {headline:'Property in Dubai, coming soon.', line:'Property advisory, not yet launched: search, selection and purchase support, coordinated with Imperial Citizenship where a home and residency meet. Interest can be registered now.'},
       'academy': {headline:'Learning and standards, in development.', line:'The Group’s learning arm, in development: training and certification to one shared standard, for our own people and for Partner teams.'}
     },
@@ -146,7 +146,7 @@ window.IHG = {
         {event:'lagos-office-event', photo:'events/lagos-office-event/05', alt:'events/lagos-office-event/06', caption:'The lounge at the Lagos office, Aromire Road'}
       ]},
     closing: {signature:'Two Cities. One Horizon.', title:['The first conversation','is for listening.'],
-      lead:'Tell us where you are, and where you would like to be. A senior adviser will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.'}
+      lead:'Tell us where you are, and where you would like to be. One named person will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.'}
   },
 
   /* Video (v5). One shape everywhere: {type:'video', provider:'vimeo'|'mux', id:'', poster:'<photo key>',
@@ -251,17 +251,17 @@ window.IHG = {
 
   steps: [
     ['One conversation','Tell us about your family and your plans once. No forms, no pressure, and no decision in the first conversation.'],
-    ['The right division','Your Relationship Manager brings in each house, and qualified specialists, when they are needed. Never before.'],
+    ['The right division','The person who looks after you brings in each house, and qualified specialists, when they are needed. Never before.'],
     ['One person, for the long term','One named person stays with you after the paperwork is done: renewals, property, the next family member.']
   ],
 
-  will: ['Tell you plainly what is possible, and what is not.','Give honest timelines, and update them as things move.','Give you one named Relationship Manager.','Keep private matters private.','Stay after the paperwork is done.'],
+  will: ['Tell you plainly what is possible, and what is not.','Give honest timelines, and update them as things move.','Give you one named person.','Keep private matters private.','Stay after the paperwork is done.'],
   never: ['Guarantee an outcome that a government decides.','Claim influence with, or shortcuts through, any government.','Give regulated advice without a qualified specialist.','Share your information beyond what a service needs.','Rush you into a decision.'],
 
   values: [
     ['Plain speaking','We explain the process before we talk about outcomes, so you always know where you stand.'],
     ['Everything in writing','Options, costs and timelines are set out in writing, option by option, before you decide.'],
-    ['One named person','One Relationship Manager across every house. You never have to explain your family twice.'],
+    ['One named person','One named person for each relationship. You never have to explain your family twice.'],
     ['Discretion','Private matters stay private. Information is shared only where a service requires it.'],
     ['For the long term','The relationship carries on after the application: renewals, property and the next chapter.']
   ],
@@ -312,28 +312,28 @@ window.IHG = {
       card:'Our Partner network, opening in stages: introducers, advisers and service-line Partners. Your Client stays your Client.',
       bullets:['Introducers','Advisers','Service-line Partners'],
       does:[
-        ['Clear written terms','Every introduction is governed by a written agreement that sets out exactly how it works.'],
-        ['Clear updates','We tell you where each introduction stands, at every stage.'],
+        ['Clear written terms','Every introduction will be governed by a written agreement that sets out how it works.'],
+        ['Clear updates','We will tell you where each introduction stands, at every stage.'],
         ['Training','Briefings and approved materials so your team can explain the options accurately. Imperial Academy’s Partner programme will follow.'],
         ['Approved materials','Client-ready guides and wording, approved by Imperial before use.'],
-        ['One named contact','A dedicated person for Partners, who knows your practice.'],
+        ['One named contact','A dedicated person for Partners, who will know your practice.'],
         ['The whole Group','Citizenship and residency today, with property and Private Office services as each house opens.']
       ],
       who:['Introducers who are often asked about life and investment abroad.','Advisers: lawyers, private bankers, family offices and the other professionals a family already relies on.','Service-line Partners who deliver specialist work for Imperial Clients.'],
       howTitle:'Four steps. No surprises.',
       start:'Tell us what your Client is considering. We ask for their details only once you have their permission and written terms are in place.',
-      how:[['Introduce','Tell us about the introduction, with your Client\u2019s permission. Their details follow once written terms are in place.'],['We advise','A Relationship Manager meets your Client and explains their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Terms honoured','Terms are honoured exactly as set out in your written agreement, and your Client stays your Client.']],
+      how:[['Introduce','Tell us about the introduction, with your Client\u2019s permission. Their details follow once written terms are in place.'],['We advise','One named person will meet your Client and explain their options plainly.'],['You stay informed','Clear updates on each introduction, at every stage.'],['Terms kept','Terms will be set out in a written agreement, and kept to. Your Client stays your Client.']],
       standards:['Partners do not act or sign on the Group\u2019s behalf.','We never guarantee citizenship, visa, residency, investment or tax outcomes.','We claim no influence with, or shortcuts through, any government.','Client information is shared only with consent, and only where a service needs it.','Every Client-facing document is approved by Imperial before use.','Regulated advice is given only by qualified specialists.'],
-      note:'Your reputation travels with ours. Every Partner is asked to agree to these standards in writing, and we hold ourselves to the same.',
+      note:'Your reputation travels with ours. Every Partner will be asked to agree to these standards in writing, and we will hold ourselves to the same.',
       cta:siteCta('partners-club', 'Visit the Partners Club website')
     },
     {
       key:'private-office', name:'Imperial Private Office', short:'Private Office', logo:'IPO', img:null, status:'Being established',
-      caption:'Ongoing support for existing Imperial Clients after the first service is complete.',
+      caption:'Being established: ongoing support for existing Imperial Clients after their first service.',
       desc:'Imperial Private Office, being established for existing Imperial Clients: one point of contact for the wider needs of a family with a multi-country life.',
-      line:'Ongoing support for existing Imperial Clients after the first service is complete: relocation, schools, structuring and introductions, through one point of contact.',
+      line:'Being established to support existing Imperial Clients after their first service: relocation, schools and introductions, with structuring through qualified specialists, all through one point of contact.',
       intro:'Imperial Private Office is being established to look after Imperial Clients once their first service is complete: a single point of contact for the wider needs of a multi-country family, delivered through trusted Partners and qualified specialists.',
-      card:'One point of contact for our existing Clients: relocation, schools, introductions, and the coordination of qualified specialists.',
+      card:'Being established as one point of contact for our existing Clients: relocation, schools, introductions, and the coordination of qualified specialists.',
       bullets:['Relocation and schools','Structuring, through specialists','Banking introductions'],
       does:[
         ['Relocation','Moving the household, and settling in well, wherever the family chooses to live.'],
@@ -345,7 +345,7 @@ window.IHG = {
       ],
       who:['Existing Imperial Clients and their families.','Completed Imperial Citizenship Clients, who may be invited to join.','Families whose lives, assets and businesses span several countries.'],
       howTitle:'One point of contact. Many specialists.',
-      how:[['Your contact','One named person who knows your family and your history with Imperial.'],['Your request','Tell us what you need. We record it properly and find the right specialist.'],['Delivered through Partners','Trusted Partners and qualified specialists carry out the work.'],['Followed through','We stay with it until it is done, and note what comes next.']],
+      how:[['Your contact','One named person who will know your family and your history with Imperial.'],['Your request','You will tell us what you need. We will record it properly and find the right specialist.'],['Delivered through Partners','Trusted Partners and qualified specialists will carry out the work.'],['Followed through','We will stay with it until it is done, and note what comes next.']],
       note:'Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists.',
       cta:siteCta('private-office', 'Visit the Private Office website')
     },
@@ -411,14 +411,14 @@ window.IHG = {
      body:[
       ['p','A family that lives across borders rarely has one question. The residency touches the home; the home touches the school; the company touches the tax position. Handled separately, each adviser sees a slice and the family carries the whole.'],
       ['h','One table'],['p','Imperial\u2019s houses sit at one table, so the person advising on your residency already knows about the home, the company and the school.'],
-      ['h','One person'],['p','One Relationship Manager brings each house in when it is needed, and qualified specialists for regulated matters such as tax, legal and investment.'],
+      ['h','One person'],['p','One named person brings each house in when it is needed, and qualified specialists for regulated matters such as tax, legal and investment.'],
       ['q','You never have to explain your family twice.']
      ]},
     {slug:'your-client-stays-your-client', draft:true, cat:'Partners', img:null, title:'Your Client stays your Client: how introductions work',
      dek:'For lawyers, bankers, advisers and family offices, an introduction should protect the relationship, not put it at risk.',
      body:[
       ['p','Professional advisers are often the first people a Client asks about living or investing abroad. The question is who to hand that conversation to without worrying about it.'],
-      ['h','Four steps'],['p','Tell us about the introduction, with your Client\u2019s permission. A Relationship Manager meets your Client and explains their options plainly. We tell you where the introduction stands, at every stage. The terms of your written agreement are honoured exactly as set out.'],
+      ['h','Four steps'],['p','Tell us about the introduction, with your Client\u2019s permission. One named person will meet your Client and explain their options plainly. We will tell you where the introduction stands, at every stage. Terms will be set out in a written agreement, and kept to.'],
       ['h','Shared standards'],['p','We never guarantee citizenship, visa, residency, investment or tax outcomes, and we claim no influence with any government. Every Client-facing document is approved by Imperial before use.'],
       ['q','Your reputation travels with ours.']
      ]},
@@ -459,9 +459,9 @@ window.IHG = {
       lead:'Tell us a little about yourself and what you have in mind. One person at Imperial will read it and reply personally. Three paths; choose the one that describes you.',
       question:'I am', prompt:'Three paths; choose the one that describes you.', field:'audience',
       paths:[
-        {key:'clients', audience:'clients', title:'Private Clients', text:'Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.', cta:'Continue as a private client', card:'Arrange a first conversation', divisions:['citizenship','private-office','real-estate','group']},
-        {key:'partners', audience:'partners', title:'Professional Partners', text:'Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.', cta:'Continue as a professional partner', card:'Discuss becoming a Partner', divisions:['partners-club','academy']},
-        {key:'institutions', audience:'institutions', title:'Institutions and Strategic Relationships', text:'Governments, missions, institutions and organisations exploring a relationship with the Group.', cta:'Continue as an institution', card:'Open a strategic conversation', divisions:['group']}
+        {key:'clients', audience:'clients', title:'Private Clients', text:'Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.', card:'Arrange a first conversation', divisions:['citizenship','private-office','real-estate','group']},
+        {key:'partners', audience:'partners', title:'Professional Partners', text:'Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.', card:'Discuss becoming a Partner', divisions:['partners-club','academy']},
+        {key:'institutions', audience:'institutions', title:'Institutions and Strategic Relationships', text:'Governments, missions, institutions and organisations exploring a relationship with the Group.', card:'Open a strategic conversation', divisions:['group']}
       ],
       footnote:'Not sure which? Begin as a private client and we will take it from there.'
     },
@@ -586,8 +586,12 @@ window.IHG = {
       draft:{keepOnSwitch:['name','email','phone','pref','msg']}
     },
     /* Division page card: "Start a relationship with <division>", with the path's card label. The home page shows the
-       three chooser paths as cards. */
-    divisionCard:{title:'Start a relationship with {division}', eyebrow:'Start a relationship'},
+       three chooser paths as cards. byDivision (v6 fix): a division whose card must not read as its path's general
+       copy. The Academy page opens the Professional Partners path with "Train or certify my team" chosen (prefill
+       byDivision academy, docs/RELATIONSHIP-JOURNEY.md 2.3), so its card speaks of training, in the Academy's own words. */
+    divisionCard:{title:'Start a relationship with {division}', eyebrow:'Start a relationship', byDivision:{
+      academy:{title:'Learning and standards, in development.', label:'Imperial Academy', text:'Imperial Academy, in development, will train Partner teams to explain the options accurately.', opening:'Tell us about your practice and what your team would like to learn. One person will read it and reply personally.', card:'Ask about training your team'}
+    }},
     states:{
       sending:{button:'Sending'},
       received:{
@@ -764,11 +768,11 @@ window.IHG = {
   /* Questions every house hears. Every answer restates something already said on this site. */
   faq: [
     {q:'Do I need any documents for a first conversation?', a:'No. The first conversation is for listening. It helps to think about who would be included, where you live and hold citizenship today, a rough budget and any dates that matter, but nothing needs to be prepared.'},
-    {q:'Will I have to deal with several people across the houses?', a:'No. One Relationship Manager is your point of contact across every house, and brings each one in when it is needed. You never have to explain your family twice.'},
+    {q:'Will I have to deal with several people across the houses?', a:'No. One named person is your point of contact, and brings in each house when it is needed. You never have to explain your family twice.'},
     {q:'Can you guarantee that an application will be approved?', a:'No one honestly can. Final approval of any citizenship or residency application always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.'},
-    {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. Your Relationship Manager coordinates them for you.'},
+    {q:'Do you give tax, legal or investment advice?', a:'Advice on regulated matters such as tax, legal or investment is given only by appropriately qualified specialists. The person who looks after you coordinates them.'},
     {q:'What happens to the information I share?', a:'It is used to respond to you, kept in our customer relationship system, and shared only where a service requires it. Private matters stay private. You can ask for a copy, or for deletion, at any time.', to:'/privacy', tl:'Privacy notice'},
-    {q:'I am a lawyer, banker or adviser. Can I introduce a client?', a:'Yes. Introductions are governed by a written agreement that sets out exactly how they work, you receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
+    {q:'I am a lawyer, banker or adviser. Can I introduce a client?', a:'Yes. Each introduction will be governed by a written agreement that sets out how it works, you will receive clear updates at every stage, and your Client stays your Client.', to:'/divisions/partners-club', tl:'Imperial Partners Club'},
     {q:'Is Imperial Real Estate open yet?', a:'Not yet. Imperial Real Estate is coming soon. You can register your interest and we will contact you when it opens.', to:'/divisions/real-estate', tl:'Register interest'},
     {q:'Where are you based?', a:'Our headquarters is in Dubai and we have an office in Lagos. We work with Partners, advisers and specialists in the Caribbean, Europe and the Gulf.'}
   ]

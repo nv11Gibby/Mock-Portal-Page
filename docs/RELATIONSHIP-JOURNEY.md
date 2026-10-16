@@ -35,10 +35,10 @@ The chooser and the closing screen are shared. Each path is written out below in
 | Navigation item and footer link | Contact | `/contact` (the page keeps its conventional name in menus; the button carries the journey name) |
 | Home, the section that replaces the enquiry card | Three path cards: Private Clients, Professional Partners, Institutions and Strategic Relationships | `/contact?journey=<key>&via=home-paths` |
 | Division page hero and closing band (today "Speak to us") | Start a relationship | `/contact?about=<key>&via=division-hero`, `&via=division-close` |
-| Division page, the section that replaces the enquiry card | Start a relationship with Imperial Citizenship (and so on) | `/contact?about=<key>&via=division` |
+| Division page, the section that replaces the enquiry card | Start a relationship with Imperial Citizenship (and so on), the button carrying the path label; the Academy page has its own card: "Learning and standards, in development.", button "Ask about training your team", because it opens the Professional Partners path with Train or certify my team chosen | `/contact?about=<key>&via=division` |
 | Real Estate page | Register interest (the existing form, unchanged) and Start a relationship | `/contact?about=real-estate&via=division` |
 | Citizenship page, fit check done state | Continue to your message | `/contact?about=citizenship&via=fit` (section 6.3 explains the handover) |
-| Event page glance panel (today "Start a strategic conversation") | Start a relationship with the Group | `/contact?journey=institutions&via=event` |
+| Event page glance panel | Open a strategic conversation (the Institutions path label, v6 fix) | `/contact?journey=institutions&via=event` |
 | House finder result | Start a relationship | `/contact?about=<top>&goals=<goals>&via=finder` |
 | Journal article end, closing band on inner pages, 404 and error pages (today "Speak to us") | Start a relationship | `/contact?via=article`, `close`, `notfound` |
 | Footer brand column | Start a relationship | `/contact?via=footer` |
@@ -54,9 +54,9 @@ Shown at `/contact` when no `journey`, `audience` or `about` parameter chose the
 
 Three cards, one question, "I am" [audience]:
 
-- **Private Clients.** Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office. Button: Continue as a private client.
-- **Professional Partners.** Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy. Button: Continue as a professional partner.
-- **Institutions and Strategic Relationships.** Governments, missions, institutions and organisations exploring a relationship with the Group. Button: Continue as an institution.
+- **Private Clients.** Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office. Button: Arrange a first conversation.
+- **Professional Partners.** Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy. Button: Discuss becoming a Partner.
+- **Institutions and Strategic Relationships.** Governments, missions, institutions and organisations exploring a relationship with the Group. Button: Open a strategic conversation.
 
 Footnote: "Not sure which? Begin as a private client and we will take it from there."
 

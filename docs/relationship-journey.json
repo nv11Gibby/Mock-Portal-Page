@@ -20,9 +20,9 @@
     "question": "I am",
     "field": "audience",
     "paths": [
-      {"key": "clients", "audience": "clients", "title": "Private Clients", "text": "Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.", "cta": "Continue as a private client", "divisions": ["citizenship", "private-office", "real-estate", "group"]},
-      {"key": "partners", "audience": "partners", "title": "Professional Partners", "text": "Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.", "cta": "Continue as a professional partner", "divisions": ["partners-club", "academy"]},
-      {"key": "institutions", "audience": "institutions", "title": "Institutions and Strategic Relationships", "text": "Governments, missions, institutions and organisations exploring a relationship with the Group.", "cta": "Continue as an institution", "divisions": ["group"]}
+      {"key": "clients", "audience": "clients", "title": "Private Clients", "text": "Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.", "cta": "Arrange a first conversation", "divisions": ["citizenship", "private-office", "real-estate", "group"]},
+      {"key": "partners", "audience": "partners", "title": "Professional Partners", "text": "Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.", "cta": "Discuss becoming a Partner", "divisions": ["partners-club", "academy"]},
+      {"key": "institutions", "audience": "institutions", "title": "Institutions and Strategic Relationships", "text": "Governments, missions, institutions and organisations exploring a relationship with the Group.", "cta": "Open a strategic conversation", "divisions": ["group"]}
     ],
     "footnote": "Not sure which? Begin as a private client and we will take it from there.",
     "why": "The path is the audience: it sets the Contact Type in Pipedrive (Client, Partner or none for institutions), which screens follow, and which questions are never asked."
@@ -353,10 +353,10 @@
     {"where": "Navigation and footer link", "label": "Contact", "href": "/contact", "note": "The page keeps its conventional name in menus; the button carries the journey name."},
     {"where": "Home, Start a relationship section (replaces the enquiry card)", "label": "Three path cards", "href": "/contact?journey=clients&via=home-paths, /contact?journey=partners&via=home-paths, /contact?journey=institutions&via=home-paths"},
     {"where": "Division page hero and closing band (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?about=<key>&via=division-hero and &via=division-close"},
-    {"where": "Division page, Start a relationship section (replaces the enquiry card)", "label": "Start a relationship with <division>", "href": "/contact?about=<key>&via=division"},
+    {"where": "Division page, Start a relationship section (replaces the enquiry card)", "label": "Start a relationship with <division>, with the path label on the button; the Academy page has its own card (Learning and standards, in development; Ask about training your team)", "href": "/contact?about=<key>&via=division"},
     {"where": "Real Estate page", "label": "Register interest (unchanged form) and Start a relationship", "href": "/contact?about=real-estate&via=division"},
     {"where": "Citizenship page, programme fit check done state", "label": "Continue to your message", "href": "/contact?about=citizenship&via=fit"},
-    {"where": "Event page glance panel (replaces Start a strategic conversation)", "label": "Start a relationship with the Group", "href": "/contact?journey=institutions&via=event"},
+    {"where": "Event page glance panel", "label": "Open a strategic conversation", "href": "/contact?journey=institutions&via=event", "note": "v6 fix: one label per path, the Institutions path label"},
     {"where": "House finder result", "label": "Start a relationship", "href": "/contact?about=<top>&goals=<goals>&via=finder"},
     {"where": "Journal article end (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?via=article"},
     {"where": "Closing band on inner pages (replaces Speak to us)", "label": "Start a relationship", "href": "/contact?via=close"},
