@@ -90,6 +90,8 @@ a[aria-disabled=true]{cursor:help}
 .scrolled .hdr::before,.mega-open .hdr::before,.solid-hdr .hdr::before{opacity:1}
 .hdr-hide .hdr{transform:translateY(-100%)}
 .mega-open.hdr-hide .hdr,.mm-open .hdr{transform:none}
+/* With the mobile menu open the bar is solid, so menu text sliding or scrolling beneath it never shows through */
+.mm-open .hdr::before{opacity:1;transition:none;background:var(--ink-2,#0b0a09);-webkit-backdrop-filter:none;backdrop-filter:none}
 @media (max-width:1024px){ .hdr-hide .hdr{transform:none} }
 .hdr-in{position:relative;display:flex;align-items:center;gap:32px;height:var(--hdrH);max-width:calc(var(--max) + 2 * var(--pad));margin:0 auto;padding:0 var(--pad)}
 .brand{display:flex;align-items:center;min-height:44px;flex:none}
@@ -137,7 +139,8 @@ a[aria-disabled=true]{cursor:help}
 .mega-sites a:hover{color:var(--gold-l)}
 
 /* ---------- mobile menu ---------- */
-.mmenu{position:fixed;inset:0;z-index:90;background:var(--ink-2);padding:calc(var(--hdrH) + 8px) var(--pad) 28px;overflow-y:auto;overscroll-behavior:contain;transform:translateY(-100%);transition:transform var(--t4) var(--e-out)}
+/* The sheet is opaque on its own: a solid fallback colour and its own stacking context, so no page text shows through */
+.mmenu{position:fixed;inset:0;z-index:90;isolation:isolate;background:#0b0a09;background:var(--ink-2,#0b0a09);padding:calc(var(--hdrH) + 8px) var(--pad) 28px;overflow-y:auto;overscroll-behavior:contain;transform:translateY(-100%);transition:transform var(--t4) var(--e-out)}
 .mm-open .mmenu{transform:none}
 .mmenu[hidden]{display:block;visibility:hidden}
 .mm-links{list-style:none;margin:0;padding:0}
@@ -1151,6 +1154,9 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .vid-cc{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;text-decoration:underline;text-underline-offset:3px}
 .vid-cc:hover{color:var(--gold-ink)}
 .gal-vid{margin-bottom:10px}
+.vid.bare figcaption{margin-top:0}
+.vid-mark{display:inline-flex;margin-right:8px;color:var(--gold-ink)}
+.sec:not(.light) .vid-mark{color:var(--gold)}
 .home-vid .vid,.founder-film .vid{margin:0}
 /* Small marker in event cards and journal rows, shown only where a clip exists */
 .vmark{display:inline-flex;align-items:center;gap:4px;color:var(--gold-ink)}

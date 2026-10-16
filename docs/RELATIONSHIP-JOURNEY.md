@@ -115,7 +115,7 @@ Why: routes to Partners Club or Academy. An introduction sets `for_whom=client`,
 
 **Screen 2 of 4: About your practice.** "So the right person replies, and so written terms can follow if it comes to that."
 
-- "Your profession" [profession], required: Lawyer / Private banker / Wealth adviser / Family office / Accountant or tax adviser / Immigration or relocation adviser / Property professional / Other (Other opens "Your profession, in a word or two"; the text is posted when given, otherwise "Other").
+- "Your profession" [profession], required: Lawyer / Private banker / Financial adviser / Family office / Accountant or tax adviser / Immigration or relocation adviser / Property professional / Other (Other opens "Your profession, in a word or two"; the text is posted when given, otherwise "Other").
 - "Firm or organisation" [firm], required.
 - "Where you practise" [country], required, hint "Country".
 

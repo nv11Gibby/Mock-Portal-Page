@@ -486,7 +486,7 @@ const CHOICES = [
   { about: 'citizenship', journey: 'clients', timeline: '3m', budget: 'over-1m', for_whom: 'family', band: 'hot', points: 9, nationality: 'Nigeria', country: 'Nigeria', phone: '+234 802 000 0101' },
   { about: 'private-office', journey: 'clients', timeline: '3-12m', for_whom: 'myself', band: 'warm', points: 4, nationality: 'United Kingdom', country: 'United Arab Emirates', phone: '+971 50 000 0102' },
   { about: 'partners-club', journey: 'partners', key: 'introduce', timeline: '3m', for_whom: 'client', firm: 'E2E Advisory LLP', profession: 'Lawyer', interests: ['A second residency or citizenship'], band: 'hot', points: 7, country: 'Ghana', phone: '+233 24 000 0103' },
-  { about: 'academy', journey: 'partners', key: 'learn', timeline: 'exploring', firm: 'E2E Academy Partners', profession: 'Wealth adviser', interests: ['Certification for my team'], band: 'exploring', points: 2, country: 'Kenya', phone: '+254 700 000 104' },
+  { about: 'academy', journey: 'partners', key: 'learn', timeline: 'exploring', firm: 'E2E Academy Partners', profession: 'Financial adviser', interests: ['Certification for my team'], band: 'exploring', points: 2, country: 'Kenya', phone: '+254 700 000 104' },
   { about: 'real-estate', journey: 'clients', timeline: '3-12m', budget: '500k-1m', for_whom: 'family', re_intent: 'buy', re_area: 'Dubai Marina', band: 'hot', points: 6, country: 'United Arab Emirates', phone: '+971 50 000 0105' },
   { about: 'group', journey: 'clients', timeline: 'exploring', for_whom: 'myself', band: 'exploring', points: 1, country: 'South Africa', phone: '+27 82 000 0106' }
 ];

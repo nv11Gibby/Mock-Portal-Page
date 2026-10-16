@@ -127,6 +127,8 @@ function videoBlock(v, cls, fb){
   if(!v) return '';
   /* v6: a poster that is not cleared gives way to the ink field (fb, when given, is the view to draw), never a substitute */
   var pk = safePhoto(v.poster), ready = !!v.id, title = v.title || 'Video';
+  /* A clip still to be supplied never sits over a photograph: with a cleared poster it is a caption line only */
+  if(!ready && pk) return '<figure class="vid pending bare'+(cls?' '+cls:'')+'" data-r><figcaption><span class="vid-mark" aria-hidden="true">'+PLAY+'</span><b>'+esc(title)+'</b>'+(v.duration?'<i aria-hidden="true">·</i>'+esc(v.duration):'')+'<i aria-hidden="true">·</i>'+tbc(v.tbc||'Footage to be supplied')+'</figcaption></figure>';
   return '<figure class="vid'+(cls?' '+cls:'')+(ready?'':' pending')+'" data-r'+(ready?' data-video data-provider="'+esc(v.provider||'vimeo')+'" data-id="'+esc(v.id)+'"'+(v.hash?' data-hash="'+esc(v.hash)+'"':'')+' data-vtitle="'+esc(title)+'"':'')+'>'+
     '<div class="vid-stage">'+(pk ? img(pk, title+' (poster)', 'vid-poster') : inkField({cls:'vid-ink', view:fb || INK.cities, points:true, fill:true}))+
     (ready ? '<button type="button" class="vid-play" aria-label="Play '+esc(title)+'">'+PLAY+'<span>Play</span></button>' : '<span class="vid-tbc">'+PLAY+tbc(v.tbc||'Footage to be supplied')+'</span>')+'</div>'+
@@ -388,7 +390,7 @@ V.about = function(){
   '<section class="sec light alt" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its Founder, with one Group team working across every division. Divisional leadership is introduced on each division\u2019s website as it is published.</p></div>'+
    '<div class="leaders real">'+D.leadership.map(function(l,i){return '<div class="leader'+(l.img?'':' more')+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s">'+(l.img?'<div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div>':'')+'<div class="role">'+(l.roleTbc?tbc(l.role):esc(l.role))+'</div><h3>'+esc(l.name||l.area)+'</h3><p>'+(l.name?esc(l.area)+'<br>Biography: '+tbc('to be approved'):'Introduced on each division\u2019s website as it is published.')+'</p></div>';}).join('')+'</div></div></section>'+
 
-  '<section class="sec light founder-film" id="founder-film"><div class="wrap split"><div>'+eyebrow('Founder film')+mask(['The Founder,','on film.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s">A short film with the Founder, 60 to 90 seconds, is planned for this page. '+tbc('Footage to be supplied')+'</p></div>'+videoBlock(VID.about,'')+'</div></section>'+
+  '<section class="sec light founder-film" id="founder-film"><div class="wrap split"><div>'+eyebrow('Founder film')+mask(['The Founder,','on film.'],'h2','d2')+'<p class="lead" data-r style="--d:.15s">A short film with the Founder, 60 to 90 seconds, is planned for this page.</p></div>'+videoBlock(VID.about,'')+'</div></section>'+
 
   '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Where we work')+mask(['Led from two cities.','Relationships across borders.'],'h2','d2')+'</div></div>'+mapBlock()+'</div></section>'+closing();
 };
@@ -742,7 +744,7 @@ function nfContacts(){
   return '<div class="kv nf-kv" data-r style="--d:.4s">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a>'+(C.emailTbc?' '+tbc(C.emailTbc):'')+'</div></div>';
 }
 V.notFound = function(){
-  return '<section class="nf">'+inkField({view:INK.world, points:true, arc:true, cls:'nf-ink'})+'<div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact?via=notfound">Start a relationship'+AR+'</a></div>'+nfContacts()+'</div></section>';
+  return '<section class="nf">'+inkField({view:INK.world, points:true, arc:true, cls:'nf-ink'})+'<div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or is no longer here.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact?via=notfound">Start a relationship'+AR+'</a></div>'+nfContacts()+'</div></section>';
 };
 /* Shown by render() when a view throws (the error is logged), and written to error.html by the build. */
 V.error = function(){

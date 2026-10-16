@@ -175,7 +175,8 @@ window.IHG = {
     ]
   },
 
-  /* Events: genuine Imperial gatherings. Photographs are from the Marketing Team SharePoint (Events folder).
+  /* Events: genuine Imperial gatherings. body: paragraphs beyond the lead (dek), empty where the record holds nothing
+     more (v6 fix: a body that only repeated the lead is gone). Photographs are from the Marketing Team SharePoint (Events folder).
      Dates and venues marked tbc have not been confirmed in writing. n = number of gallery photographs (v6: five frames
      removed by the photography plan, section 6; the Grenada covers are now crops of frame 03, the arrival).
      consent: true once the guests in that event's photographs have confirmed they are happy to be featured; until then
@@ -191,20 +192,20 @@ window.IHG = {
     {slug:'lagos-diplomatic-soiree-2025', title:'The Lagos Diplomatic Soirée 2025', short:'Diplomatic Soirée, Lagos', city:'Lagos', venue:null, date:'2025', iso:'2025', cat:'Events', n:6, featured:true, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/lagos-diplomatic-soiree-2025/cover', captions:'assets/captions/lagos-diplomatic-soiree-2025.vtt', title:'Highlights: The Lagos Diplomatic Soir\u00e9e 2025', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'An evening in Lagos for Clients, partners and friends of Imperial.',
-     body:['An evening in Lagos for Clients, partners and friends of Imperial.'], tbc:['Description of the evening','Exact date','Venue','Guests of honour']},
+     body:[], tbc:['Description of the evening','Exact date','Venue','Guests of honour']},
     {slug:'gala-dinner-lagos', title:'Gala Dinner, Lagos', short:'Gala Dinner, Lagos', city:'Lagos', venue:null, date:null, iso:null, cat:'Private gathering', n:5, consent:false,
      dek:'A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.',
-     body:['A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.'], tbc:['Description of the evening','Date','Venue','Speakers and guests of honour']},
+     body:[], tbc:['Description of the evening','Date','Venue','Speakers and guests of honour']},
     {slug:'easter-polo-cup-2026', title:'Easter Polo Cup After Party', short:'Easter Polo Cup, Lagos', city:'Lagos', venue:'Lagos Polo Club, Ikoyi', date:'Easter 2026', iso:'2026', cat:'Events', n:3, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/easter-polo-cup-2026/cover', captions:'assets/captions/easter-polo-cup-2026.vtt', title:'Highlights: Easter Polo Cup after party, Lagos', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'An after party hosted by Imperial Citizenship at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.',
-     body:['Imperial Citizenship hosted an after party following the Easter Polo Cup at Lagos Polo Club, Ikoyi.'], tbc:['Exact date']},
+     body:[], tbc:['Exact date']},
     {slug:'lagos-office-event', title:'An Evening at the Lagos Office', short:'Lagos office evening', city:'Lagos', venue:'8 Aromire Road, Ikoyi', date:null, iso:null, cat:'Private gathering', n:6, consent:false,
      dek:'Clients, partners and friends of Imperial at the Lagos office on Aromire Road, Ikoyi.',
-     body:['Imperial welcomed Clients, partners and friends to an evening at the Lagos office on Aromire Road, Ikoyi.'], tbc:['Date','Occasion']},
+     body:[], tbc:['Date','Occasion']},
     {slug:'delborough-dinner', title:'A Private Dinner at DANI, The Delborough', short:'Private dinner, Lagos', city:'Lagos', venue:'DANI, The Delborough Hotel', date:null, iso:null, cat:'Private gathering', n:5, consent:false,
      dek:'A private dinner at DANI, The Delborough Hotel, Lagos.',
-     body:['A private dinner at DANI, The Delborough Hotel, Lagos.'], tbc:['Description of the evening','Date','Occasion']}
+     body:[], tbc:['Description of the evening','Date','Occasion']}
   ],
 
   /* Journal: selective and institutional. Company developments, insights, partnerships and selected events.
@@ -212,7 +213,7 @@ window.IHG = {
      video: one slot per entry, empty until a clip exists (same shape as D.video). The two layout samples that pointed
      at the Insights articles were removed; the four Insights articles themselves are draft copy awaiting approval. */
   journal: [
-    {kind:'Events', date:'19 February 2025', iso:'2025-02-19', title:'Imperial Citizenship sponsors Grenada’s 51st Independence Day after party in Dubai', dek:'Following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai, Imperial Citizenship sponsored the evening at The Dubai EDITION.', to:'/journal/events/grenada-51-dubai', img:'events/grenada-51-dubai/cover-p', own:true, video:null},
+    {kind:'Diplomatic', date:'19 February 2025', iso:'2025-02-19', title:'Imperial Citizenship sponsors Grenada’s 51st Independence Day after party in Dubai', dek:'Following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai, Imperial Citizenship sponsored the evening at The Dubai EDITION.', to:'/journal/events/grenada-51-dubai', img:'events/grenada-51-dubai/cover-p', own:true, video:null},
     {kind:'Company developments', date:null, iso:null, title:'Imperial Real Estate is coming soon', dek:'The Group’s fifth division will offer property advisory, starting with Dubai. Interest can be registered now.', to:'/divisions/real-estate', img:null, video:null},
     {kind:'Events', date:'Easter 2026', iso:'2026', title:'Imperial Citizenship hosts the Easter Polo Cup after party at Lagos Polo Club', dek:'An after party at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.', to:'/journal/events/easter-polo-cup-2026', img:'events/easter-polo-cup-2026/cover-p', own:true, video:null},
     {kind:'Events', date:'2025', iso:'2025', title:'The Lagos Diplomatic Soirée 2025', dek:'An evening in Lagos for Clients, partners and friends of Imperial.', to:'/journal/events/lagos-diplomatic-soiree-2025', img:'events/lagos-diplomatic-soiree-2025/cover-p', own:true, video:null}
@@ -240,12 +241,12 @@ window.IHG = {
     ['Build','A business, a career or a presence in a new market.'],
     ['Structure','How assets, companies and the family are organised.'],
     ['Invest','Property in Dubai, and banking introductions that fit the plan.'],
-    ['Protect','Security for what you have built, and who you love.'],
+    ['Protect','A lasting option for the family: a second residency or citizenship, and structuring through specialists.'],
     ['Experience','The occasions and introductions that come with a wider life.']
   ],
 
   steps: [
-    ['One conversation','Tell us about your family and your plans once. No forms, no pressure, and no decision in the first conversation.'],
+    ['One conversation','Tell us about your family and your plans once. No obligation, no pressure, and no decision in the first conversation.'],
     ['The right division','The person who looks after you brings in each house, and qualified specialists, when they are needed. Never before.'],
     ['One person, for the long term','One named person stays with you after the paperwork is done: renewals, property, the next family member.']
   ],
@@ -288,12 +289,12 @@ window.IHG = {
         ['Caribbean citizenship','Citizenship by investment, for example Saint Kitts and Nevis and Grenada.', 'Full programme list to confirm'],
         ['UAE residency','Long-term residency routes, including property-linked options in Dubai.'],
         ['European residency','Residency routes in Europe.', 'Approved European programmes to confirm'],
-        ['Global Mobility Strategy','Advisory for families planning across several countries at once.'],
+        ['Global mobility strategy','Advisory for families planning across several countries at once.'],
         ['UAE business set-up','Advisory for founders establishing a presence in the UAE.']
       ],
       who:['Families who want more choices for their children.','Founders who need a regional base and a clear structure behind it.','Families who travel often and are tired of planning their lives around visas.'],
       howTitle:'Five steps, said plainly.',
-      how:[['Listen','A first conversation about your family and your plans. No forms, no pressure.'],['Compare','Your options side by side: requirements, costs and an honest timeline for each, in writing.'],['Plan','One route, one timeline, one named person responsible for it.'],['Apply','A complete, accurate application, with every specialist coordinated for you.'],['Stay','Renewals, property, the next family member. The relationship carries on.']],
+      how:[['Listen','A first conversation about your family and your plans. No obligation, no pressure.'],['Compare','Your options side by side: requirements, costs and an honest timeline for each, in writing.'],['Plan','One route, one timeline, one named person responsible for it.'],['Apply','A complete, accurate application, with every specialist coordinated for you.'],['Stay','Renewals, property, the next family member. The relationship carries on.']],
       includes:['Eligibility review','Options in writing','Full cost schedule','Honest timeline','Document checklist','Application quality check','Specialists coordinated','Aftercare'],
       note:'Final approval always rests with the relevant government. We tell you that at the start, and keep you informed at every stage.',
       cta:siteCta('citizenship', 'Visit imperialcitizenship.com')
@@ -508,7 +509,7 @@ window.IHG = {
           ]},
           {id:'practice', short:'Your practice', title:'About your practice', lead:'So the right person replies, and so written terms can follow if it comes to that.', fields:[
             {name:'profession', type:'choice-or-text', required:true, label:'Your profession', options:[
-              {v:'Lawyer', l:'Lawyer'}, {v:'Private banker', l:'Private banker'}, {v:'Wealth adviser', l:'Wealth adviser'}, {v:'Family office', l:'Family office'},
+              {v:'Lawyer', l:'Lawyer'}, {v:'Private banker', l:'Private banker'}, {v:'Financial adviser', l:'Financial adviser'}, {v:'Family office', l:'Family office'},
               {v:'Accountant or tax adviser', l:'Accountant or tax adviser'}, {v:'Immigration or relocation adviser', l:'Immigration or relocation adviser'}, {v:'Property professional', l:'Property professional'},
               {v:'Other', l:'Other', text:{label:'Your profession, in a word or two', required:false}}
             ]},
@@ -630,7 +631,7 @@ window.IHG = {
       experience:{'private-office':3}
     },
     why: {
-      citizenship:{_:'Second residency and citizenship by investment, compared side by side.', live:'Residency and citizenship routes for the whole family.', build:'UAE business set-up advisory and a regional base.', structure:'A Global Mobility Strategy across several countries.', protect:'A second citizenship or residency as a lasting option.', experience:'Fewer visas to plan a life around.'},
+      citizenship:{_:'Second residency and citizenship by investment, compared side by side.', live:'Residency and citizenship routes for the whole family.', build:'UAE business set-up advisory and a regional base.', structure:'A global mobility strategy across several countries.', protect:'A second citizenship or residency as a lasting option.', experience:'Fewer visas to plan a life around.'},
       'private-office':{_:'One point of contact for a multi-country family.', live:'Relocation, and the right schools near the right home.', build:'Coordination of company formation through qualified specialists.', structure:'Tax residency and structuring, coordinated with qualified specialists.', invest:'Introductions to private banks where a relationship fits the plan.', protect:'Structuring coordinated with tax and legal specialists.', experience:'Events and introductions that come with a wider life.'},
       'partners-club':{_:'Introduce a Client with clear written terms. Your Client stays your Client.'},
       academy:{_:'Training and certification to one shared standard, in development.'},
