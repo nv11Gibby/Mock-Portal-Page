@@ -411,6 +411,10 @@ async function follow(page, loc) {
   await click(loc);
   await page.waitForFunction(function (sel) { return location.pathname === '/contact' && !!document.querySelector(sel); }, CUR, { timeout: 10000 });
 }
+async function clientNav(page, path, sel) {
+  await click(page.locator('#ftr a[href="' + path + '"]').first());
+  await page.waitForFunction(function (a) { return location.pathname === a[0] && !!document.querySelector(a[1]); }, [path, sel], { timeout: 10000 });
+}
 function divisionLink(page, key) { return page.locator('a[href$="contact?about=' + key + '&via=division"]').first(); }
 function journeyLine(spec, entry) { return 'Journey: ' + JOURNEY_NAME[spec.journey] + ' · Entry: ' + (entry || 'not given'); }
 async function received(page) {
@@ -1136,7 +1140,9 @@ test('8.4 the preview build (data-preview): the chip shows on every form, Send p
   assert.ok(!/received|registered/i.test(panel.text.replace('once Imperial has received your message', '')), 'nothing on the panel says received or registered: ' + panel.text);
   assert.equal(await page.locator('#cf [data-verify]').count(), 0, 'no verification step on the preview');
   /* the two other forms on the preview: the Real Estate interest form and the guide form (they posted on a preview before, D2) */
-  await page.goto(BASE + '/divisions/real-estate', { waitUntil: 'networkidle' });
+  /* reached through the footer, as /contact was: a page loaded directly keeps the production markup it was prerendered
+     with, while the Render preview prerenders it with data-preview, so a client render is the faithful stand-in */
+  await clientNav(page, '/divisions/real-estate', '[data-form="interest"] form');
   const ri = page.locator('[data-form="interest"] form');
   assert.equal((await page.locator('[data-form="interest"] [data-preview-chip]').innerText()).trim(), 'Preview build: nothing is sent from this preview', 'the interest form carries the chip');
   await ri.locator('input[name="name"]').fill('E2E Preview Interest');
@@ -1149,7 +1155,7 @@ test('8.4 the preview build (data-preview): the chip shows on every form, Send p
   const ri2 = await page.evaluate(function () { const s = document.querySelector('[data-form="interest"] .success'); return { title: s.querySelector('h3').textContent.trim(), text: s.querySelector('p').textContent.replace(/\s+/g, ' ').trim(), chip: ((s.querySelector('.jp-chip') || {}).textContent || '').trim(), announce: (document.getElementById('announce') || {}).textContent || '', all: s.textContent }; });
   neutral(ri2, 'interest form');
   assert.ok(!/registered|launches/i.test(ri2.all.replace('once Imperial has received your message', '')), 'no "Your interest is registered" on the preview: ' + ri2.all);
-  await page.goto(BASE + '/divisions/citizenship', { waitUntil: 'networkidle' });
+  await clientNav(page, '/divisions/citizenship', '[data-form="guide"] form');
   const gf = page.locator('#guide-card form');
   assert.equal((await page.locator('#guide-card [data-preview-chip]').innerText()).trim(), 'Preview build: nothing is sent from this preview', 'the guide form carries the chip');
   await gf.locator('input[name="name"]').fill('E2E Preview Guide');
