@@ -7,7 +7,7 @@
      Placeholders:
        {{SITE_NAME}}         the site's name, for the logo alt text and the aria-label
        {{HOME_URL}}          the site's own home, usually /
-       {{CONTACT_URL}}       the site's own contact page (the Enquire now buttons)
+       {{CONTACT_URL}}       the site's own contact page (the Start a relationship buttons append ?via=header and ?via=menu)
        {{IHG_URL}}           the Group site, https://www.imperialholdingsgroup.com (TO CONFIRM: final domain)
        {{LOGO_HORIZONTAL}}   the site's horizontal gold wordmark, for example assets/logos/IPC-Horizontal-Gold.svg
        {{LOGO_CROWN}}        assets/logos/Imperial-Crown-Gold.svg
@@ -31,7 +31,7 @@
       <a href="{{IHG_URL}}/journal" data-nav="journal" {{ACTIVE:journal}}>Journal</a>
       <a href="{{CONTACT_URL}}" data-nav="contact" {{ACTIVE:contact}}>Contact</a>
     </nav>
-    <a class="btn line sm hdr-cta mag" href="{{CONTACT_URL}}"><span>Enquire now</span></a>
+    <a class="btn line sm hdr-cta mag" href="{{CONTACT_URL}}?via=header"><span>Start a relationship</span></a>
     <button class="wa-btn" id="waBtn" type="button" aria-label="WhatsApp us" aria-expanded="false" aria-controls="waPop"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6a7.4 7.4 0 0 0-6.4 11.1L2.6 17.4l3.8-1A7.4 7.4 0 1 0 10 2.6z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.4 7.1c.2-.4.4-.5.7-.5h.5l.6 1.5-.5.7c.4.9 1.1 1.6 2 2l.7-.5 1.5.7v.4c0 .4-.2.8-.7 1-1 .3-2.4-.2-3.7-1.5S7 8.2 7.4 7.1z" fill="currentColor"/></svg></button>
     <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="mmenu"><span></span><span></span></button>
   </div>
@@ -43,22 +43,22 @@
     <div class="wa-pop-tbc"><span class="tbc" title="Placeholder: to be confirmed">Confirm this number is WhatsApp enabled</span></div>
   </div>
   <div class="mega" id="mega" hidden><div class="mega-in wrap" id="megaIn">
-    <div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="{{IHG_URL}}/divisions">All divisions<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a></div>
+    <div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One named person for each relationship.</p><a class="tlink" href="{{IHG_URL}}/divisions">All divisions<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a></div>
     <ul class="mega-list" id="megaList">
-      <li><a class="mega-item on" href="{{IHG_URL}}/divisions/citizenship" data-dv="citizenship" data-i="0"><span class="n">01</span><b>Imperial Citizenship</b><small>The flagship</small></a></li>
-      <li><a class="mega-item" href="{{IHG_URL}}/divisions/partners-club" data-dv="partners-club" data-i="1"><span class="n">02</span><b>Imperial Partners Club</b><small>For professionals</small></a></li>
-      <li><a class="mega-item" href="{{IHG_URL}}/divisions/private-office" data-dv="private-office" data-i="2"><span class="n">03</span><b>Imperial Private Office</b><small>For existing Clients</small></a></li>
+      <li><a class="mega-item on" href="{{IHG_URL}}/divisions/citizenship" data-dv="citizenship" data-i="0"><span class="n">01</span><b>Imperial Citizenship</b></a></li>
+      <li><a class="mega-item" href="{{IHG_URL}}/divisions/partners-club" data-dv="partners-club" data-i="1"><span class="n">02</span><b>Imperial Partners Club</b><small>Opening in stages</small></a></li>
+      <li><a class="mega-item" href="{{IHG_URL}}/divisions/private-office" data-dv="private-office" data-i="2"><span class="n">03</span><b>Imperial Private Office</b><small>Being established</small></a></li>
       <li><a class="mega-item" href="{{IHG_URL}}/divisions/real-estate" data-dv="real-estate" data-i="3"><span class="n">04</span><b>Imperial Real Estate</b><small>Coming soon</small></a></li>
-      <li><a class="mega-item" href="{{IHG_URL}}/divisions/academy" data-dv="academy" data-i="4"><span class="n">05</span><b>Imperial Academy</b><small>Learning and standards</small></a></li>
+      <li><a class="mega-item" href="{{IHG_URL}}/divisions/academy" data-dv="academy" data-i="4"><span class="n">05</span><b>Imperial Academy</b><small>In development</small></a></li>
     </ul>
     <div class="mega-prev" aria-hidden="true">
       <figure class="on" data-i="0"><img src="{{IMG_DIR}}/citizenship-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Citizenship</b>Second residency and citizenship by investment, from first conversation to completed application.</figcaption></figure>
-      <figure data-i="1"><img src="{{IMG_DIR}}/partners-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Partners Club</b>The network of lawyers, bankers, wealth advisers and family offices who introduce families to us.</figcaption></figure>
-      <figure data-i="2"><img src="{{IMG_DIR}}/private-office-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Private Office</b>One lasting relationship for families with multi-country lives.</figcaption></figure>
-      <figure data-i="3"><img src="{{IMG_DIR}}/real-estate-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Real Estate</b>Licensed property advisory, starting with Dubai.</figcaption></figure>
-      <figure data-i="4"><img src="{{IMG_DIR}}/academy-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Academy</b>Learning, training and certification for the people who do this work.</figcaption></figure>
+      <figure data-i="1"><img src="{{IMG_DIR}}/partners-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Partners Club</b>Lawyers, bankers, advisers and family offices who introduce Clients to the Group, on written terms.</figcaption></figure>
+      <figure data-i="2"><img src="{{IMG_DIR}}/private-office-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Private Office</b>Ongoing support for existing Imperial Clients after the first service is complete.</figcaption></figure>
+      <figure data-i="3"><img src="{{IMG_DIR}}/real-estate-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Real Estate</b>Property advisory, not yet launched: search, selection and purchase support in Dubai.</figcaption></figure>
+      <figure data-i="4"><img src="{{IMG_DIR}}/academy-c.webp" alt="" loading="lazy" decoding="async"><figcaption><b>Academy</b>Learning and standards, in development: training and certification for the people who do this work.</figcaption></figure>
     </div>
-    <div class="mega-sites"><span>The houses online:</span><a href="{{IHG_URL}}/">Imperial Holdings Group</a><a href="https://imperialcitizenship.com" target="_blank" rel="noopener">imperialcitizenship.com<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><a href="#" data-tbc="Imperial Partners Club website link">Partners Club <small>TBC</small></a><a href="#" data-tbc="Imperial Private Office website link">Private Office <small>TBC</small></a><a href="#" data-tbc="Imperial Real Estate website link (at launch)">Real Estate <small>TBC</small></a><a href="#" data-tbc="Imperial Academy website link">Academy <small>TBC</small></a></div>
+    <div class="mega-sites"><span>Our websites:</span><a href="{{IHG_URL}}/">Imperial Holdings Group</a><a href="https://imperialcitizenship.com" target="_blank" rel="noopener">imperialcitizenship.com<svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M5.5 4H12v6.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><a href="#" data-tbc="Imperial Partners Club website link">Partners Club <small>To confirm</small></a><a href="#" data-tbc="Imperial Private Office website link">Private Office <small>To confirm</small></a><a href="#" data-tbc="Imperial Real Estate website link (at launch)">Real Estate <small>To confirm</small></a><a href="#" data-tbc="Imperial Academy website link">Academy <small>To confirm</small></a></div>
   </div></div>
 </header>
 
@@ -68,14 +68,14 @@
     <li style="--i:1"><a href="{{IHG_URL}}/about"><span>About</span><span class="ix">02</span></a></li>
     <li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>
       <a href="{{IHG_URL}}/divisions"><span class="all"><img src="{{LOGO_CROWN}}" alt=""></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>
-      <a href="{{IHG_URL}}/divisions/citizenship"><img src="{{IMG_DIR}}/citizenship-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Citizenship</b><small>The flagship</small></span></a>
-      <a href="{{IHG_URL}}/divisions/partners-club"><img src="{{IMG_DIR}}/partners-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Partners Club</b><small>For professionals</small></span></a>
-      <a href="{{IHG_URL}}/divisions/private-office"><img src="{{IMG_DIR}}/private-office-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Private Office</b><small>For existing Clients</small></span></a>
+      <a href="{{IHG_URL}}/divisions/citizenship"><img src="{{IMG_DIR}}/citizenship-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Citizenship</b></span></a>
+      <a href="{{IHG_URL}}/divisions/partners-club"><img src="{{IMG_DIR}}/partners-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Partners Club</b><small>Opening in stages</small></span></a>
+      <a href="{{IHG_URL}}/divisions/private-office"><img src="{{IMG_DIR}}/private-office-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Private Office</b><small>Being established</small></span></a>
       <a href="{{IHG_URL}}/divisions/real-estate"><img src="{{IMG_DIR}}/real-estate-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Real Estate</b><small>Coming soon</small></span></a>
-      <a href="{{IHG_URL}}/divisions/academy"><img src="{{IMG_DIR}}/academy-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Academy</b><small>Learning and standards</small></span></a>
+      <a href="{{IHG_URL}}/divisions/academy"><img src="{{IMG_DIR}}/academy-c.webp" alt="" loading="lazy" decoding="async"><span><b>Imperial Academy</b><small>In development</small></span></a>
     </div></div></li>
     <li style="--i:3"><a href="{{IHG_URL}}/journal"><span>Journal</span><span class="ix">04</span></a></li>
     <li style="--i:4"><a href="{{CONTACT_URL}}"><span>Contact</span><span class="ix">05</span></a></li>
   </ul>
-  <div class="mm-foot"><a class="btn gold" href="{{CONTACT_URL}}"><span>Enquire now</span><svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><div class="mm-meta"><span>DUBAI &middot; LAGOS &middot; WORLDWIDE</span></div><p class="mm-hint">Press Esc to close</p></div>
+  <div class="mm-foot"><a class="btn gold" href="{{CONTACT_URL}}?via=menu"><span>Start a relationship</span><svg class="ar" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.3"/></svg></a><div class="mm-meta"><span>DUBAI &middot; LAGOS</span></div><p class="mm-hint">Press Esc to close</p></div>
 </div></div>

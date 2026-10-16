@@ -3,9 +3,9 @@
 <channel>
   <title>Imperial Holdings Group Journal</title>
   <link>https://www.imperialholdingsgroup.com/journal</link>
-  <description>Company developments, insights, partnerships and selected Imperial events in Dubai and Lagos.</description>
+  <description>Company developments and selected Imperial events in Dubai and Lagos.</description>
   <language>en-GB</language>
-  <lastBuildDate>Thu, 15 Oct 2026 17:41:06 GMT</lastBuildDate>
+  <lastBuildDate>Fri, 16 Oct 2026 10:28:53 GMT</lastBuildDate>
   <atom:link href="https://www.imperialholdingsgroup.com/journal/feed.xml" rel="self" type="application/rss+xml"/>
   <image><url>https://www.imperialholdingsgroup.com/assets/img/og.jpg</url><title>Imperial Holdings Group Journal</title><link>https://www.imperialholdingsgroup.com/journal</link></image>
   <item>
@@ -13,28 +13,28 @@
     <link>https://www.imperialholdingsgroup.com/journal/events/grenada-51-dubai</link>
     <guid isPermaLink="true">https://www.imperialholdingsgroup.com/journal/events/grenada-51-dubai</guid>
     <description>Following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai, Imperial Citizenship sponsored the evening at The Dubai EDITION.</description>
-    <category>Partnerships</category>
+    <category>Diplomatic</category>
     <pubDate>Wed, 19 Feb 2025 00:00:00 GMT</pubDate>
   </item>
   <item>
-    <title>Imperial Real Estate is licensed and preparing to launch</title>
+    <title>Imperial Real Estate is coming soon</title>
     <link>https://www.imperialholdingsgroup.com/divisions/real-estate</link>
     <guid isPermaLink="true">https://www.imperialholdingsgroup.com/divisions/real-estate</guid>
-    <description>The Group’s fifth division will offer licensed property advisory, starting with Dubai. Interest can be registered now.</description>
+    <description>The Group’s fifth division will offer property advisory, starting with Dubai. Interest can be registered now.</description>
     <category>Company developments</category>
   </item>
   <item>
-    <title>Imperial Citizenship and Lagos Polo Club host the Easter Polo Cup after party</title>
+    <title>Imperial Citizenship hosts the Easter Polo Cup after party at Lagos Polo Club</title>
     <link>https://www.imperialholdingsgroup.com/journal/events/easter-polo-cup-2026</link>
     <guid isPermaLink="true">https://www.imperialholdingsgroup.com/journal/events/easter-polo-cup-2026</guid>
-    <description>An exclusive after party at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.</description>
-    <category>Partnerships</category>
+    <description>An after party at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.</description>
+    <category>Events</category>
   </item>
   <item>
     <title>The Lagos Diplomatic Soirée 2025</title>
     <link>https://www.imperialholdingsgroup.com/journal/events/lagos-diplomatic-soiree-2025</link>
     <guid isPermaLink="true">https://www.imperialholdingsgroup.com/journal/events/lagos-diplomatic-soiree-2025</guid>
-    <description>Members of the diplomatic community, clients and friends of Imperial, together for an evening in Lagos.</description>
+    <description>An evening in Lagos for Clients, partners and friends of Imperial.</description>
     <category>Events</category>
   </item>
 </channel>
