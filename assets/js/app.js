@@ -907,14 +907,17 @@ function focusMain(){ var m=document.getElementById('main'); if(document.activeE
 var io = null, fx = {};
 function enhance(){
   if(io) io.disconnect();
-  var els = app.querySelectorAll('[data-r], .steps, .wmap, .clipr');
-  /* prerendered: the markup already on screen carries .in, so the first client render keeps everything visible */
+  /* v6 (UX audit item 3): every block is visible on landing, so nothing waits for the observer. The observer is kept
+     only for lazy one-off work in view: the map arcs, the steps line, the ring and the figures. */
+  [].forEach.call(app.querySelectorAll('[data-r]:not(.anim)'), function(e){ e.classList.add('in'); });
+  var els = app.querySelectorAll('.steps, .wmap, .ring.anim, [data-count]');
+  /* prerendered: the markup already on screen carries .in, so the first client render keeps everything as it is */
   if(reduced || prerendered || !('IntersectionObserver' in window)){
     [].forEach.call(els, function(e){ e.classList.add('in'); });
     [].forEach.call(app.querySelectorAll('[data-count]'), function(el){ el._done=true; el.textContent=(+el.getAttribute('data-count')).toLocaleString('en-GB'); });
   } else {
     io = new IntersectionObserver(function(ents){
-      ents.forEach(function(en){ if(!en.isIntersecting) return; var t=en.target; t.classList.add('in'); [].forEach.call(t.querySelectorAll('[data-count]'), count); io.unobserve(t); });
+      ents.forEach(function(en){ if(!en.isIntersecting) return; var t=en.target; t.classList.add('in'); if(t.hasAttribute('data-count')) count(t); io.unobserve(t); });
     }, {rootMargin:'0px 0px -6% 0px', threshold:0.06});
     [].forEach.call(els, function(e){ io.observe(e); });
   }
