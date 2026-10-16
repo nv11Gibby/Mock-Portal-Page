@@ -433,8 +433,10 @@ V.realEstate = function(d){
     '<div id="register" data-r style="--d:.15s">'+registerForm()+'</div></div></section>';
   return h + others(d);
 };
+/* the preview build's chip, at the top of every form (a preview sends nothing: showSuccess, finish) */
+function previewChip(){ return PREVIEW ? '<div class="jp-preview" data-preview-chip><span class="jp-chip">'+esc(D.journeys.states.preview.chip)+'</span></div>' : ''; }
 function registerForm(){
-  return '<div class="form-card" data-form="interest"><form novalidate name="interest" method="post"><input type="hidden" name="form-name" value="interest"><label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label><div class="eyebrow">Register interest</div><h2 class="d3" style="margin-bottom:12px">Hear when it launches.</h2><p class="muted small" style="margin-bottom:28px">Tell us a little about what you are looking for. We will contact you when Imperial Real Estate launches.</p>'+
+  return '<div class="form-card" data-form="interest"><form novalidate name="interest" method="post"><input type="hidden" name="form-name" value="interest"><label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+previewChip()+'<div class="eyebrow">Register interest</div><h2 class="d3" style="margin-bottom:12px">Hear when it launches.</h2><p class="muted small" style="margin-bottom:28px">Tell us a little about what you are looking for. We will contact you when Imperial Real Estate launches.</p>'+
    '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
    '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required><em class="em">Please enter an email address we can reply to.</em></label>'+
    '<label class="field"><span>Country of residence</span><input name="country" autocomplete="country-name" required><em class="em">Please tell us where you live.</em></label>'+
@@ -674,7 +676,7 @@ V.contact = function(q){
   '<section class="sec light"><div class="wrap split cf-split"><div data-r><div class="form-card" data-form="contact" id="cf" data-journey="'+esc(key)+'" data-about="'+esc(q.about||'')+'" data-via="'+esc(q.via||'')+'"><form novalidate name="contact" method="post">'+
    '<input type="hidden" name="form-name" value="contact"><input type="hidden" name="routed_to" value=""><input type="hidden" name="interests" value="'+esc(gl.join(', '))+'"><input type="hidden" name="audience" value="'+esc(key)+'"><input type="hidden" name="lead_source" value="website"><input type="hidden" name="quiz_answers" value="">'+trackFields()+
    '<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
-   (PREVIEW ? '<div class="jp-preview" data-preview-chip><span class="jp-chip">'+esc(J.states.preview.chip)+'</span></div>' : '')+
+   previewChip()+
    '<div class="draft" id="draft" hidden><span>We kept what you started earlier.</span><button class="tlink" type="button" data-clear-draft>Start afresh</button></div>'+
    (gl.length?'<p class="from-finder"><span>From the house finder</span>'+gl.map(function(g){return '<b>'+esc(g)+'</b>';}).join('')+'</p>':'')+
    /* the chooser, screen 0: three path cards; a quiet line with a Change link once a path is chosen */
@@ -1346,7 +1348,7 @@ function draftNote(form){
   grid.parentNode.insertBefore(dn, grid);
 }
 function successHTML(title, msg, inner, chip){
-  return '<div class="success'+(chip?' preview':'')+'" role="status" tabindex="-1">'+(chip?'<div class="jp-preview"><span class="jp-chip">'+esc(chip)+'</span></div>':'')+'<svg viewBox="0 0 100 100" aria-hidden="true"><path class="tick" d="M32 51l12 12 24-26"/></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>'+esc(D.journeys.states.received.next.journal.label)+'</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>'+esc(D.journeys.states.received.next.again.label)+'</span></button></div></div>';
+  return '<div class="success'+(chip?' preview':'')+'" role="status" tabindex="-1">'+(chip?'<div class="jp-preview"><span class="jp-chip">'+esc(chip)+'</span></div>':'<svg viewBox="0 0 100 100" aria-hidden="true"><path class="tick" d="M32 51l12 12 24-26"/></svg>')+'<h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center">'+(chip?'':'<a class="btn sm" href="#/journal"><span>'+esc(D.journeys.states.received.next.journal.label)+'</span>'+AR+'</a>')+'<button class="btn line sm" type="button" data-reset><span>'+esc(D.journeys.states.received.next.again.label)+'</span></button></div></div>';
 }
 /* The received state of the journey (docs/RELATIONSHIP-JOURNEY.md section 5). The wording follows which route
    confirmed it: the function answers ok with a reference only after Pipedrive took the record (via lead), so the page
@@ -1371,19 +1373,22 @@ function journeyLinks(info){
   return out.length ? '<div class="jp-next">'+out.join('')+'</div>' : '';
 }
 /* success state: thank you, then the next steps (verification when a phone was given and the endpoint is enabled, then booking).
-   For the journey the title and text come from receivedCopy; a preview build renders the same state under its label,
-   without the tick animation and without the announcement (nothing was sent). */
+   For the journey the title and text come from receivedCopy. v6 fix (D2): a preview build sends nothing from any form
+   (the journey, the Real Estate interest form, the guide form), so it never shows received or registered wording: a
+   neutral panel (D.journeys.states.preview) says nothing was sent and where the confirmation will appear on the live
+   site, with no tick and no next steps. */
 function showSuccess(wrap, info, anchor){
-  var t, msg, chip = '', said;
-  if(info.kind==='contact'){ var rc = receivedCopy(info); t = rc.title; msg = (info.name ? 'Thank you, '+esc(info.name)+'. ' : '')+esc(rc.text); said = rc.announce; if(info.preview) chip = D.journeys.states.preview.onSend; }
+  var t, msg, chip = '', said, P = D.journeys.states.preview;
+  if(info.preview){ t = esc(P.title); msg = esc(P.text); chip = P.chip; said = P.title; }
+  else if(info.kind==='contact'){ var rc = receivedCopy(info); t = rc.title; msg = (info.name ? 'Thank you, '+esc(info.name)+'. ' : '')+esc(rc.text); said = rc.announce; }
   else { t = 'Thank you'+(info.name?', '+esc(info.name):'')+'.'; msg = info.msg; said = 'Received. '+t; }
-  wrap.innerHTML = successHTML(t, msg, (info.inner||'')+'<div class="next" data-next-steps></div>', chip);
+  wrap.innerHTML = successHTML(t, msg, info.preview ? '' : (info.inner||'')+'<div class="next" data-next-steps></div>', chip);
   fixLinks(wrap);
   var s = wrap.querySelector('.success'); s.focus({preventScroll:true});
   wrap.querySelector('[data-reset]').addEventListener('click', function(){ render(); var c = document.getElementById(anchor); if(c) c.scrollIntoView({block:'center'}); });
   var top = wrap.getBoundingClientRect().top + window.pageYOffset - 120; if(wrap.getBoundingClientRect().top < 80) window.scrollTo({top:top, behavior: reduced?'auto':'smooth'});
-  if(!info.preview) announce(said);
-  nextSteps(wrap, info);
+  announce(said);
+  if(!info.preview) nextSteps(wrap, info);
 }
 function nextSteps(wrap, info){
   var el = wrap.querySelector('[data-next-steps]'); if(!el) return;
@@ -1391,7 +1396,7 @@ function nextSteps(wrap, info){
     el.insertAdjacentHTML('beforeend', bookingHTML(info)+journeyLinks(info)); fixLinks(el);
     var g = el.querySelector('[data-go]'); if(g) g.addEventListener('click', function(e){ e.preventDefault(); go(HIST ? g.getAttribute('href') : g.getAttribute('href').slice(1), g.getAttribute('data-go')); });
   }
-  if(info.preview || !info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
+  if(!info.phone || !D.config.verifyEndpoint || info.kind==='guide'){ booking(); return; }
   verifyStep(el, info, booking);
 }
 /* Phone verification (BUILD-CONTRACT 4.4). A code goes by WhatsApp first; when WhatsApp cannot deliver (the number is
@@ -1458,13 +1463,21 @@ function bookingURL(url, info){
   var q = 'name='+encodeURIComponent(info.fullName||'')+'&email='+encodeURIComponent(info.email||'')+'&a1='+encodeURIComponent(info.divisionName||info.division||'');
   return url+(url.indexOf('?')>-1 ? '&' : '?')+q;
 }
+/* v6 fix (P1): while no office has a booking page the block is left out, and the WhatsApp row takes its place, with
+   its To confirm note. Both carry data-next-done, the mark that the next steps are drawn. */
+function waNextHTML(){
+  var notes = [], links = D.contact.offices.map(function(o){ var w = waOffice(o); if(!w) return ''; if(w.tbc && notes.indexOf(w.tbc) < 0) notes.push(w.tbc); return '<a class="btn line sm" href="'+waLink(w.number)+'" target="_blank" rel="noopener" data-wa="'+esc(o.city)+'">'+WA+'<span>WhatsApp '+esc(o.city)+'</span></a>'; }).join('');
+  if(!links) return '<div data-next-done></div>';
+  return '<div class="wa-next" data-next-done><div class="eyebrow">'+esc(D.journeys.states.received.next.whatsapp.label)+'</div><div class="btns">'+links+'</div>'+notes.map(function(n){ return '<p class="xs wa-tbc">'+tbc(n)+'</p>'; }).join('')+'</div>';
+}
 function bookingHTML(info){
   var B = D.config.booking || {};
+  if(!D.contact.offices.some(function(o){ var b = B[o.city.toLowerCase()]; return b && b.url; })) return waNextHTML();
   var rows = D.contact.offices.map(function(o){
     var b = B[o.city.toLowerCase()]; if(!b) return '';
     return b.url ? '<a class="btn sm" href="'+esc(bookingURL(b.url, info))+'" target="_blank" rel="noopener" data-book="'+esc(o.city)+'" data-division="'+esc(info.division||'')+'"><span>'+esc(o.city)+'</span>'+NE+'</a>' : '<span class="book-tbc"><b>'+esc(o.city)+'</b>'+tbc(b.tbc)+'</span>';
   }).join('');
-  return '<div class="book"><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Where the booking page allows it, your name and email are filled in for you.</p><div class="btns">'+rows+'</div></div>';
+  return '<div class="book" data-next-done><div class="eyebrow">Book a first conversation</div><p>Choose the office closest to you. Where the booking page allows it, your name and email are filled in for you.</p><div class="btns">'+rows+'</div></div>';
 }
 function bookingSide(){
   var B = D.config.booking || {};
@@ -1561,7 +1574,7 @@ function guideForm(){
   return '<section class="sec light" id="guide"><div class="wrap split"><div>'+eyebrow(G.eyebrow)+mask(G.title,'h2','d2')+
     '<p class="lead" data-r style="--d:.15s;margin-top:26px">'+esc(G.lead)+'</p><p class="small" data-r style="--d:.2s"><b>'+esc(C.title)+'</b>'+(C.file?'':'<br>'+tbc(C.tbc))+'</p></div>'+
     '<div data-r style="--d:.15s"><div class="form-card" data-form="guide" id="guide-card"><form novalidate name="guide" method="post"><input type="hidden" name="form-name" value="guide"><input type="hidden" name="lead_source" value="guide"><input type="hidden" name="site" value="'+esc(D.config.site)+'"><input type="hidden" name="division" value="citizenship"><input type="hidden" name="routed_to" value=""><input type="hidden" name="audience" value="clients">'+trackFields()+'<label class="hp" aria-hidden="true">Leave this empty <input name="company_url" tabindex="-1" autocomplete="off"></label>'+
-    '<div class="eyebrow">Request the guide</div>'+
+    previewChip()+'<div class="eyebrow">Request the guide</div>'+
     '<div class="fgrid"><label class="field"><span>Full name</span><input name="name" autocomplete="name" required><em class="em">Please enter your name.</em></label>'+
     '<label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required><em class="em">Please enter an email address we can reply to.</em></label></div>'+
     consentBox(C.file ? 'I agree to Imperial Holdings Group sending me the guide and contacting me about it, as described in the {privacy}.' : 'I agree to Imperial Holdings Group contacting me about the guide, as described in the {privacy}.')+
@@ -1658,6 +1671,8 @@ function bindForms(){
       var em = form.elements.namedItem('email');
       disposableList().then(function(){
         if(em && !mark(em, true)){ busy(btn, false); emailProblem(em, disposableEmail(em.value)); return; }
+        /* D2: a preview build posts nothing from any form and shows the neutral preview panel */
+        if(PREVIEW){ busy(btn, false); showSuccess(wrap, {kind:kind, preview:true}, anchor); return; }
         return turnstileToken(form).then(function(){ return submitLead(form, extra); }).then(function(res){
           store.del(draftKey(kind)); if(kind==='contact') store.del('ihg-contact-draft');
           /* which route confirmed it (showSuccess words the journey's received state by it): forms, or lead with the function's reference */
@@ -1705,8 +1720,8 @@ function bindForms(){
    a "when" condition are hidden and disabled when it does not hold, as the v5 conditional fields were. ?about chooses
    the division and skips the first screen when it names exactly one of its options (the Partners Club page lands on
    the screen, because its two options route the same way but are recorded differently). A draft opens the journey on
-   the first screen that still needs an answer. A preview build sends nothing: the closing screen's Send renders the
-   received state under its label (showSuccess). */
+   the first screen that still needs an answer. A preview build sends nothing: Send runs finish(), which shows the
+   neutral preview panel instead of posting (showSuccess). */
 function bindJourney(wrap, form, api){
   var J = D.journeys, screensEl = form.querySelector('[data-screens]'), chooserEl = form.querySelector('.jp-chooser'), lineEl = form.querySelector('[data-path-line]');
   if(!screensEl || !chooserEl) return;
@@ -1854,10 +1869,6 @@ function bindJourney(wrap, form, api){
     for(var n = from; n < stepEls.length; n++){ if(!complete(n)) break; }
     return n;
   }
-  function previewSend(){
-    var ab = aboutValue();
-    showSuccess(wrap, {kind:'contact', preview:true, name:firstName(), fullName:val('name'), email:val('email'), phone:val('phone'), division:ab, divisionName:divisionName(ab), lead_source:val('lead_source')||'website', journey:key, entry:via, via:'forms', ref:''}, api.anchor);
-  }
   form.addEventListener('click', function(e){
     var b = e.target.closest('[data-path]');
     if(b){
@@ -1886,7 +1897,6 @@ function bindJourney(wrap, form, api){
     var bad = check(step);
     if(bad){ announceInvalid(form, bad); bad.focus({preventScroll:true}); var r = bad.getBoundingClientRect(); if(r.top<90||r.bottom>window.innerHeight) window.scrollTo({top: r.top + window.pageYOffset - 140, behavior: reduced?'auto':'smooth'}); return; }
     if(step < stepEls.length){ show(step+1); return; }
-    if(PREVIEW){ previewSend(); return; }
     api.finish(divisionName(aboutValue()) || 'Imperial Holdings Group', firstName());
   });
   /* which path to open: the query's own path; otherwise the draft's; the fit check's draft chooses the path it wrote */

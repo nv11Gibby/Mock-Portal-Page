@@ -386,7 +386,7 @@
       "replyTime": {"text": "", "tbc": "Reply time standard (for example one working day, Dubai or Lagos hours). Not printed until confirmed."},
       "next": {
         "verify": "As built: when a phone was given and the verify endpoint is enabled; skip allowed; a code accepted but not yet recorded is worded softly.",
-        "booking": "As built: one button per office with name, email and division; the To confirm chip while config.booking is empty.",
+        "booking": "One button per office with name, email and division. v6 fix: while config.booking is empty the block is left out and the WhatsApp row takes its place.",
         "whatsapp": "Both office numbers from config.whatsapp, each with its To confirm chip until confirmed WhatsApp enabled.",
         "guide": {"when": {"about": ["citizenship"]}, "label": "Request the guide", "href": "/divisions/citizenship#guide", "note": "The guide form stays on the citizenship page; the link is offered, not a second form."},
         "site": {"when": "the division site is real", "label": "Explore {division} online", "note": "From D.sites; placeholders stay hidden here rather than shown as a chip."},
@@ -405,8 +405,9 @@
       "when": "html[data-preview] (the BUILD_PREVIEW=1 build that the Render preview serves)",
       "chip": "Preview build: nothing is sent from this preview",
       "onSend": {
-        "label": "Preview of the confirmation. Nothing was sent.",
-        "note": "The received state is rendered with the Forms wording, under the amber label, without the tick animation and without the Received announcement; the next steps show their To confirm chips. No request leaves the page. This is the one place a mocked path is shown, and it is labelled."
+        "title": "Preview: nothing was sent",
+        "text": "On the live site, this is where the confirmation appears once Imperial has received your message.",
+        "note": "v6 fix (D2): a neutral panel under the amber chip, never received or registered wording, on every form of the preview build: the journey, the Real Estate interest form and the guide form. No tick, no next steps, no request leaves the page; the announcement is the panel title."
       }
     }
   },

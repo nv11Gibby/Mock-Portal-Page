@@ -1078,6 +1078,12 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .book .btns{justify-content:center;gap:10px 12px;margin-top:4px}
 .book-tbc{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--l-body)}
 .book-tbc b{font-weight:500}
+/* v6 fix: the WhatsApp row that stands in for the booking block while no office has a booking page */
+.wa-next{margin-top:26px}
+.wa-next .eyebrow{justify-content:center;margin-bottom:10px}
+.wa-next .btns{justify-content:center;gap:10px 12px;margin-top:4px}
+.wa-next .btn>svg:first-child{width:18px;height:18px}
+.wa-next .wa-tbc{margin-top:12px}
 /* WhatsApp: header button (mobile only) with a small sheet for both offices, and a button under each office on Contact */
 .wa-btn{display:none;flex:none;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;color:var(--soft);border-radius:50%;transition:color var(--t2)}
 .wa-btn svg{width:22px;height:22px}

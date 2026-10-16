@@ -607,11 +607,13 @@ window.IHG = {
           guide:{when:{about:['citizenship']}, label:'Request the guide', href:'#/divisions/citizenship', scroll:'guide'},
           site:{label:'Explore {division} online'},
           journal:{label:'Read while you wait', href:'#/journal'},
+          whatsapp:{label:'Or message us on WhatsApp'},
           again:{label:'Send another'}
         }
       },
       failed:{title:'We could not send this just now.', text:'Please call or email us and we will take it from there. What you typed is kept on this device, so you can also try again later.'},
-      preview:{chip:'Preview build: nothing is sent from this preview', onSend:'Preview of the confirmation. Nothing was sent.'}
+      /* v6 fix (D2): what every form shows on Send on a preview build. Never received or registered wording. */
+      preview:{chip:'Preview build: nothing is sent from this preview', title:'Preview: nothing was sent', text:'On the live site, this is where the confirmation appears once Imperial has received your message.'}
     }
   },
 
@@ -677,7 +679,7 @@ window.IHG = {
     lead:'The guide is being finalised. Leave your name and email and we will let you know when it is ready.',
     cta:'Send me the guide', ctaSoon:'Tell me when it is ready', note:'We use these details only for the guide, and to reply if you ask us to.',
     ready:'Your copy of the guide is ready below. One person will be in touch only if you would like a conversation.',
-    soon:'Thank you. The guide is being finalised, and we will let you know when it is ready.'
+    soon:'The guide is being finalised, and we will let you know when it is ready.'
   },
 
   /* Legal pages (v5 trust, brief section 8). The privacy notice says what the forms collect, where it goes, how long it is

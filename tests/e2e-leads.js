@@ -425,7 +425,7 @@ const NAMES = /\b(Zaid|Kaylan|Gilbert|Alhindi|Tarin|Ferrer)\b/;
 async function afterSuccess(page, mode, scope) {
   const s = scope || '#cf ';
   await page.waitForSelector(s + '.success', { timeout: 20000 });
-  if (mode === 'none') { await page.waitForSelector(s + '.book', { timeout: 10000 }); return; }
+  if (mode === 'none') { await page.waitForSelector(s + '[data-next-done]', { timeout: 10000 }); return; }
   await page.waitForSelector(s + '[data-verify]', { timeout: 10000 });
   if (mode === 'skip') await click(page.locator(s + '[data-verify-skip]'));
   else {
@@ -438,17 +438,32 @@ async function afterSuccess(page, mode, scope) {
     await click(page.locator(s + '[data-verify-send]'));
     await page.waitForSelector(s + '.verified', { timeout: 10000 });
   }
-  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  await page.waitForSelector(s + '[data-next-done]', { timeout: 10000 });
 }
+/* the next steps after the received state: the booking block (only while an office has a booking page) and, in its
+   place otherwise, the WhatsApp row with its To confirm note */
 async function bookingState(page, scope) {
   const s = scope || '#cf ';
   return page.evaluate(function (sel) {
-    const box = document.querySelector(sel + '.book');
+    const box = document.querySelector(sel + '.book'), wa = document.querySelector(sel + '.wa-next');
     return {
-      links: Array.prototype.map.call(box.querySelectorAll('a[data-book]'), function (a) { return { office: a.getAttribute('data-book'), href: a.getAttribute('href'), division: a.getAttribute('data-division') }; }),
-      tbc: Array.prototype.map.call(box.querySelectorAll('.book-tbc'), function (el) { return Array.prototype.map.call(el.childNodes, function (n) { return n.textContent.trim(); }).filter(Boolean).join(': '); })
+      book: !!box,
+      links: box ? Array.prototype.map.call(box.querySelectorAll('a[data-book]'), function (a) { return { office: a.getAttribute('data-book'), href: a.getAttribute('href'), division: a.getAttribute('data-division') }; }) : [],
+      tbc: box ? Array.prototype.map.call(box.querySelectorAll('.book-tbc'), function (el) { return Array.prototype.map.call(el.childNodes, function (n) { return n.textContent.trim(); }).filter(Boolean).join(': '); }) : [],
+      wa: wa ? Array.prototype.map.call(wa.querySelectorAll('a[data-wa]'), function (a) { return { office: a.getAttribute('data-wa'), href: a.getAttribute('href') }; }) : [],
+      waTbc: wa ? Array.prototype.map.call(wa.querySelectorAll('.tbc'), function (el) { return el.textContent.trim(); }) : [],
+      text: (document.querySelector(sel + '.success') || {}).textContent || ''
     };
   }, s);
+}
+/* while config.booking is empty: no booking block, no "Book a first conversation", and the WhatsApp row with its note */
+function assertNoBooking(b) {
+  assert.equal(b.book, false, 'no booking block while config.booking urls are empty');
+  assert.equal(b.links.length, 0, 'no booking links');
+  assert.ok(!/Book a first conversation/.test(b.text), 'the success state does not offer booking');
+  assert.deepEqual(b.wa.map(function (w) { return w.office; }), ['Dubai', 'Lagos'], 'the WhatsApp row, one link per office');
+  assert.ok(b.wa[0].href === 'https://wa.me/97145461110' && b.wa[1].href === 'https://wa.me/2349022222024', 'WhatsApp links: ' + JSON.stringify(b.wa));
+  assert.ok(b.waTbc.length === 1 && /WhatsApp enabled/.test(b.waTbc[0]), 'the WhatsApp row keeps its To confirm note: ' + b.waTbc.join(','));
 }
 async function fitCheck(page) {
   const answers = [['who', 'family'], ['where', 'nigeria'], ['matters', 'live'], ['timeline', '3m'], ['budget', '500k-1m']];
@@ -672,9 +687,8 @@ test('3.2 phone verification skipped: the Academy enquiry arrives Not Verified',
   assert.equal(twilioChecks(t).length, 0, 'no code check');
   assert.equal(m.notes.filter(function (n) { return n.deal_id === t.ids.id; }).length, 1, 'only the enquiry note on the deal');
   const b = await bookingState(page);
-  assert.equal(b.links.length, 0, 'no booking links while config.booking urls are empty');
-  assert.equal(b.tbc.length, 2, 'both offices show the tbc text');
-  t.detail = 'code sent then skipped; person ' + t.ids.person + ' Verification Status 983 (Not Verified); ' + t.ids.kind + ' ' + t.ids.id + ' arrived with one note; booking shows the tbc text for both offices (mobile).';
+  assertNoBooking(b);
+  t.detail = 'code sent then skipped; person ' + t.ids.person + ' Verification Status 983 (Not Verified); ' + t.ids.kind + ' ' + t.ids.id + ' arrived with one note; no booking block while config.booking is empty, the WhatsApp row with its To confirm note instead (mobile).';
 });
 
 test('4.1 booking buttons carry name, email and division (config override), journey from the division page', async function (t, browser) {
@@ -685,6 +699,8 @@ test('4.1 booking buttons carry name, email and division (config override), jour
   await journeyFlow(page, spec);
   await afterSuccess(page, 'none');
   const b = await bookingState(page);
+  assert.equal(b.book, true, 'the booking block shows once an office has a booking page');
+  assert.equal(b.wa.length, 0, 'the WhatsApp row stands in only while there is no booking page');
   assert.equal(b.links.length, 2, 'one button per office');
   /* a1 carries the division's name, which reads as an answer on the booking page (the key stays in data-division for analytics) */
   const q = 'name=' + encodeURIComponent(spec.name) + '&email=' + encodeURIComponent(spec.email) + '&a1=' + encodeURIComponent('Imperial Citizenship');
@@ -700,21 +716,18 @@ test('4.1 booking buttons carry name, email and division (config override), jour
   t.detail = 'division page card, then ' + spec.screens.join(' > ') + '; Dubai: ' + b.links[0].href + ' ; Lagos: ' + b.links[1].href + ' (no phone given, so no verification step; ' + t.ids.kind + ' ' + t.ids.id + ', ref ' + sub.result.ref + '); the guide link is offered.';
 });
 
-test('4.2 booking shows the tbc text while config.booking is empty', async function (t, browser) {
+test('4.2 booking is left out while config.booking is empty: the WhatsApp row with its note instead', async function (t, browser) {
   const spec = { journey: 'clients', about: 'group', division: 'group', name: 'E2E Tbc', email: 'e2e.tbc@example.com', phone: '', country: 'South Africa', for_whom: 'myself', timeline: '3-12m', band: 'warm', points: 3, msg: 'TEST booking placeholder.' };
   const page = await open(browser, t, 'desktop', '/contact');
   const side = await page.evaluate(function () { return Array.prototype.map.call(document.querySelectorAll('.tbc'), function (el) { return el.textContent.trim(); }); });
   await journeyFlow(page, spec);
   await afterSuccess(page, 'none');
   const b = await bookingState(page);
-  assert.equal(b.links.length, 0);
-  assert.equal(b.tbc.length, 2);
-  assert.ok(/Dubai/.test(b.tbc[0]) && /booking page/.test(b.tbc[0]), 'Dubai tbc: ' + b.tbc[0]);
-  assert.ok(/Lagos/.test(b.tbc[1]) && /booking page/.test(b.tbc[1]), 'Lagos tbc: ' + b.tbc[1]);
+  assertNoBooking(b);
   const rc = await received(page);
   assert.ok(/received by the Group/.test(rc.text) && /bring in the right house/.test(rc.text), 'the Group variant of the received text: ' + rc.text);
   t.ids = checkStored(t, spec, {});
-  t.detail = 'success screen: "' + b.tbc.join('" and "') + '"; the Contact page side column also carries ' + side.filter(function (s) { return /booking/.test(s); }).length + ' booking placeholders; the Group wording "' + rc.text.slice(0, 70) + '...".';
+  t.detail = 'success screen: no booking block, WhatsApp ' + b.wa.map(function (w) { return w.office; }).join(' and ') + ' with "' + b.waTbc.join('') + '"; the Contact page side column also carries ' + side.filter(function (s) { return /booking/.test(s); }).length + ' booking placeholders; the Group wording "' + rc.text.slice(0, 70) + '...".';
 });
 
 test('5.1 primary POST fails: the fallback endpoint receives the lead, the direct received wording with the reference', async function (t, browser) {
@@ -787,7 +800,8 @@ test('6.1 guide form: lead_source guide reaches the backend', async function (t,
   const seen = await page.evaluate(function () { const s = document.querySelector('[data-form="guide"] .success'); return { msg: s.querySelector('p').textContent.trim(), tbc: Array.prototype.map.call(s.querySelectorAll('.tbc'), function (el) { return el.textContent.trim(); }) }; });
   assert.ok(/being finalised/.test(seen.msg), 'guide not ready message: ' + seen.msg);
   assert.ok(seen.tbc.some(function (s) { return /Guide PDF/.test(s); }), 'guide tbc shown: ' + seen.tbc.join(','));
-  assert.equal(seen.tbc.length, 3, 'the guide placeholder plus the two booking placeholders: ' + seen.tbc.join(','));
+  assert.equal(seen.tbc.length, 2, 'the guide placeholder plus the WhatsApp note (no booking block while config.booking is empty): ' + seen.tbc.join(','));
+  assert.ok(!/Thank you\. The guide/.test(seen.msg) && (await page.locator('[data-form="guide"] .success h3').innerText()).trim() === 'Thank you, E2E.', 'one "Thank you", in the title only (D6): ' + seen.msg);
   t.detail = 'form guide, lead_source guide, ' + t.ids.kind + ' ' + t.ids.id + ' "(guide)" for Imperial Citizenship, score exploring, email "Your guide request"; the page says the guide is being finalised and shows the tbc placeholder (config.guide.file is empty).';
 });
 
@@ -891,7 +905,7 @@ test('7.4 code accepted but not yet recorded in Pipedrive: softer wording, the s
   await page.locator(s + 'input[name="code"]').fill('123456');
   await click(page.locator(s + '[data-verify-send]'));
   await page.waitForSelector(s + '.verified', { timeout: 10000 });
-  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  await page.waitForSelector(s + '[data-next-done]', { timeout: 10000 });
   const text = (await page.locator(s + '.verified').innerText()).replace(/\s+/g, ' ').trim();
   assert.ok(/Code accepted/.test(text) && /note it on your enquiry/.test(text) && !/Phone verified/.test(text), 'softer wording: ' + text);
   assert.equal(stub.checks, 1, 'exactly one check call');
@@ -920,7 +934,7 @@ test('7.5 WhatsApp cannot deliver the code: the page tries SMS itself', async fu
   await page.locator(s + 'input[name="code"]').fill('123456');
   await click(page.locator(s + '[data-verify-send]'));
   await page.waitForSelector(s + '.verified', { timeout: 10000 });
-  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  await page.waitForSelector(s + '[data-next-done]', { timeout: 10000 });
   t.ids = checkStored(t, spec, { verification: O.verificationStatus.verified });
   t.detail = 'journey from the division page; whatsapp start refused (reason provider), sms start sent (Twilio Channel sms), 123456 approved; person ' + t.ids.person + ' Verified (982).';
 });
@@ -932,7 +946,7 @@ test('7.6 a number without its country code: the person is told and the enquiry 
   await journeyFlow(page, spec);
   const s = '#cf ';
   await page.waitForSelector(s + '.verify-note', { timeout: 10000 });
-  await page.waitForSelector(s + '.book', { timeout: 10000 });
+  await page.waitForSelector(s + '[data-next-done]', { timeout: 10000 });
   const note = (await page.locator(s + '.verify-note').innerText()).replace(/\s+/g, ' ').trim();
   assert.ok(/could not send a verification code/.test(note) && /country code/.test(note), 'the note explains: ' + note);
   assert.equal(await page.locator(s + '[data-verify]').count(), 0, 'no code step');
@@ -1086,7 +1100,7 @@ test('8.3 the received wording differs by route: "Received by Imperial" after Ne
   t.detail = 'Forms: "' + forms.title + ' ' + forms.text + '"; direct: "' + direct.title + ' ' + direct.text + '"; no person named in either.';
 });
 
-test('8.4 the preview build (data-preview): the chip shows, Send posts nothing, the confirmation is labelled', async function (t, browser) {
+test('8.4 the preview build (data-preview): the chip shows on every form, Send posts nothing, a neutral panel and never received or registered wording', async function (t, browser) {
   const posts = [];
   /* the Render preview serves pages prerendered with data-preview; here the attribute is added to the document as it
      loads and /contact is reached by the footer link, so the journey renders under it */
@@ -1108,16 +1122,49 @@ test('8.4 the preview build (data-preview): the chip shows, Send posts nothing, 
   await page.waitForSelector('#cf .success.preview', { timeout: 10000 });
   await page.waitForTimeout(800);
   const rc = await received(page);
-  assert.equal(rc.chip, 'Preview of the confirmation. Nothing was sent.', 'the confirmation is labelled');
-  assert.equal(rc.title, 'Received by Imperial.', 'the Forms wording, never the direct one');
-  assert.notEqual(rc.announce.trim(), 'Received.', 'no "Received" announcement on the preview');
+  /* the neutral preview panel (D2): what was sent is nothing, and the page says so */
+  function neutral(r, where) {
+    assert.equal(r.chip, 'Preview build: nothing is sent from this preview', where + ': the panel carries the preview chip');
+    assert.equal(r.title, 'Preview: nothing was sent', where + ': the panel title');
+    assert.equal(r.text, 'On the live site, this is where the confirmation appears once Imperial has received your message.', where + ': the panel text');
+    assert.ok(!/\breceived\b|\bregistered\b|\bthank you\b/i.test(r.title) && !/\b(is|been) (received|registered)\b|^received|thank you/i.test(r.text), where + ': no received or registered wording: ' + r.title + ' ' + r.text);
+    assert.ok(!/^Received/.test(r.announce.trim()), where + ': no "Received" announcement: ' + r.announce);
+  }
+  neutral(rc, 'journey');
+  const panel = await page.evaluate(function () { const s = document.querySelector('#cf .success'); return { tick: !!s.querySelector('.tick'), next: !!s.querySelector('[data-next-steps]'), book: !!s.querySelector('.book'), wa: !!s.querySelector('.wa-next'), text: s.textContent }; });
+  assert.ok(!panel.tick && !panel.next && !panel.book && !panel.wa, 'no tick and no next steps on the preview: ' + JSON.stringify(panel));
+  assert.ok(!/received|registered/i.test(panel.text.replace('once Imperial has received your message', '')), 'nothing on the panel says received or registered: ' + panel.text);
   assert.equal(await page.locator('#cf [data-verify]').count(), 0, 'no verification step on the preview');
-  assert.equal(await page.locator('#cf .book').count(), 1, 'the next steps show, with their To confirm chips');
+  /* the two other forms on the preview: the Real Estate interest form and the guide form (they posted on a preview before, D2) */
+  await page.goto(BASE + '/divisions/real-estate', { waitUntil: 'networkidle' });
+  const ri = page.locator('[data-form="interest"] form');
+  assert.equal((await page.locator('[data-form="interest"] [data-preview-chip]').innerText()).trim(), 'Preview build: nothing is sent from this preview', 'the interest form carries the chip');
+  await ri.locator('input[name="name"]').fill('E2E Preview Interest');
+  await ri.locator('input[name="email"]').fill('e2e.preview.interest@example.com');
+  await ri.locator('input[name="country"]').fill('Nigeria');
+  await ri.locator('select[name="interest"]').selectOption({ index: 1 });
+  await ri.locator('input[name="consent"]').check();
+  await click(ri.locator('button[type="submit"]'));
+  await page.waitForSelector('[data-form="interest"] .success.preview', { timeout: 10000 });
+  const ri2 = await page.evaluate(function () { const s = document.querySelector('[data-form="interest"] .success'); return { title: s.querySelector('h3').textContent.trim(), text: s.querySelector('p').textContent.replace(/\s+/g, ' ').trim(), chip: ((s.querySelector('.jp-chip') || {}).textContent || '').trim(), announce: (document.getElementById('announce') || {}).textContent || '', all: s.textContent }; });
+  neutral(ri2, 'interest form');
+  assert.ok(!/registered|launches/i.test(ri2.all.replace('once Imperial has received your message', '')), 'no "Your interest is registered" on the preview: ' + ri2.all);
+  await page.goto(BASE + '/divisions/citizenship', { waitUntil: 'networkidle' });
+  const gf = page.locator('#guide-card form');
+  assert.equal((await page.locator('#guide-card [data-preview-chip]').innerText()).trim(), 'Preview build: nothing is sent from this preview', 'the guide form carries the chip');
+  await gf.locator('input[name="name"]').fill('E2E Preview Guide');
+  await gf.locator('input[name="email"]').fill('e2e.preview.guide@example.com');
+  await gf.locator('input[name="consent"]').check();
+  await click(gf.locator('button[type="submit"]'));
+  await page.waitForSelector('[data-form="guide"] .success.preview', { timeout: 10000 });
+  const gf2 = await page.evaluate(function () { const s = document.querySelector('[data-form="guide"] .success'); return { title: s.querySelector('h3').textContent.trim(), text: s.querySelector('p').textContent.replace(/\s+/g, ' ').trim(), chip: ((s.querySelector('.jp-chip') || {}).textContent || '').trim(), announce: (document.getElementById('announce') || {}).textContent || '', all: s.textContent }; });
+  neutral(gf2, 'guide form');
+  assert.ok(!/being finalised|let you know/i.test(gf2.all), 'no guide confirmation on the preview: ' + gf2.all);
   assert.equal(posts.length, 0, 'no request left the page: ' + posts.join(', '));
   assert.equal(t.http.length, 0, 'nothing reached the server');
   assert.equal(t.calls.length, 0, 'nothing reached any API');
   t.ids = {};
-  t.detail = 'chip "' + chip + '"; on Send the received state under "' + rc.chip + '", title "' + rc.title + '", no announcement, no verification, no request of any kind.';
+  t.detail = 'chip "' + chip + '" on the journey, the interest form and the guide form; on Send each shows "' + rc.title + '" with "' + rc.text + '", no tick, no next steps, no received or registered wording, no request of any kind.';
 });
 
 test('8.5 the entry point: a journey opened from the division hero carries via=division-hero into the note', async function (t, browser) {
