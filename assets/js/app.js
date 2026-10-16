@@ -63,18 +63,9 @@ function img(k, alt, cls, v, eager){return '<img src="'+IMG+k+(v||'')+'.webp" al
    the player only on click (Vimeo with dnt=1, or Mux). The hero loop is rendered only when motion and data allow. */
 var PREVIEW = root.hasAttribute('data-preview'), VID = D.video || {};
 var PLAY = '<svg class="play" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.5v11l9-5.5z" fill="currentColor"/></svg>';
-/* Fallback photographs per event while its guests' consent is outstanding: [card, alternate]. Event cards and page
-   heroes use the first, journal rows and video posters the second, so a page shows each photograph at most twice.
-   No event borrows another event's banner or backdrop (design review, findings 2 and 4): each gets a neutral own
-   photograph, a city view, an interior, or a detail crop from its own folder with nobody in frame. */
-var EVENT_SAFE = {
-  'grenada-51-dubai': ['closing', 'partners'],
-  'lagos-diplomatic-soiree-2025': ['lagos', 'lagos'],
-  'gala-dinner-lagos': ['hero-lights', 'events/gala-dinner-lagos/stage'],
-  'easter-polo-cup-2026': ['events/easter-polo-cup-2026/02', 'events/easter-polo-cup-2026/04'],
-  'lagos-office-event': ['about', 'private-office'],
-  'delborough-dinner': ['academy', 'about']
-};
+/* v6 (docs/PHOTOGRAPHY-PLAN.md 4.3): EVENT_SAFE, the substitute photographs per event (generated scenes, the stage
+   lights, city views), is retired with the scenes. An event whose photograph is not cleared is typographic: a plate
+   on the ink field, never a borrowed picture. */
 function photoMeta(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i]; return null;}
 function eventBySlug(slug){for(var i=0;i<D.events.length;i++) if(D.events[i].slug===slug) return D.events[i]; return null;}
 function photoAllowed(k){
@@ -84,16 +75,10 @@ function photoAllowed(k){
   if(slug){ ev = eventBySlug(slug); return !!(ev && ev.consent); }
   return true; /* not from an event and not gated in the registry: nothing to hold back */
 }
-function safePhoto(k, fb){ return photoAllowed(k) ? k : (fb || 'about'); }
-function variantOf(k){ return k.indexOf('events/')===0 ? '' : k.indexOf('hero')===0 ? '-m' : '-c'; }
-/* The fallback for an event (alt: the alternate), checked for consent, with the city view as the last resort */
-function eventSafe(e, alt){
-  var pair = EVENT_SAFE[e.slug] || [], city = e.city==='Dubai' ? 'closing' : 'lagos';
-  var pick = [alt ? pair[1] : pair[0], alt ? pair[0] : pair[1], city].filter(function(k){ return k && photoAllowed(k); });
-  return pick[0] || city;
-}
-function cardPhoto(e){ var k = 'events/'+e.slug+'/cover'; return photoAllowed(k) ? k : eventSafe(e); }
-function rowPhoto(j){ var ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null; return photoAllowed(j.img) ? j.img : (ev ? eventSafe(ev, true) : 'about'); }
+/* A photograph key the site can show: one in the registry, or an event's own cover or frame (gated by its event). */
+function knownPhoto(k){ return !!k && (!!photoMeta(k) || /^events\/[a-z0-9-]+\/(cover|cover-p|\d\d)$/.test(k)); }
+/* The key when it exists and is cleared, else the fallback (itself checked), else '' (the caller draws the ink field) */
+function safePhoto(k, fb){ return knownPhoto(k) && photoAllowed(k) ? k : (fb && fb!==k ? safePhoto(fb) : ''); }
 function sortByIso(list){
   return list.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){
     var p = a.x.iso || '', q = b.x.iso || '';
@@ -115,9 +100,10 @@ function heroLoop(v){
 }
 function videoBlock(v, cls, fb){
   if(!v) return '';
-  var pk = safePhoto(v.poster, fb || 'hero-lights'), ready = !!v.id, title = v.title || 'Video';
+  /* v6: a poster that is not cleared gives way to the ink field (fb, when given, is the view to draw), never a substitute */
+  var pk = safePhoto(v.poster), ready = !!v.id, title = v.title || 'Video';
   return '<figure class="vid'+(cls?' '+cls:'')+(ready?'':' pending')+'" data-r'+(ready?' data-video data-provider="'+esc(v.provider||'vimeo')+'" data-id="'+esc(v.id)+'"'+(v.hash?' data-hash="'+esc(v.hash)+'"':'')+' data-vtitle="'+esc(title)+'"':'')+'>'+
-    '<div class="vid-stage">'+img(pk, title+' (poster)', 'vid-poster')+
+    '<div class="vid-stage">'+(pk ? img(pk, title+' (poster)', 'vid-poster') : inkField({cls:'vid-ink', view:fb || INK.cities, points:true, fill:true}))+
     (ready ? '<button type="button" class="vid-play" aria-label="Play '+esc(title)+'">'+PLAY+'<span>Play</span></button>' : '<span class="vid-tbc">'+PLAY+tbc(v.tbc||'Footage to be supplied')+'</span>')+'</div>'+
     '<figcaption><b>'+esc(title)+'</b>'+(v.duration?'<i aria-hidden="true">·</i>'+esc(v.duration):'')+(v.captions?'<i aria-hidden="true">·</i><a class="vid-cc" href="'+esc(v.captions)+'">Captions</a>':'')+'</figcaption></figure>';
 }
@@ -188,14 +174,43 @@ function fmtTime(tz){try{return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',
    screens, as on the home hero. Every site photograph has a -m file (a 3:4 centre crop of the same frame, so nothing
    changes visually); event photographs and portraits have none. Brief section 4: responsive sizes, LCP on mobile. */
 function heroVariant(k){ return k.indexOf('events/')===0 || k.indexOf('people/')===0 ? '' : '-m'; }
+/* v6: the ink field (docs/PHOTOGRAPHY-PLAN.md 2.1 alternative, section 5). The dotted world already in D.map.path is
+   drawn inline as SVG, cropped to a view in map units (the map is 1440 by 544), with the two offices and one arc where
+   asked: no image file, nothing to credit, nobody to clear. The dots keep their size on screen whatever the crop
+   (vector-effect in site.css), so a tight crop reads as a sparser field, not a coarser one. */
+var INK = {world:[0,0,1440,544], cities:[560,40,640,320], dubai:[761,119,360,200], lagos:[553,194,360,200], europe:[590,0,540,250], gulf:[741,99,400,240], atlantic:[300,30,960,440]};
+var MAP_PTS = null;
+function mapPts(){ if(MAP_PTS) return MAP_PTS; var out = [], re = /M(\d+) (\d+)h0/g, m; while((m = re.exec(D.map.path))) out.push([+m[1], +m[2]]); return (MAP_PTS = out); }
+function inkMap(view, o){
+  o = o || {};
+  var pts = mapPts(), d = '', i, p, x0 = view[0], y0 = view[1], x1 = view[0]+view[2], y1 = view[1]+view[3];
+  for(i=0;i<pts.length;i++){ p = pts[i]; if(p[0]>=x0-8 && p[0]<=x1+8 && p[1]>=y0-8 && p[1]<=y1+8) d += 'M'+p[0]+' '+p[1]+'h0'; }
+  var P = D.map.places, marks = '';
+  if(o.points) P.forEach(function(c){ if(c.x>=x0 && c.x<=x1 && c.y>=y0 && c.y<=y1) marks += '<circle class="ring" cx="'+c.x+'" cy="'+c.y+'" r="11"/><circle class="city" cx="'+c.x+'" cy="'+c.y+'" r="3.5"/>'; });
+  if(o.arc && P.length>1){ var a = P[0], b = P[1], mx = (a.x+b.x)/2, my = Math.min(a.y,b.y)-Math.abs(b.x-a.x)*0.22; marks += '<path class="link" d="M'+a.x+' '+a.y+'Q'+mx.toFixed(0)+' '+my.toFixed(0)+' '+b.x+' '+b.y+'"/>'; }
+  return '<svg class="ink-map'+(o.cls?' '+o.cls:'')+'" viewBox="'+view.join(' ')+'" preserveAspectRatio="xMidYMid '+(o.fill?'slice':'meet')+'" aria-hidden="true" focusable="false"><path class="land" d="'+d+'"/>'+marks+'</svg>';
+}
+/* The field itself: the dark ground with a soft lift top right, the map crop when a view is given, and a large outlined
+   numeral when a division asks for one. Decorative, so hidden from assistive technology. */
+function inkField(o){ o = o || {}; return '<div class="ph-ink'+(o.cls?' '+o.cls:'')+'" aria-hidden="true">'+(o.view ? inkMap(o.view, o) : '')+(o.n ? '<span class="ink-n">'+esc(o.n)+'</span>' : '')+'</div>'; }
+/* Each division's accent on the ink field (division heroes, the rail, the menus): its numeral, and its own crop of the
+   dotted map, chosen for where the work points (Citizenship the Atlantic and the Caribbean programmes, Partners Club
+   Europe, Private Office the Gulf, Real Estate Dubai, Academy the two offices). Never a generated scene. */
+var DIV_INK = {'citizenship':'atlantic', 'partners-club':'europe', 'private-office':'gulf', 'real-estate':'dubai', 'academy':'cities'};
+function divNo(d){ return pad2(D.divisions.indexOf(d)+1); }
+function divInk(d, o){ o = o || {}; return inkField({n:divNo(d), view:INK[DIV_INK[d.key]] || INK.world, points:o.points, fill:o.fill!==false, cls:'div-ink'+(o.cls?' '+o.cls:'')}); }
+/* A plate for an event whose photograph is not cleared: the city's crop of the map, its point, and the city's name. */
+function cityView(city){ return city==='Dubai' ? INK.dubai : city==='Lagos' ? INK.lagos : INK.cities; }
+function evPlate(e){ return '<div class="plate" aria-hidden="true">'+inkMap(cityView(e.city), {points:true, fill:true})+'<span class="plate-l">'+esc(e.city)+'</span></div>'; }
 function pageHero(o){
+  /* v6: no photograph (none given, removed, or not cleared) means the ink field, with o.ink's map crop and numeral */
   var k = o.img ? safePhoto(o.img, o.fb) : '', v = k ? heroVariant(k) : '';
-  var bg = k ? '<div class="ph-bg"><div class="px">'+(v ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+v+'.webp" sizes="100vw">' : '')+img(k, null, '', '', true)+(v ? '</picture>' : '')+'</div></div>' : '';
+  var bg = k ? '<div class="ph-bg"><div class="px">'+(v ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+v+'.webp" sizes="100vw">' : '')+img(k, null, '', '', true)+(v ? '</picture>' : '')+'</div></div>' : inkField(o.ink || {view:INK.world});
   var crumb = o.crumb ? '<nav class="crumb" aria-label="Breadcrumb" data-r><a href="#/">Home</a>'+o.crumb.map(function(c){return '<i aria-hidden="true">/</i>'+(c[1]?'<a href="'+c[1]+'">'+esc(c[0])+'</a>':'<span aria-current="page">'+esc(c[0])+'</span>');}).join('')+'</nav>' : '';
-  return '<section class="ph'+(o.cls?' '+o.cls:'')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
+  return '<section class="ph'+(o.cls?' '+o.cls:'')+(k?'':' ph-ink-on')+'">'+bg+'<div class="ph-c wrap">'+crumb+(o.pre||'')+(o.eyebrow?eyebrow(o.eyebrow):'')+mask(o.title,'h1','d1',.12)+(o.lead?'<p class="lead" data-r style="--d:.4s">'+o.lead+'</p>':'')+(o.after||'')+'</div></section>';
 }
 function closing(){
-  return '<section class="closing"><div class="ph-bg"><div class="px">'+img('closing')+'</div></div><div class="closing-c wrap">'+
+  return '<section class="closing">'+inkField({view:INK.cities, points:true, arc:true})+'<div class="closing-c wrap">'+
     '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+
     mask(['With you, from the','first question.'],'h2','d2')+
     '<p class="lead" data-r style="--d:.2s">Tell us where you are, and where you would like to be. The first conversation is for listening. Decisions come when you are ready.</p>'+
@@ -209,19 +224,48 @@ function steps(list){
   return '<div class="steps" style="--n:'+list.length+'">'+list.map(function(s,i){return '<div class="step" style="--i:'+i+'" data-r><span class="ix">STEP '+pad2(i+1)+'</span><h3 class="h3">'+esc(s[0])+'</h3><p>'+esc(s[1])+'</p></div>';}).join('')+'</div>';
 }
 function insightCard(a,i){
-  return '<a class="icard" href="#/insights/'+a.slug+'" data-cat="'+esc(a.cat)+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><div class="ic-img">'+img(a.img,null,'','-c')+(a.draft?'<span class="sample">Draft, awaiting approval</span>':'')+'</div><div class="meta">'+esc(a.cat)+' <i aria-hidden="true">\u00b7</i> '+readMins(a)+' min read</div><h3>'+esc(a.title)+'</h3><p>'+esc(a.dek)+'</p><span class="tlink">'+(a.draft?'Read the draft':'Read the article')+AR+'</span></a>';
+  return '<a class="icard" href="#/insights/'+a.slug+'" data-cat="'+esc(a.cat)+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><div class="ic-img'+(a.img?'':' ic-ink')+'">'+(a.img ? img(a.img,null,'','-c') : inkField({view:INK.atlantic})+'<span class="ic-cat" aria-hidden="true">'+esc(a.cat)+'</span>')+(a.draft?'<span class="sample">Draft, awaiting approval</span>':'')+'</div><div class="meta">'+esc(a.cat)+' <i aria-hidden="true">\u00b7</i> '+readMins(a)+' min read</div><h3>'+esc(a.title)+'</h3><p>'+esc(a.dek)+'</p><span class="tlink">'+(a.draft?'Read the draft':'Read the article')+AR+'</span></a>';
 }
-function figures(){
-  return '<div class="figs">'+D.figures.map(function(f,i){return '<div class="fig" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><span class="num"><span data-count="'+f.n+'">'+(reduced?f.n.toLocaleString('en-GB'):'0')+'</span><sup>'+f.s+'</sup></span><span>'+esc(f.l)+'</span></div>';}).join('')+'</div>'+
-    '<p class="figs-note" data-r>Figures from the Imperial Holdings brochure. '+tbc('"As at" date for these figures')+'</p>';
-}
+/* The five division cards (v6, docs/PHOTOGRAPHY-PLAN.md 2.2): typographic on the ink field, no thumbnails. Each card
+   carries its numeral (small, and large in outline behind), the division's mark (its wordmark, or the crown for the
+   flagship), its name, the approved headline and line (D.home.divisions) and a status chip only where the division is
+   in preparation. The accordion (hover, focus, arrow keys, tap) is bindHouses(), unchanged. */
 function houses(){
+  var H = D.home.divisions;
   return '<div class="houses" id="houses">'+D.divisions.map(function(d,i){
-    var cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
+    var c = H[d.key] || {headline:d.name, line:d.line}, cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
     return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'">'+
-      '<figure>'+img(d.img,'', '', '-c')+'</figure><span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
-      '<div class="hc"><span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span><h3>'+esc(d.name)+'</h3><p>'+esc(d.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
+      inkField({n:pad2(i+1)})+'<span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
+      '<div class="hc">'+(c.prep?'<span class="badge soon">'+esc(D.home.prepLabel)+'</span>':'')+
+      '<span class="mark'+(d.logo?'':' crown')+'"><img src="'+LOGO+(d.logo ? d.logo+'-Horizontal-Gold.svg' : 'Imperial-Crown-Gold.svg')+'" alt="" loading="lazy" decoding="async"></span>'+
+      '<span class="nm'+(d.logo?' vh':'')+'">'+esc(d.name)+'</span><h3>'+esc(c.headline)+'</h3><p>'+esc(c.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
   }).join('')+'</div>';
+}
+/* The home event strip (docs/PHOTOGRAPHY-PLAN.md 2.2): four frames at 4:5 from four different gatherings and both
+   cities, each slot gated on its own frame's consent (the alternate stands in when it is cleared and the first is
+   not), an uncleared slot drawn as a typographic card, and the whole strip held while fewer than D.home.strip.min
+   slots are cleared. Never a substitute photograph, never a generated scene, never a city view in an event slot. */
+function eventStrip(){
+  var S = D.home.strip, held = 0;
+  var slots = S.slots.map(function(s){ var k = photoAllowed(s.photo) ? s.photo : (s.alt && photoAllowed(s.alt) ? s.alt : ''); if(!k) held++; return {s:s, k:k, e:eventBySlug(s.event)}; });
+  if(slots.length - held < (S.min || 3)) return '';
+  var allOk = slots.every(function(x){ return x.e && x.e.consent; });
+  var note = allOk ? 'Photographs of guests are published with their permission.' : held ? 'Photographs of guests appear once they have confirmed they are happy to be featured.' : 'Preview build: photographs of guests are shown before their consent is recorded.';
+  return '<section class="sec deep strip" id="gatherings"><div class="wrap"><div class="sec-head"><div>'+eyebrow(esc(S.eyebrow))+mask(S.title.map(esc),'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">'+esc(S.lead)+'</p><a class="tlink" href="#/journal">Selected events and the Journal'+AR+'</a></div></div>'+
+    '<div class="frames">'+slots.map(function(x,i){
+      var e = x.e, when = e && e.date ? esc(e.date) : '', meta = esc(e ? e.city : '')+(when ? ' <i aria-hidden="true">·</i> '+when : '');
+      return '<a class="frame'+(x.k?'':' card')+'" href="#/journal/events/'+esc(x.s.event)+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s">'+
+        (x.k ? '<figure>'+img(x.k, photoAlt(x.k))+'</figure><div class="frame-b"><span class="meta">'+meta+'</span><p>'+esc(x.s.caption)+'</p></div>'
+             : '<div class="frame-plate">'+inkMap(cityView(e ? e.city : ''), {points:true, fill:true})+'<div class="frame-pt"><span class="meta">'+meta+'</span><h3>'+esc(e ? e.title : x.s.event)+'</h3><p>'+esc(e ? e.dek : '')+'</p><span class="tlink">Read the story'+AR+'</span></div></div>')+'</a>';
+    }).join('')+'</div><p class="xs" data-r style="margin-top:28px">'+note+'</p></div></section>';
+}
+/* The home closing band (v6): the signature line, the approved closing headline and copy, on the ink map. The Start a
+   Relationship block that follows carries the action, so the band has no buttons of its own. */
+function homeClosing(){
+  var C = D.home.closing;
+  return '<section class="closing home-close" id="horizon">'+inkField({view:INK.cities, points:true, arc:true})+'<div class="closing-c wrap">'+
+    '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow(esc(C.signature))+mask(C.title.map(esc),'h2','d2')+
+    '<p class="lead" data-r style="--d:.2s">'+esc(C.lead)+'</p></div></section>';
 }
 function mapBlock(){
   var M = D.map, hq = M.places[0];
@@ -237,64 +281,44 @@ function mapBlock(){
     '<div class="wmap-side"><div class="wmap-tabs" role="tablist" aria-label="Where we work">'+tabs.map(function(t,i){return '<button role="tab" id="wmt-'+t[0]+'" aria-controls="wm-'+t[0]+'" aria-selected="'+(i===0)+'" tabindex="'+(i===0?0:-1)+'" data-wm="'+t[0]+'"><span>'+t[1]+'</span><small>'+t[2]+'</small></button>';}).join('')+'</div><div class="wmap-card">'+cards+'</div></div></div>'+
     '<p class="wmap-note" data-r>Regions are shown broadly to indicate relationships, not office locations.</p>';
 }
-function story(){
-  var ch = [
-    {img:'citizenship', t:'One conversation', p:D.steps[0][1]},
-    {img:'private-office', t:'The right house', p:D.steps[1][1]},
-    {img:'about', t:'One person, for the long term', p:D.steps[2][1]}
-  ];
-  return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
-    '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
-    '<div class="story-text"><div class="eyebrow">How we work</div><div class="story-num" aria-hidden="true"><span id="storyNum">01</span></div>'+
-    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img,'')+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
-    '<div class="story-dots" aria-hidden="true">'+ch.map(function(){return '<i></i>';}).join('')+'</div></div></div></section>';
-}
+/* v6: story() (the pinned three-chapter scroll with the generated scenes) was unused and is gone with the scenes. */
 
 /* ---------- views ---------- */
 var V = {};
 V.home = function(){
-  var N = D.network, HH = D.hero, hk = safePhoto(HH.photo, HH.fallback), nk = photoAllowed(HH.night) ? HH.night : null, hv = homeVideo();
-  var ev = sortByIso(D.events).filter(function(e){return e.featured;}).slice(0,2), lead = D.leadership.filter(function(l){return l.img;});
-  var rows = sortByIso(D.journal).slice(0,3), AUD_SAFE = ['about','academy','closing'];
-  /* Our Network grid: own photographs of Imperial gatherings with nobody awaiting consent, chosen so that nothing on
-     this page (hero, event cards, journal rows) shows the same photograph more than twice */
-  var used = {}, GATHERINGS = ['events/easter-polo-cup-2026/04','events/gala-dinner-lagos/stage','events/easter-polo-cup-2026/05','hero-lights','closing','lagos'];
-  function use(k){ used[k] = (used[k]||0)+1; return k; }
-  use(hk); ev.forEach(function(e){ use(cardPhoto(e)); }); rows.forEach(function(j){ use(rowPhoto(j)); });
-  var grid = N.photos.map(function(p){ return photoAllowed(p) ? use(p) : null; }).map(function(k){
-    if(k) return k;
-    var best = null; GATHERINGS.forEach(function(g){ if(photoAllowed(g) && (!best || (used[g]||0) < (used[best]||0))) best = g; });
-    return use(best || 'lagos');
-  });
-  var held = N.photos.some(function(p){return !photoAllowed(p);});
+  var N = D.network, HH = D.hero, hk = HH.style==='map' ? '' : (HH.photo && photoAllowed(HH.photo) ? HH.photo : ''), hv = homeVideo();
+  var ev = sortByIso(D.events).filter(function(e){return e.featured;}).slice(0,2), rows = sortByIso(D.journal).slice(0,3), H = D.home;
   return ''+
-  /* hero: the strongest element of the existing site, kept. Two journeys: clients explore the ecosystem, partners go to IPC. */
-  '<section class="hh'+(hk===HH.fallback?' fallback':'')+'" id="top"><div class="hh-pin">'+
-    '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'+
-    (nk ? '<figure class="night" aria-hidden="true"><picture><source media="(max-width:640px)" srcset="'+IMG+nk+'-m.webp"><img src="'+IMG+nk+'.webp" alt="" decoding="async" fetchpriority="low"></picture></figure>' : '')+
-    '<div class="hh-c wrap">'+eyebrow('Imperial Holdings Group <i>·</i> Dubai <i>·</i> Lagos')+mask(['Two Cities.','One Horizon.'],'h1','d1',.15)+
-    '<p class="lead" data-r style="--d:.55s">Five specialist divisions, one standard, and one person who knows your family.</p>'+
-    '<div class="hh-row" data-r style="--d:.7s"><div class="journeys">'+
-      '<div class="jny"><a class="btn gold mag" href="#/" data-scroll="ecosystem"><span>Explore our ecosystem</span>'+AR+'</a><small>For private clients</small></div>'+
-      '<div class="jny"><a class="btn line" href="#/divisions/partners-club" data-dv="partners-club"><span>Partner with us</span>'+AR+'</a><small>For professional partners</small></div></div>'+
-    '<p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred" data-r style="--d:.8s">'+tbc(HH.tbc)+'</p></div></div>'+
+  /* v6 hero (docs/PHOTOGRAPHY-PLAN.md 2.1): one architectural photograph (the graded Dubai skyline, with its 3:4 mobile
+     crop and the optional silent loop) or, when D.hero.style is 'map', the ink field with the dotted world drawn inline.
+     No night layer, no crossfade, no scroll-linked motion: only the entrance reveals. The copy comes from D.hero (the
+     approved option A); the two buttons carry the Start a Relationship entries for the home hero. */
+  '<section class="hh'+(hk?'':' ink')+'" id="top"><div class="hh-pin">'+
+    (hk ? '<figure class="dusk"><picture><source media="(max-width:640px)" srcset="'+IMG+hk+'-m.webp"><img src="'+IMG+hk+'.webp" alt="'+esc(photoAlt(hk))+'" fetchpriority="high"></picture>'+heroLoop(VID.hero)+'</figure>'
+        : '<div class="hh-ink" aria-hidden="true">'+inkMap(INK.world, {points:true, arc:true, cls:'wide'})+inkMap(INK.cities, {points:true, arc:true, cls:'tall'})+'</div>')+
+    '<div class="hh-c wrap">'+eyebrow(esc(HH.eyebrow).replace(/ · /g,' <i>·</i> '))+mask(HH.title.map(esc),'h1','d1',.15)+
+    '<p class="lead" data-r style="--d:.55s">'+esc(HH.lead)+'</p>'+
+    '<div class="btns hh-btns" data-r style="--d:.7s"><a class="btn gold mag" href="'+esc(HH.primary.href)+'"><span>'+esc(HH.primary.label)+'</span>'+AR+'</a><a class="btn line" href="'+esc(HH.secondary.href)+'"><span>'+esc(HH.secondary.label)+'</span>'+AR+'</a></div>'+
+    '<div class="hh-row" data-r style="--d:.8s"><p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred">'+tbc(HH.tbc)+'</p></div></div>'+
     '<span class="cue" aria-hidden="true">Scroll</span></div></section>'+
 
-  '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow('The Group')+mask(['A house for a life','across borders.'],'h2','d2')+'</div>'+
-   '<div data-r style="--d:.15s"><p class="lead">Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. We help families and their advisers decide where they live, what they own and what they leave behind.</p><a class="tlink" href="#/about">About the Group'+AR+'</a></div></div>'+figures()+'</div></section>'+
+  /* v6: the Group intro carries the approved copy (D.home.intro); the figures band is gone (docs/CLAIMS-AUDIT.md C06 to C11) */
+  '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow(esc(H.intro.eyebrow))+mask(H.intro.title.map(esc),'h2','d2')+'</div>'+
+   '<div data-r style="--d:.15s"><p class="lead">'+esc(H.intro.lead)+'</p><a class="tlink" href="#/about">About the Group'+AR+'</a></div></div></div></section>'+
 
   '<section class="sec deep" id="ecosystem"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our ecosystem')+mask(['Five divisions.','One table.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Each division is a specialist. Together they sit at one table, so the person advising on your residency already knows about the home, the company and the school.</p></div>'+
    houses()+'<div class="houses-foot" data-r><span>Hover, focus or tap a division to open it.</span><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div></div></section>'+
 
-  /* Our Network: one client journey, four photographs of genuine Imperial gatherings, three audiences */
+  /* Our Network (v6): the journey is an illustration in the conditional and says so (docs/CLAIMS-AUDIT.md C73); no
+     photograph grid and no audience card images (docs/PHOTOGRAPHY-PLAN.md 2.2); the text and the links stay */
   '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our Network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The ecosystem exists so that each step is taken with the others in view.</p></div>'+
-   '<ol class="journey" aria-label="How a relationship with Imperial grows">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
-   '<div class="net-photos" data-r>'+grid.map(function(k,i){return '<figure class="np'+(i+1)+'">'+img(k,'')+'</figure>';}).join('')+'</div><p class="xs net-cap" data-r>Imperial gatherings in Dubai and Lagos. '+(held?'Photographs of guests appear once they have confirmed they are happy to be featured. ':'')+'<a class="ul" href="#/journal">See selected events</a></p>'+
-   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><figure>'+img(safePhoto(a.img, AUD_SAFE[i]),'')+'</figure><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
+   '<p class="journey-lbl" data-r><b>'+esc(N.journeyLabel)+'</b><span>'+esc(N.journeyNote)+'</span></p>'+
+   '<ol class="journey" aria-label="'+esc(N.journeyLabel)+': '+esc(N.journeyNote).toLowerCase()+'">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
+   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
 
-  '<section class="sec lead-sec" id="leadership"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Leadership')+mask(['The people','accountable.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Imperial is led by its founder, with one Group team working across every division.</p></div>'+
-   '<div class="leaders real home">'+lead.map(function(l,i){return '<div class="leader" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="portrait has-photo">'+img('people/'+l.img, l.name)+'</div><div class="role">'+esc(l.role)+'</div><h3>'+esc(l.name)+'</h3></div>';}).join('')+
-   '<div class="leader more" data-r style="--d:.2s"><p>Each division has its own leadership, introduced on its website. Group biographies: '+tbc('to be approved')+'</p><a class="tlink" href="#/about">About the Group'+AR+'</a></div></div></div></section>'+
+  /* the event strip (docs/PHOTOGRAPHY-PLAN.md 2.2), held while fewer than three of its four frames are cleared; the
+     leadership block has left the home page (About carries the two portraits, section 5 of the plan) */
+  eventStrip()+
 
   '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Gatherings','worth the evening.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic collaborations, private gatherings and the relationships behind them.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
    '<div class="evgrid two">'+ev.map(eventCard).join('')+'</div></div></section>'+
@@ -306,12 +330,14 @@ V.home = function(){
 
   '<section class="sec deep" id="where"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Global presence')+mask(['Led from Dubai','and Lagos.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Headquarters in Dubai, a regional hub in Lagos and relationships with Partners, advisers and specialists in more than 20 countries.</p></div>'+mapBlock()+'</div></section>'+
 
+  /* the closing band above Start a Relationship: the signature, the approved closing headline and copy, on the ink map */
+  homeClosing()+
   enquiryBlock();
 };
 
 V.about = function(){
   var seats = D.divisions.map(function(d,i){var a=(-90+i*72)*Math.PI/180, r=40; return '<li style="--i:'+i+';--x:'+(Math.cos(a)*r).toFixed(2)+';--y:'+(Math.sin(a)*r+4).toFixed(2)+'"><a href="#/divisions/'+d.key+'" data-dv="'+d.key+'"><b>'+esc(d.short)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></a></li>';}).join('');
-  return pageHero({img:'about', crumb:[['About',null]], eyebrow:'About Imperial Holdings Group', title:['One house.','Many services.'], lead:'Imperial began as a citizenship and residency specialist. Over more than a decade of work with families and founders, it has grown into a group of five specialist divisions, run by one team to one standard.'})+
+  return pageHero({ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, crumb:[['About',null]], eyebrow:'About Imperial Holdings Group', title:['One house.','Many services.'], lead:'Imperial began as a citizenship and residency specialist. Over more than a decade of work with families and founders, it has grown into a group of five specialist divisions, run by one team to one standard.'})+
   '<section class="sec"><div class="wrap split"><div>'+eyebrow('Our story')+mask(['From one question','to a whole house.'],'h2','d2')+'</div>'+
    '<div data-r style="--d:.15s"><p class="lead">Imperial Citizenship is where we began, and it remains our main business. Working with families on residency and citizenship taught us that one transaction rarely solves the whole problem.</p>'+
    '<p class="muted">The residency question touches the home. The home touches the school. The company touches the tax position. And the trusted professionals our Clients already rely on needed a reliable house to hand those conversations to.</p>'+
@@ -338,9 +364,9 @@ V.about = function(){
 };
 
 V.divisions = function(){
-  return pageHero({img:'partners', crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
+  return pageHero({ink:{view:INK.world, points:true}, crumb:[['Divisions',null]], eyebrow:'Our divisions', title:['Five houses.','One table.'], lead:'Each house is a specialist. Together they sit at one table, with one Relationship Manager across all five.'})+
   '<section class="sec"><div class="wrap"><div class="dindex" id="dindex">'+D.divisions.map(function(d,i){
-    return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-img="'+IMG+d.img+'-c.webp" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
+    return '<a class="drow" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><span class="no">'+pad2(i+1)+'</span><span class="nm">'+esc(d.short)+'</span><span class="ln">'+esc(d.line)+'</span><span class="st">'+esc(d.status)+'</span>'+AR+'</a>';
   }).join('')+'</div></div></section>'+finderSec()+compare()+
   '<section class="sec light alt"><div class="wrap"><div class="sec-head"><div>'+eyebrow('How we work')+mask(['Come for one thing.','Find a whole house.'],'h2','d2')+'</div><p class="lead" data-r>One shared team works across every division. You never have to explain your family twice.</p></div>'+steps(D.steps)+'</div></section>'+
   '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('The houses online')+mask(['Visit a house','directly.'],'h2','d2')+'</div><p class="lead" data-r>Imperial Citizenship has its own website today. The others are in preparation; their links will be added before launch.</p></div>'+
@@ -353,14 +379,14 @@ function ctaTitle(d){return {citizenship:['Begin with','Imperial Citizenship.'],
 function others(d){
   var list = D.divisions.filter(function(x){return x.key!==d.key;});
   return '<section class="sec line-t"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Explore the other houses')+mask(['One table.'],'h2','d2')+'</div><div data-r style="--d:.1s"><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div></div><div class="rail" id="rail" aria-label="Other divisions">'+
-   list.map(function(x,i){return '<a href="#/divisions/'+x.key+'" data-dv="'+x.key+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><div class="rail-img">'+img(x.img,null,'','-c')+(x.soon?'<span class="badge soon">Coming soon</span>':'')+'</div><b>'+esc(x.short)+'</b><span>'+esc(x.line)+'</span></a>';}).join('')+'</div></div></section>';
+   list.map(function(x,i){return '<a href="#/divisions/'+x.key+'" data-dv="'+x.key+'" data-r style="--d:'+(i*0.08).toFixed(2)+'s"><div class="rail-img">'+divInk(x)+(x.soon?'<span class="badge soon">Coming soon</span>':'')+'</div><b>'+esc(x.short)+'</b><span>'+esc(x.line)+'</span></a>';}).join('')+'</div></div></section>';
 }
 V.division = function(key){
   var d = div(key); if(!d) return null;
   if(d.soon) return V.realEstate(d);
   var logo = d.logo ? '<img class="ph-logo" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'" data-r>' : '<div data-r style="margin-bottom:26px">'+logoImg(d,'White','')+'</div>';
   var badge = '<div data-r style="margin-bottom:22px"><span class="badge'+(d.statusTone==='gold'?' gold':'')+'">'+esc(d.status)+'</span></div>';
-  var h = pageHero({img:d.img, crumb:[['Divisions','#/divisions'],[d.short,null]], pre:logo+badge, title:heroTitle(d), lead:esc(d.line)});
+  var h = pageHero({img:d.img, ink:{n:divNo(d), view:INK[DIV_INK[d.key]], points:true, cls:'div-hero'}, crumb:[['Divisions','#/divisions'],[d.short,null]], pre:logo+badge, title:heroTitle(d), lead:esc(d.line)});
   h += '<section class="sec"><div class="wrap split"><div>'+eyebrow('Overview')+'<p class="statement" data-r>'+esc(d.intro)+'</p></div>'+
     '<div class="glance" role="region" data-r style="--d:.15s" aria-label="At a glance"><dl><dt>Division</dt><dd>'+esc(d.name)+'</dd><dt>Status</dt><dd>'+esc(d.status)+'</dd><dt>For</dt><dd>'+esc(d.who[0])+'</dd><dt>Website</dt><dd>'+(d.cta.real?'<a class="tlink" href="'+d.cta.href+'" target="_blank" rel="noopener">'+esc(d.cta.domain)+NE+'</a>':tbc(d.cta.tbc))+'</dd></dl>'+
     '<div class="btns">'+extLink(d,'btn')+'<a class="btn line" href="#/contact?about='+d.key+'"><span>Speak to us</span></a></div></div></div></section>';
@@ -399,7 +425,7 @@ function registerForm(){
 V.insights = function(q){
   var pre = (q && q.cat) || 'All';
   var cats = ['All'].concat(D.insights.map(function(a){return a.cat;}).filter(function(v,i,s){return s.indexOf(v)===i;}));
-  return pageHero({img:'academy', cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
+  return pageHero({ink:{view:INK.atlantic}, cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
   '<section class="sec light"><div class="wrap">'+(D.insights.some(function(a){return a.draft;})?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> These articles are drafts and will be published once the copy has been approved.</div></div>':'')+
    '<div class="filters" role="group" aria-label="Filter insights" data-r>'+cats.map(function(c){var n=c==='All'?D.insights.length:D.insights.filter(function(a){return a.cat===c;}).length, on=c===pre;return '<button class="'+(on?'on':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+on+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('')+'</div>'+
    '<h2 class="vh">Articles</h2><div class="icards four" id="icards">'+D.insights.map(function(a,i){var h=insightCard(a,i);return pre!=='All'&&a.cat!==pre?h.replace('class="icard"','class="icard hide"'):h;}).join('')+'</div><p class="vh" id="filterMsg" aria-live="polite"></p></div></section>'+closing();
@@ -408,7 +434,7 @@ V.article = function(slug){
   var a=null; D.insights.forEach(function(x){if(x.slug===slug) a=x;}); if(!a) return null;
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
-  return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
+  return '<div class="reading" aria-hidden="true"><i id="reading"></i></div>'+pageHero({img:a.img, ink:{view:INK.atlantic}, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
   '<section class="sec light"><div class="wrap"><article class="article" id="article">'+(a.draft?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> Final copy to be approved before publication. Author and publication date: '+tbc('to confirm')+'</div></div>':'')+'<p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
@@ -422,18 +448,21 @@ function splitTitle(t){
 
 /* ---------- v4: events, journal, enquiry, finder section ---------- */
 function evWhen(e){ return e.date ? esc(e.date) : ''; }
+/* v6: an event card or a journal row whose photograph is not cleared is typographic (a plate: the city's crop of the
+   dotted map with its point, or the crown for an entry that is not an event); no borrowed photograph, no city view. */
 function eventCard(e,i){
   var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s"><figure>'+img(cardPhoto(e), '')+'</figure><div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Read the story')+AR+'</span></div></a>';
+  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s">'+(ok ? '<figure>'+img(k, '')+'</figure>' : '<figure class="ev-plate">'+evPlate(e)+'</figure>')+'<div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Read the story')+AR+'</span></div></a>';
 }
 function journalRow(j,i){
-  var ok = photoAllowed(j.img), k = rowPhoto(j), v = ok ? (j.own?'':'-c') : variantOf(k);
+  var ok = !!(j.img && photoAllowed(j.img)), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null;
   var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s"><figure>'+img(k, '', '', v)+'</figure><div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  var fig = ok ? '<figure>'+img(j.img, '', '', j.own?'':'-c')+'</figure>' : '<figure class="jplate" aria-hidden="true">'+(ev ? inkMap(cityView(ev.city), {points:true, fill:true}) : '<img class="jcrown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" loading="lazy" decoding="async">')+'</figure>';
+  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s">'+fig+'<div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 V.journal = function(){
   var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
-  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', fb:'events/easter-polo-cup-2026/02', cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
+  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, cls:'short', crumb:[['Journal',null]], eyebrow:'Events &amp; Journal', title:['Selected events.','Selected words.'], lead:'Genuine company developments, insights, partnerships and selected gatherings. Fewer entries, chosen with care.'})+
   '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Where the','network meets.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. '+(allOk ? 'One cover photograph for each, and a gallery inside.' : 'Galleries open as guests confirm they are happy to be featured.')+'</p></div>'+
    '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
    '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
@@ -442,13 +471,13 @@ V.journal = function(){
 };
 V.event = function(slug){
   var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
-  var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01'), fb = eventSafe(e), fb2 = eventSafe(e, true);
+  var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01'), cv = cityView(e.city);
   var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
   facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)]);
   if(ok) facts.push(['Photographs', e.n+', Imperial']);   /* counted only while the gallery is shown */
   var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), photoAlt('events/'+e.slug+'/'+pad2(i)) || (e.title+', photograph '+i+' of '+e.n))+'</figure>';
   var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
-  return pageHero({img:'events/'+e.slug+'/cover', fb:fb, crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
+  return pageHero({img:'events/'+e.slug+'/cover', ink:{view:cv, points:true, cls:'city'}, crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
   '<section class="sec light"><div class="wrap split"><div>'+e.body.map(function(p){return '<p class="lead" data-r>'+esc(p)+'</p>';}).join('')+
     (e.guests?'<div data-r><div class="eyebrow" style="margin-top:34px">Among the guests</div><ul class="guests">'+e.guests.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>':'')+
     (e.tbc?'<p class="xs ev-tbc" data-r style="margin-top:24px">'+e.tbc.map(tbc).join('')+'</p>':'')+
@@ -457,7 +486,7 @@ V.event = function(slug){
    '<div class="glance" data-r style="--d:.15s"><dl>'+facts.map(function(f){return '<dt>'+f[0]+'</dt><dd>'+f[1]+'</dd>';}).join('')+'</dl><div class="btns"><a class="btn" href="#/contact?about=group&audience=institutions"><span>Start a strategic conversation</span>'+AR+'</a><a class="btn line" href="#/journal"><span>All events</span></a></div></div></div></section>'+
   /* the heading says what is on the page: pictures while the gallery shows, the clip while only the video slot does */
   '<section class="sec light alt" id="gallery"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Gallery')+mask(ok ? ['The evening,','in pictures.'] : (e.video && e.video.id) ? ['The evening,','on film.'] : e.video ? ['Film and photographs','to follow.'] : ['Photographs','to follow.'],'h2','d2')+'</div><p class="xs gal-note" data-r>'+note+'</p></div>'+
-    (e.video ? videoBlock(e.video, 'gal-vid', fb2) : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
+    (e.video ? videoBlock(e.video, 'gal-vid', cv) : '')+(ok ? '<div class="gallery">'+gal+'</div>' : '')+'</div></section>'+
   relatedRow('event', e)+
   '<section class="sec light"><div class="wrap"><nav class="pn" aria-label="More events" data-r><a href="#/journal/events/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/journal/events/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></div></section>'+closing();
 };
@@ -625,11 +654,11 @@ function nfContacts(){
   return '<div class="kv nf-kv" data-r style="--d:.4s">'+C.offices.map(function(o){ return '<div><span>'+esc(o.city)+'</span><a class="ul" href="tel:'+o.tel.replace(/\s/g,'')+'">'+esc(o.tel)+'</a></div>'; }).join('')+'<div><span>Email</span><a class="ul" href="mailto:'+C.email+'">'+esc(C.email)+'</a></div></div>';
 }
 V.notFound = function(){
-  return '<section class="nf"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
+  return '<section class="nf">'+inkField({view:INK.world, points:true, arc:true, cls:'nf-ink'})+'<div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Page not found')+mask(['This page has moved,','or never existed.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Let us take you somewhere useful.</p><div class="nf-links" data-r style="--d:.3s"><a class="btn gold" href="#/"><span>Home</span>'+AR+'</a><a class="tlink" href="#/divisions">Our divisions'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
 };
 /* Shown by render() when a view throws (the error is logged), and written to error.html by the build. */
 V.error = function(){
-  return '<section class="nf err"><div class="ph-bg" style="opacity:.35"><div class="px">'+img('closing','')+'</div></div><div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Error')+mask(['Something went wrong','on our side.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Please try again in a moment. If it happens again, call or email us and we will take it from there.</p><div class="nf-links" data-r style="--d:.3s"><button class="btn gold" type="button" data-reload><span>Try again</span>'+AR+'</button><a class="tlink" href="#/">Home'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
+  return '<section class="nf err">'+inkField({view:INK.world, points:true, arc:true, cls:'nf-ink'})+'<div class="wrap" style="position:relative;z-index:2"><img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+eyebrow('Error')+mask(['Something went wrong','on our side.'],'h1','d2')+'<p class="lead" data-r style="--d:.2s;margin-top:20px">Please try again in a moment. If it happens again, call or email us and we will take it from there.</p><div class="nf-links" data-r style="--d:.3s"><button class="btn gold" type="button" data-reload><span>Try again</span>'+AR+'</button><a class="tlink" href="#/">Home'+AR+'</a><a class="tlink" href="#/contact">Speak to us'+AR+'</a></div>'+nfContacts()+'</div></section>';
 };
 
 /* ---------- chrome: mega menu, mobile menu, footer ---------- */
@@ -644,14 +673,14 @@ function buildChrome(){
   document.getElementById('megaIn').innerHTML =
     '<div class="mega-intro"><div class="eyebrow">Our ecosystem</div><div class="d3">Five divisions. One table.</div><p>One Relationship Manager across all five.</p><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div>'+
     '<ul class="mega-list" id="megaList">'+D.divisions.map(function(d,i){return '<li><a class="mega-item'+(i===0?' on':'')+'" href="#/divisions/'+d.key+'" data-dv="'+d.key+'" data-i="'+i+'"><span class="n">'+pad2(i+1)+'</span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></a></li>';}).join('')+'</ul>'+
-    '<div class="mega-prev" aria-hidden="true">'+D.divisions.map(function(d,i){return '<figure class="'+(i===0?'on':'')+'" data-i="'+i+'">'+img(d.img,'','','-c')+'<figcaption><b>'+esc(d.short)+'</b>'+esc(d.line)+'</figcaption></figure>';}).join('')+'</div>'+
+    '<div class="mega-prev" aria-hidden="true">'+D.divisions.map(function(d,i){return '<figure class="'+(i===0?'on':'')+'" data-i="'+i+'">'+divInk(d)+'<figcaption><b>'+esc(d.short)+'</b>'+esc(d.line)+'</figcaption></figure>';}).join('')+'</div>'+
     '<div class="mega-sites"><span>The houses online:</span>'+D.sites.map(function(s){return siteLink(s,'', siteText(s, true));}).join('')+'</div>';
   document.getElementById('mmIn').innerHTML = '<button class="mm-search" type="button" data-palette><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="m13 13 4.5 4.5" stroke="currentColor" stroke-width="1.4"/></svg><span>Search the site</span></button><ul class="mm-links">'+
     '<li style="--i:0"><a href="#/"><span>Home</span><span class="ix">01</span></a></li>'+
     '<li style="--i:1"><a href="#/about"><span>About</span><span class="ix">02</span></a></li>'+
     '<li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>'+
       '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
-      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'">'+menuImg(d.img,'-c')+'<span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
+      D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'"><span class="all mm-no" aria-hidden="true">'+divNo(d)+'</span><span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
     '<li style="--i:3"><a href="#/" data-goto="network"><span>Our Network</span><span class="ix">04</span></a></li>'+
     '<li style="--i:4"><a href="#/journal"><span>Journal</span><span class="ix">05</span></a></li>'+
     '<li style="--i:5"><a href="#/contact"><span>Contact</span><span class="ix">06</span></a></li></ul>'+
@@ -920,13 +949,11 @@ function enhance(){
   }
   // cache scroll-linked elements for this view
   fx = {
-    hh: app.querySelector('.hh'), dusk: app.querySelector('.hh .dusk img'), night: app.querySelector('.hh .night'), nightImg: app.querySelector('.hh .night img'), hc: app.querySelector('.hh-c'),
     pxs: app.querySelectorAll('.ph .px, .closing .px, .nf .px'),
     story: app.querySelector('.story'), chapters: app.querySelectorAll('.chapter'), media: app.querySelectorAll('.story-media figure'), dots: app.querySelectorAll('.story-dots i'), num: document.getElementById('storyNum'), cur: 0,
     words: app.querySelectorAll('#words>span'), wordsEl: document.getElementById('words'),
     reading: document.getElementById('reading'), article: document.getElementById('article')
   };
-  if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
   tick(); greet(); onScroll(); bindHouses(); bindMap(); bindIndex(); bindRail(); bindFilters(); bindForms(); bindMagnetic(app); bindFinder(); bindFaq(); bindShare(); bindMedia();
   body.classList.toggle('on-contact', curView==='contact');
 }
@@ -954,14 +981,7 @@ function onScroll(){
   var ft = ftr.getBoundingClientRect().top;
   body.classList.toggle('show-mcta', y > H*0.8 && ft > H - 40);
   if(reduced) return;
-  if(fx.hh){
-    var r = fx.hh.getBoundingClientRect(), p = clamp(-r.top/Math.max(1,r.height-H),0,1), e = p*p*(3-2*p);
-    if(r.bottom > 0){
-      fx.dusk.style.transform = 'scale('+(1.08-0.06*p).toFixed(4)+') translate3d(0,'+(p*3).toFixed(2)+'%,0)';
-      if(fx.night){ fx.night.style.opacity = e.toFixed(3); fx.nightImg.style.transform = 'scale('+(1.14-0.1*p).toFixed(4)+')'; }
-      fx.hc.style.transform = 'translate3d(0,'+(-p*48).toFixed(1)+'px,0)';
-    }
-  }
+  /* v6: the home hero no longer moves on scroll (no dusk-to-night crossfade, no parallax on the headline) */
   [].forEach.call(fx.pxs, function(px){ var s=px.parentNode.parentNode, rr=s.getBoundingClientRect(); if(rr.bottom<0||rr.top>H) return; px.style.transform='translate3d(0,'+((rr.top)*-0.16).toFixed(1)+'px,0)'; });
   if(fx.story && fx.chapters.length){
     var sr = fx.story.getBoundingClientRect(), n = fx.chapters.length, q = clamp(-sr.top/Math.max(1,sr.height-H),0,0.9999);
@@ -1058,7 +1078,7 @@ var cprev = document.getElementById('cprev'), cimg = cprev.querySelector('img'),
 function cLoop(){ px += (mx-px)*0.14; py += (my-py)*0.14; cprev.style.transform = 'translate3d('+(px+24).toFixed(1)+'px,'+(py-190).toFixed(1)+'px,0) rotate('+((mx-px)*0.03).toFixed(2)+'deg)'; if(Math.abs(mx-px)>0.4 || Math.abs(my-py)>0.4) requestAnimationFrame(cLoop); else cRun=false; }
 function bindIndex(){
   var ix = document.getElementById('dindex'); if(!ix || reduced || !finePointer) return;
-  [].forEach.call(ix.querySelectorAll('.drow'), function(r){
+  [].forEach.call(ix.querySelectorAll('.drow[data-img]'), function(r){   /* v6: no division photograph, so no preview */
     r.addEventListener('mouseenter', function(e){ cimg.src = r.getAttribute('data-img'); if(!cprev.classList.contains('on')){ px=mx=e.clientX; py=my=e.clientY; cLoop(); } cprev.classList.add('on'); });
     r.addEventListener('mouseleave', function(){ cprev.classList.remove('on'); });
   });
@@ -1776,10 +1796,10 @@ function palIndex(){
   add({k:'Tool', t:'Find your house', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Global presence', s:'Dubai headquarters, Lagos hub, 20+ countries', u:'/', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
   add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
-  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p', eventSafe(e)), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
+  D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});
-  D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:d.img, kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
+  D.divisions.forEach(function(d){ add({k:'Division', t:d.name, s:d.line, u:'/divisions/'+d.key, img:'', kw:[d.short, d.status].concat(d.bullets, d.does.map(function(x){return x[0];})).join(' ')}); });
   D.insights.forEach(function(a){ if(a.draft) return; add({k:'Insight', t:a.title, s:a.dek, u:'/insights/'+a.slug, img:a.img, kw:a.cat}); });
   D.faq.forEach(function(f,i){ add({k:'Question', t:f.q, s:f.a, u:'/contact?faq='+i}); });
   D.enquiry.forEach(function(e){ add({k:'Enquire', t:e.l, s:'Start an enquiry, routed to the right house', u:'/contact?about='+e.v, kw:'enquire enquiry contact'}); });

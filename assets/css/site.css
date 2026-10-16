@@ -186,7 +186,6 @@ li{max-width:46em}
 .hh-pin{position:sticky;top:0;height:100vh;height:100svh;min-height:600px;overflow:hidden}
 .hh-pin figure{position:absolute;inset:0;margin:0}
 .hh-pin img{width:100%;height:100%;object-fit:cover;will-change:transform,opacity}
-.hh .night{opacity:0}
 .hh-pin::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,.62) 0,rgba(14,13,11,.12) 34%,rgba(14,13,11,.25) 60%,rgba(14,13,11,.94) 100%)}
 .hh-c{position:absolute;z-index:2;left:0;right:0;bottom:clamp(36px,9vh,104px)}
 .hh-c .d1{margin:0 0 28px;max-width:11.5em}
@@ -727,7 +726,6 @@ li{max-width:46em}
   [data-r],.mask>span,.clipr,.clipr img{opacity:1!important;transform:none!important;clip-path:none!important}
   .hh{height:auto}
   .hh-pin{position:relative}
-  .hh .night{display:none}
   .story{height:auto}
   .story-pin{position:relative;height:auto;display:block}
   .story-media{display:none}
@@ -1277,9 +1275,6 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .does .ix-rule{display:block;width:22px;height:18px;background:linear-gradient(var(--gold-ink),var(--gold-ink)) 0 50%/100% 1px no-repeat}
 /* Search palette: a page without a thumbnail shows a short gold rule in its icon box (no dash glyph) */
 .pal-ic.pal-rule::before{content:"";width:14px;height:1px;background:var(--gold-l)}
-/* Home hero while the consent-free fallback photograph shows (.hh.fallback): its own scrim, tuned so the headline, lead
-   and marker sit on a backdrop at least as dark as the approved dusk hero (design review, October 2026) */
-.hh.fallback .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,.72) 0,rgba(14,13,11,.50) 34%,rgba(14,13,11,.80) 60%,rgba(14,13,11,.98) 100%)}
 /* Event page: the facts still to confirm, as a row of placeholder chips rather than a note */
 .ev-tbc{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 /* A placeholder chip inside a key-value list (the booking line on Contact) keeps the chip's sentence-case style
@@ -1290,3 +1285,107 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
    width on a phone and the dashed chip stays whole when its text wraps */
 .vid-tbc{left:0;right:0;width:max-content;max-width:calc(100% - 32px);margin:0 auto;transform:translateY(-50%)}
 .vid-tbc .tbc{white-space:normal;line-height:1.5}
+
+/* === v6 home === */
+/* The refined home page (docs/BRAND-BRIEF.md v6, docs/PHOTOGRAPHY-PLAN.md section 2) and the ink field used wherever a
+   photograph no longer belongs. Tokens only: ink and paper, gold for emphasis, Cormorant Garamond and Inter. */
+/* Hero: one architectural photograph, the entrance reveals and nothing else. No night layer, no crossfade and no
+   scroll-linked transforms, so the section is as tall as the viewport (taller when its copy needs it) and no longer
+   pinned behind a 175vh scroll zone. */
+.hh{height:auto}
+.hh-pin{position:relative;height:auto;min-height:100vh;min-height:100svh;display:flex;align-items:flex-end;padding-top:calc(var(--hdrH) + 48px)}
+.hh-pin img{will-change:auto}
+.hh-c{position:relative;bottom:auto;width:100%;padding-bottom:clamp(36px,8vh,96px)}
+.hh-c .d1{max-width:12.5em}
+.hh-btns{margin-bottom:30px}
+.hh-row{align-items:center;gap:16px 40px}
+.hh-cred{margin:0}
+/* The ink field: the dark ground with a soft lift top right and, where a view is given, the dotted world as inline SVG
+   (D.map.path through inkMap in app.js), the two offices in gold and one thin arc. The dots keep their size on screen
+   whatever the crop, so a close crop is a sparser field rather than a coarser one. */
+.hh-ink,.ph-ink{position:absolute;inset:0;overflow:hidden;background:var(--ink)}
+.hh-ink::before,.ph-ink::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 88% 6%,rgba(241,236,227,.075),transparent 68%)}
+.ink-map{position:absolute;display:block;overflow:visible}
+.ink-map .land{fill:none;stroke:rgba(241,236,227,.2);stroke-width:2.4px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.ink-map .city{fill:var(--gold)}
+.ink-map .ring{fill:none;stroke:var(--gold);stroke-width:1px;opacity:.5;vector-effect:non-scaling-stroke}
+.ink-map .link{fill:none;stroke:var(--gold);stroke-width:1px;opacity:.6;vector-effect:non-scaling-stroke}
+.hh-ink .ink-map{right:-2%;top:7%;width:min(96vw,1500px);height:auto}
+.hh-ink .ink-map.tall{display:none}
+.hh.ink .hh-pin::after{background:linear-gradient(180deg,rgba(14,13,11,0) 0,rgba(14,13,11,0) 46%,rgba(14,13,11,.74) 100%)}
+@media (max-width:640px){
+  .hh-pin{padding-top:calc(var(--hdrH) + 32px)}
+  .hh-c .d1{max-width:none}
+  .hh-ink .ink-map.wide{display:none}
+  .hh-ink .ink-map.tall{display:block;width:150vw;right:-40vw;top:10%}
+}
+/* v6 home structure: typographic division cards, the journey label, the event strip, plates for uncleared covers and
+   rows, and the home closing band on the ink map */
+.house .ph-ink{background:var(--ink-3)}
+.house .ph-ink::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,0) 45%,rgba(10,9,8,.55))}
+.ink-n{position:absolute;right:-.04em;top:-.08em;font-family:var(--head);font-weight:500;font-size:clamp(150px,17vw,280px);line-height:1;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:1px rgba(196,165,116,.2);transition:-webkit-text-stroke-color var(--t4)}
+.house.on .ink-n{-webkit-text-stroke-color:rgba(196,165,116,.34)}
+.house .ink-n{opacity:0;transition:opacity var(--t4) var(--e-out),-webkit-text-stroke-color var(--t4)}
+.house.on .ink-n{opacity:1}
+.house .mark{display:block;margin-bottom:14px}
+.house .mark img{width:auto;height:15px;filter:none;transform:none;opacity:.92}
+.house .mark.crown img{height:26px}
+.house .nm{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l);margin-bottom:10px}
+.house .hc h3{font-size:clamp(26px,2.5vw,38px)}
+.house .hc p{max-width:30em}
+.journey-lbl{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;margin:0 0 14px;font-size:13px;color:var(--l-muted)}
+.journey-lbl b{font-weight:500;color:var(--l-text);font-size:14px}
+.net .journey{margin-bottom:0}
+.strip .frames{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(14px,2vw,28px)}
+.frame{display:block;color:var(--text)}
+.frame figure,.frame-plate{position:relative;margin:0;aspect-ratio:4/5;overflow:hidden;border-radius:2px;background:var(--ink-3)}
+.frame img{width:100%;height:100%;object-fit:cover;transition:transform 1.6s var(--e-out)}
+.frame:hover img{transform:scale(1.03)}
+.frame .meta{display:block;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l)}
+.frame .meta i{font-style:normal;margin:0 4px;opacity:.6}
+.frame-b{margin-top:16px}
+.frame-b .meta{margin-bottom:6px}
+.frame-b p{font-size:14.5px;color:var(--soft);margin:0}
+.frame-plate::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,0) 28%,rgba(14,13,11,.82))}
+.frame-pt{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:20px 20px 22px}
+.frame-pt h3{font-family:var(--head);font-weight:500;font-size:clamp(22px,1.8vw,28px);line-height:1.12;letter-spacing:-.015em;margin:10px 0 8px}
+.frame-pt p{font-size:14px;color:var(--soft);margin:0 0 10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.frame-pt .tlink{font-size:14px;min-height:0}
+.plate .ink-map,.jplate .ink-map,.frame-plate .ink-map{position:absolute;inset:0;width:100%;height:100%}
+.ev figure{position:relative}
+.ev figure.ev-plate{background:var(--ink-3)}
+.plate{position:absolute;inset:0;background:var(--ink-3)}
+.plate-l{position:absolute;left:18px;bottom:16px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l)}
+.jrow figure.jplate{position:relative;display:flex;align-items:center;justify-content:center;background:var(--ink-3)}
+.jplate .jcrown{width:34px;height:auto;object-fit:contain}
+.closing .ph-ink::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(14,13,11,.3),rgba(14,13,11,.9))}
+.closing .ph-ink .ink-map{left:50%;top:50%;width:min(130%,1500px);height:auto;transform:translate(-50%,-50%)}
+.closing .eyebrow{justify-content:center}
+.home-close .lead{margin-bottom:0}
+@media (max-width:1024px){ .strip .frames{grid-template-columns:repeat(2,minmax(0,1fr))} .house .ph-ink::after{background:linear-gradient(180deg,rgba(10,9,8,0) 30%,rgba(10,9,8,.6))} .house .ink-n{opacity:1}
+  .house>a{position:relative;inset:auto;flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-end} }
+.hh-c .eyebrow,.ph-c .eyebrow{flex-wrap:wrap;row-gap:8px}
+@media (min-width:641px){ .hh-c .d1{font-size:clamp(56px,6.2vw,108px);max-width:none} }
+@media (max-width:640px){ .strip .frames{gap:10px} .ink-n{font-size:clamp(120px,36vw,180px)} }
+/* v6 photography across the site (docs/PHOTOGRAPHY-PLAN.md sections 4 to 6): where no cleared photograph exists, the
+   page hero, the closing band, the 404 and error backdrops, the division tiles, the insight cards and the video posters
+   take the ink field; the division accent is its numeral and its own crop of the dotted map */
+.ph .ph-ink .ink-map{right:-3%;top:calc(var(--hdrH) + 8px);width:min(64vw,1060px);height:auto}
+.ph.short .ph-ink .ink-map{width:min(54vw,880px)}
+.ph .ph-ink.cities .ink-map,.ph .ph-ink.city .ink-map{width:min(52vw,820px)}
+.ph .ph-ink .ink-n{top:auto;right:3vw;bottom:-.16em;font-size:clamp(200px,28vw,440px);-webkit-text-stroke-color:rgba(196,165,116,.22)}
+.ph.ph-ink-on::after{background:linear-gradient(180deg,rgba(14,13,11,.55) 0,rgba(14,13,11,0) 38%,rgba(14,13,11,.78) 100%)}
+.div-ink .ink-map,.vid-ink .ink-map,.ic-ink .ink-map{inset:0;width:100%;height:100%}
+.rail-img .ink-n,.mega-prev .ink-n{font-size:clamp(120px,11vw,190px)}
+.rail-img .div-ink::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,0) 40%,rgba(10,9,8,.5))}
+.rail>a:hover .rail-img .ink-n{-webkit-text-stroke-color:rgba(196,165,116,.4)}
+.ic-ink{background:var(--ink-3)}
+.ic-cat{position:absolute;left:20px;bottom:18px;z-index:2;font-family:var(--head);font-size:clamp(24px,2vw,30px);line-height:1.1;color:var(--text)}
+.ic-ink .ph-ink{background:var(--ink-3)}
+.nf .nf-ink .ink-map{right:-6%;top:14%;width:min(96vw,1400px);height:auto;opacity:.85}
+.mm-sub .mm-no{font-family:var(--head);font-size:20px;color:var(--gold-l)}
+@media (max-width:640px){
+  .ph .ph-ink .ink-map,.ph.short .ph-ink .ink-map,.ph .ph-ink.cities .ink-map,.ph .ph-ink.city .ink-map{width:150vw;right:-36vw;top:calc(var(--hdrH) + 4px)}
+  .ph .ph-ink .ink-n{font-size:clamp(150px,46vw,220px);right:-2vw}
+  .nf .nf-ink .ink-map{width:170vw;right:-50vw}
+}
