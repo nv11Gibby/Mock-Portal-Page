@@ -30,8 +30,12 @@ const PREVIEW = process.env.BUILD_PREVIEW === '1';
 const sandbox = {window: {}};
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'assets/js/data.js'), 'utf8'), sandbox, {filename: 'data.js'});
 const D = sandbox.window.IHG, SITE = String(D.config.siteUrl).replace(/\/+$/, '');
+/* Insights (v6 fix, decision 9): while every article is a draft, /insights and the articles are built only on the
+   preview build; production leaves them out of the build, the sitemap, the feed and every link (checked below). */
+const insightsLive = PREVIEW || D.insights.some(function(a){ return !a.draft; });
+const insightRoutes = ['/insights'].concat(D.insights.map(function(a){ return '/insights/' + a.slug; }));
 const routes = ['/', '/about', '/divisions'].concat(D.divisions.map(function(d){ return '/divisions/' + d.key; }), ['/journal'],
-  D.events.map(function(e){ return '/journal/events/' + e.slug; }), ['/insights'], D.insights.map(function(a){ return '/insights/' + a.slug; }), ['/contact', '/privacy', '/terms']);
+  D.events.map(function(e){ return '/journal/events/' + e.slug; }), insightsLive ? insightRoutes : [], ['/contact', '/privacy', '/terms']);
 /* Drafts (insights with draft:true): prerendered and reachable, but noindex on every build (LAUNCH included) and
    absent from the sitemap and the feed until the copy is approved. */
 const drafts = D.insights.filter(function(a){ return a.draft; }).map(function(a){ return '/insights/' + a.slug; });
@@ -122,7 +126,7 @@ function startServer(){
   if(!fs.existsSync(path.join(DIR, 'index.html'))){ console.error('no build at ' + DIR + ': run `npm run build` first'); process.exit(2); }
   const server = await startServer();
   try{
-    const titles = {}, descs = {};
+    const titles = {}, descs = {}, insightLinks = [];
     for(const route of routes){
       const r = await get(BASE + route);
       const h = r.body, label = route.padEnd(44);
@@ -131,6 +135,7 @@ function startServer(){
       const expectCanonical = route === '/' ? SITE + '/' : SITE + route;
       const problems = [];
       if(r.status !== 200) problems.push('status ' + r.status);
+      if(!insightsLive && /href="\/insights(?:[\/?"#])/.test(h)) insightLinks.push(route);
       if(!/<html[^>]*\sdata-prerendered/.test(h)) problems.push('not prerendered');
       if(count(h, /<title>/g) !== 1) problems.push('titles: ' + count(h, /<title>/g));
       if(count(h, /<meta name="description"/g) !== 1 || !desc) problems.push('descriptions: ' + count(h, /<meta name="description"/g));
@@ -183,6 +188,11 @@ function startServer(){
         if(!show && h.indexOf('Photographs will appear once guests have confirmed') < 0) problems.push('consent gallery note missing');
       }
       ok(!problems.length, label + (title || '').slice(0, 60), problems.join('; '));
+    }
+    /* Insights while every article is a draft: no file in a production build, and no page links to one */
+    if(!insightsLive){
+      const files = insightRoutes.filter(function(r){ return fs.existsSync(path.join(DIR, r.slice(1) + '.html')) || fs.existsSync(path.join(DIR, r.slice(1), 'index.html')); });
+      ok(!files.length && !insightLinks.length, 'production build: /insights and the ' + D.insights.length + ' draft articles are left out (no file, no link)', (files.length ? 'built: ' + files.join(',') : '') + (insightLinks.length ? ' linked from: ' + insightLinks.join(',') : ''));
     }
     /* search assets */
     const robots = await get(BASE + '/robots.txt');

@@ -10,7 +10,9 @@ var routes = ['/', '/about', '/divisions', '/divisions/citizenship', '/divisions
 /* what a route must show, beyond loading cleanly */
 var expect = {
   '/#/contact': function(i){ return i.contactForm ? '' : 'no contact form (home markup kept after the #/ rewrite)'; },
-  '/#/about': function(i){ return /One Group/.test(i.h1 || '') ? '' : 'About heading missing (home markup kept after the #/ rewrite)'; }
+  '/#/about': function(i){ return /One Group/.test(i.h1 || '') ? '' : 'About heading missing (home markup kept after the #/ rewrite)'; },
+  /* v6 fix: while every article is a draft, Insights exists only on the preview build; production shows the not-found page */
+  '/insights': function(i){ return i.preview ? (/Notes from/.test(i.h1 || '') ? '' : 'Insights missing on the preview build') : (/no longer here/.test(i.h1 || '') ? '' : 'Insights reachable on a production build: ' + i.h1); }
 };
 (async function(){
   var browser = await chromium.launch(), results = [], fails = 0;
@@ -32,7 +34,7 @@ var expect = {
         var imgs = [].slice.call(document.querySelectorAll('img'));
         var broken = imgs.filter(function(i){ return i.complete && i.naturalWidth === 0 && i.getAttribute('src'); }).map(function(i){ return i.getAttribute('src'); });
         var noAlt = imgs.filter(function(i){ return !i.hasAttribute('alt'); }).length;
-        return {title: document.title, h1: (document.querySelector('h1') || {}).textContent, imgs: imgs.length, broken: broken, noAlt: noAlt, overflow: document.documentElement.scrollWidth > window.innerWidth + 1, tbc: document.querySelectorAll('.tbc').length, contactForm: !!document.querySelector('#app form[name="contact"]')};
+        return {title: document.title, h1: (document.querySelector('h1') || {}).textContent, imgs: imgs.length, broken: broken, noAlt: noAlt, overflow: document.documentElement.scrollWidth > window.innerWidth + 1, tbc: document.querySelectorAll('.tbc').length, contactForm: !!document.querySelector('#app form[name="contact"]'), preview: document.documentElement.hasAttribute('data-preview')};
       });
       var miss = expect[r] ? expect[r](info) : ''; if(miss) errs.push('expected: ' + miss);
       var bad = errs.length || info.broken.length || info.overflow || info.noAlt;

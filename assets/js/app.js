@@ -99,6 +99,11 @@ function photoAllowed(k){
 function knownPhoto(k){ return !!k && (!!photoMeta(k) || /^events\/[a-z0-9-]+\/(cover|cover-p|\d\d)$/.test(k)); }
 /* The key when it exists and is cleared, else the fallback (itself checked), else '' (the caller draws the ink field) */
 function safePhoto(k, fb){ return knownPhoto(k) && photoAllowed(k) ? k : (fb && fb!==k ? safePhoto(fb) : ''); }
+/* v6 fix (decision 9): while every Insights article is a draft, /insights and the four articles exist only on the
+   preview build (with the Draft label, for the Founder's approval); production leaves them out of the routes, the
+   prerender, the sitemap, the search and every link, and no page promises insights. */
+function publishedInsights(){ return D.insights.filter(function(a){ return !a.draft; }); }
+function insightsLive(){ return PREVIEW || publishedInsights().length > 0; }
 function sortByIso(list){
   return list.map(function(x,i){return {x:x,i:i};}).sort(function(a,b){
     var p = a.x.iso || '', q = b.x.iso || '';
@@ -350,7 +355,7 @@ V.home = function(){
   /* one video block on the home page, only once a clip exists (first event or journal video with an id) */
   (hv ? '<section class="sec light home-vid" id="film"><div class="wrap"><div class="sec-head"><div>'+eyebrow('On film')+mask(['The evening,','in motion.'],'h2','d2')+'</div></div>'+videoBlock(hv,'')+'</div></section>' : '')+
 
-  '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: company developments, insights and selected events.</p></div>'+
+  '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(journalTitle(),'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: company developments'+(publishedInsights().length ? ', insights' : '')+' and selected events.</p></div>'+
    '<div class="jlist">'+rows.map(function(j,i){ return journalRow(j, i, true); }).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
   /* v6 (UX audit item 22): the map lives on About only; the home page no longer repeats it */
@@ -488,13 +493,14 @@ function journalRow(j, i, plain){
   var fig = ok ? '<figure>'+img(j.img, '', '', j.own?'':'-c')+'</figure>' : '<figure class="jplate" aria-hidden="true">'+(ev ? inkMap(cityView(ev.city), {points:true, fill:true}) : '<img class="jcrown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" loading="lazy" decoding="async">')+'</figure>';
   return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s">'+fig+'<div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
+function journalTitle(){ return publishedInsights().length ? ['Developments, insights','and selected events.'] : ['Company developments','and selected events.']; }
 V.journal = function(){
   var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
-  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, cls:'short', crumb:[['Journal',null]], eyebrow:'Events and Journal', title:['Selected events.','Selected words.'], lead:'Company developments, insights and selected gatherings. Fewer entries, chosen with care.'})+
+  return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, cls:'short', crumb:[['Journal',null]], eyebrow:'Events and Journal', title:['Selected events.','Selected words.'], lead:(publishedInsights().length ? 'Company developments, insights and selected gatherings.' : 'Company developments and selected gatherings.')+' Fewer entries, chosen with care.'})+
   '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Relationships,','in person.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos. '+(allOk ? 'One cover photograph for each, and a gallery inside.' : 'Galleries open as guests confirm they are happy to be featured.')+'</p></div>'+
    '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
    '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
-  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments and selected insights.</p></div></div>'+
+  '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(journalTitle(),'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">'+(publishedInsights().length ? 'Company developments and selected insights.' : 'Company developments and selected events.')+'</p></div></div>'+
    '<div class="jlist">'+rows.map(journalRow).join('')+'</div></div></section>'+closing();
 };
 V.event = function(slug){
@@ -800,11 +806,11 @@ function resolve0(r){
   if(p[0]==='about' && p.length===1) return {html:V.about(), title:'About', nav:'about', view:'about', desc:'Imperial began as a citizenship and residency specialist and is now the parent of five divisions, run by one team to one standard. The people behind the Group.'};
   if(p[0]==='divisions' && p.length===1) return {html:V.divisions(), title:'Divisions', nav:'divisions', view:'divisions', desc:'The five Imperial divisions: Citizenship, Partners Club, Private Office, Real Estate and the Academy, with one named person for each relationship.'};
   if(p[0]==='divisions' && p.length===2){ var d=div(p[1]); if(d) return {html:V.division(p[1]), title:d.name, nav:'divisions', view:'division', desc:d.desc||d.line}; }
-  if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Company developments, insights and selected Imperial events in Dubai and Lagos.'};
+  if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Company developments'+(publishedInsights().length ? ', insights' : '')+' and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
-  if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken notes on mobility, families across borders and working with Imperial.'};
-  if(p[0]==='insights' && p.length===2){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
+  if(p[0]==='insights' && p.length===1 && insightsLive()) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken notes on mobility, families across borders and working with Imperial.'};
+  if(p[0]==='insights' && p.length===2 && insightsLive()){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
   if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:D.journeys.title, nav:'contact', view:'contact', desc:D.journeys.description};
   if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true, desc:'Privacy notice for the Imperial Holdings Group website: who we are, what we collect through our enquiry forms, how we use it and your rights.'};
   if(p[0]==='terms' && p.length===1) return {html:V.terms(), title:'Terms', nav:null, view:'legal', solid:true, desc:'Terms of use for the Imperial Holdings Group website: information only, not advice, and no guarantee of any government decision or outcome.'};
@@ -2055,8 +2061,8 @@ function palIndex(){
   add({k:'Page', t:'About the Group', s:'Our story, values and leadership', u:'/about', kw:'about history values leadership team story'});
   add({k:'Page', t:'Our ecosystem', s:'Five divisions, side by side', u:'/divisions', kw:'houses compare divisions ecosystem all'});
   add({k:'Page', t:'Our network', s:'How the divisions work together, an illustration', u:'/', go:'network', kw:'network audiences clients partners institutions strategic journey'});
-  add({k:'Page', t:'Journal', s:'Company developments, insights and selected Imperial events in Dubai and Lagos', u:'/journal', kw:'journal events gallery photos news articles insights'});
-  add({k:'Page', t:'Insights', s:'Notes from the Group', u:'/insights', kw:'articles blog guidance insights'});
+  add({k:'Page', t:'Journal', s:'Company developments'+(publishedInsights().length ? ', insights' : '')+' and selected Imperial events in Dubai and Lagos', u:'/journal', kw:'journal events gallery photos news'+(publishedInsights().length ? ' articles insights' : '')});
+  if(publishedInsights().length) add({k:'Page', t:'Insights', s:'Notes from the Group', u:'/insights', kw:'articles blog guidance insights'});
   add({k:'Page', t:'Start a relationship', s:'Three paths; one person reads your message and replies personally', u:'/contact?via=palette', kw:'contact enquiry enquire call email phone get in touch book speak message send'});
   add({k:'Page', t:'Offices', s:'Telephone, addresses and local time, Dubai and Lagos', u:'/contact?via=palette', kw:'offices office telephone phone address addresses local time dubai lagos'});
   add({k:'Tool', t:'Find the right division', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
@@ -2159,8 +2165,11 @@ function routes(opts){
   D.divisions.forEach(function(d){ out.push('/divisions/'+d.key); });
   out.push('/journal');
   D.events.forEach(function(e){ out.push('/journal/events/'+e.slug); });
-  if(!(published && allDrafts())) out.push('/insights');   /* the listing stays out of the sitemap while every article is a draft */
-  D.insights.forEach(function(a){ if(published && a.draft) return; out.push('/insights/'+a.slug); });
+  /* production leaves /insights and the drafts out altogether while every article is a draft (insightsLive) */
+  if(insightsLive()){
+    if(!(published && allDrafts())) out.push('/insights');   /* the listing stays out of the sitemap while every article is a draft */
+    D.insights.forEach(function(a){ if(published && a.draft) return; out.push('/insights/'+a.slug); });
+  }
   out.push('/contact', '/privacy', '/terms');
   return out;
 }
