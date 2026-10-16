@@ -219,7 +219,9 @@ function startServer(){
     ok(homePre.length === 2 && homePre.some(function(k){ return /max-width/.test(k); }) && homePre.some(function(k){ return /min-width/.test(k); }) && !preloadProblems(index, '/').length, 'home page preloads its own desktop and mobile hero: ' + homePre.join(', '));
     ['404.html', 'error.html'].forEach(function(f){
       const h = fs.readFileSync(path.join(DIR, f), 'utf8'), p = preloadProblems(h, f).concat(heroFileProblems(h, f));
-      ok(!p.length && actualPreloads(h).length === 1, f + ' preloads its own backdrop only', p.join('; ') || actualPreloads(h).join(', '));
+      /* one preload, or (since v6 gives the backdrop its -m file on phones) a desktop and mobile pair split by media */
+      const pre = actualPreloads(h), pair = pre.length === 2 && pre.some(function(k){ return /max-width/.test(k); }) && pre.some(function(k){ return /min-width/.test(k); });
+      ok(!p.length && (pre.length === 1 || pair), f + ' preloads its own backdrop only', p.join('; ') || pre.join(', '));
     });
     /* the 200 KB rule over every hero file any page references (home figures, page heroes, backdrops, mobile sources) */
     const big = Object.keys(oversize);

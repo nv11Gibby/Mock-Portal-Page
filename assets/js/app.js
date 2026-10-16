@@ -55,7 +55,23 @@ var CROSS = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9M1
 function div(k){for(var i=0;i<D.divisions.length;i++) if(D.divisions[i].key===k) return D.divisions[i]; return null;}
 function pad2(n){return (n<10?'0':'')+n;}
 function photoAlt(k){for(var i=0;i<D.photos.length;i++) if(D.photos[i].key===k) return D.photos[i].what; return '';}
-function img(k, alt, cls, v, eager){return '<img src="'+IMG+k+(v||'')+'.webp" alt="'+esc(alt==null?photoAlt(k):alt)+'"'+(cls?' class="'+cls+'"':'')+(eager?' fetchpriority="high"':' loading="lazy"')+' decoding="async">';}
+/* v6 image delivery (UX audit item 18). Every photograph carries its intrinsic width and height, so the browser
+   reserves its box before the file arrives: the files come in a few fixed shapes (dimsOf). Below the fold it loads
+   lazily and decodes off the main thread. A full-frame site photograph (no variant) also offers its existing -m file
+   (the 3:4 crop every site photograph has) to screens up to 640 px through a picture source, as the page heroes do;
+   event photographs, portraits and the hero files have no -m file and are left as they are. No file is added. */
+var DIMS = {c: ' width="900" height="1125"', m: ' width="810" height="1080"', wide: ' width="1600" height="1000"'};
+function dimsOf(k, v){
+  if(v==='-c' || /\/cover-p$/.test(k) || k.indexOf('people/')===0) return DIMS.c;
+  if(v==='-m') return DIMS.m;
+  if(!v && (k.indexOf('events/')!==0 || /\/cover$/.test(k))) return k==='hero-lights' ? ' width="1600" height="977"' : DIMS.wide;
+  return '';   /* event gallery frames vary in shape; their figures set the box */
+}
+function hasMobile(k){ return k.indexOf('events/')!==0 && k.indexOf('people/')!==0 && k.indexOf('hero')!==0; }
+function img(k, alt, cls, v, eager){
+  var tag = '<img src="'+IMG+k+(v||'')+'.webp" alt="'+esc(alt==null?photoAlt(k):alt)+'"'+(cls?' class="'+cls+'"':'')+dimsOf(k, v||'')+(eager?' fetchpriority="high"':' loading="lazy"')+' decoding="async">';
+  return !v && !eager && hasMobile(k) ? '<picture><source media="(max-width:640px)" srcset="'+IMG+k+'-m.webp" width="810" height="1080">'+tag+'</picture>' : tag;
+}
 /* v5 media: consent-aware photographs and video. A photograph shows when the registry records consent for it, when
    its event has consent recorded (events[i].consent), or on a preview build (data-preview on <html>). Otherwise
    safePhoto() returns a fallback that shows no guests. Video blocks share one shape (see D.video in data.js):
@@ -154,7 +170,7 @@ function relatedRow(kind, cur){
 }
 function logoImg(d, colour, cls){
   if(d.logo) return '<img class="'+(cls||'')+'" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'">';
-  return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="">'+esc(d.name)+'</span>';
+  return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175">'+esc(d.name)+'</span>';
 }
 function extLink(d, cls, label){
   if(!d.cta) return '';
@@ -196,7 +212,7 @@ function pageHero(o){
 }
 function closing(){
   return '<section class="closing"><div class="ph-bg"><div class="px">'+img('closing')+'</div></div><div class="closing-c wrap">'+
-    '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" data-r>'+
+    '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175" data-r>'+
     mask(['With you, from the','first question.'],'h2','d2')+
     '<p class="lead" data-r style="--d:.2s">Tell us where you are, and where you would like to be. The first conversation is for listening. Decisions come when you are ready.</p>'+
     '<div class="btns" data-r style="--d:.3s"><a class="btn gold mag" href="#/contact"><span>Speak to us</span>'+AR+'</a><a class="btn line" href="#/about"><span>About the Group</span></a></div></div></section>';
@@ -237,19 +253,6 @@ function mapBlock(){
     '<div class="wmap-side"><div class="wmap-tabs" role="tablist" aria-label="Where we work">'+tabs.map(function(t,i){return '<button role="tab" id="wmt-'+t[0]+'" aria-controls="wm-'+t[0]+'" aria-selected="'+(i===0)+'" tabindex="'+(i===0?0:-1)+'" data-wm="'+t[0]+'"><span>'+t[1]+'</span><small>'+t[2]+'</small></button>';}).join('')+'</div><div class="wmap-card">'+cards+'</div></div></div>'+
     '<p class="wmap-note" data-r>Regions are shown broadly to indicate relationships, not office locations.</p>';
 }
-function story(){
-  var ch = [
-    {img:'citizenship', t:'One conversation', p:D.steps[0][1]},
-    {img:'private-office', t:'The right house', p:D.steps[1][1]},
-    {img:'about', t:'One person, for the long term', p:D.steps[2][1]}
-  ];
-  return '<section class="story" id="story" style="--n:'+ch.length+'" aria-label="How we work"><div class="story-pin">'+
-    '<div class="story-media" aria-hidden="true">'+ch.map(function(c,i){return '<figure class="'+(i===0?'on':'')+'">'+img(c.img,'')+'</figure>';}).join('')+'</div>'+
-    '<div class="story-text"><div class="eyebrow">How we work</div><div class="story-num" aria-hidden="true"><span id="storyNum">01</span></div>'+
-    '<div class="chapters">'+ch.map(function(c,i){return '<article class="chapter'+(i===0?' on':'')+'"><span class="cimg">'+img(c.img,'')+'</span><span class="ix">Chapter '+pad2(i+1)+' of '+pad2(ch.length)+'</span><h3>'+esc(c.t)+'</h3><p>'+esc(c.p)+'</p></article>';}).join('')+'</div>'+
-    '<div class="story-dots" aria-hidden="true">'+ch.map(function(){return '<i></i>';}).join('')+'</div></div></div></section>';
-}
-
 /* ---------- views ---------- */
 var V = {};
 V.home = function(){
@@ -318,7 +321,7 @@ V.about = function(){
    '<p class="muted">Imperial Holdings Group is the result: five specialist houses at one table, sharing one team, one standard and one record of each family, so that you never have to explain your family twice.</p>'+
    '<p class="small muted">Founding date and milestones: '+tbc('Group history and key dates')+'</p></div></div></section>'+
 
-  '<section class="sec light"><div class="wrap split"><div class="ring anim" data-r="fade" aria-label="One table: your family at the centre, one Relationship Manager, and the five houses"><div class="ring-c"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><b>Your family</b><span class="ring-rm">One Relationship Manager</span></div><ul>'+seats+'</ul></div>'+
+  '<section class="sec light"><div class="wrap split"><div class="ring anim" data-r="fade" aria-label="One table: your family at the centre, one Relationship Manager, and the five houses"><div class="ring-c"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><b>Your family</b><span class="ring-rm">One Relationship Manager</span></div><ul>'+seats+'</ul></div>'+
    '<div>'+eyebrow('How we work')+mask(['One team.','One point of contact.'],'h2','d2')+
    '<p class="lead" data-r style="--d:.15s">Our people work across the Group rather than inside a single division, so knowledge and standards travel with your family.</p>'+
    '<p data-r style="--d:.2s">One Relationship Manager brings each house in when it is needed, together with qualified specialists for regulated matters such as tax, legal and investment. Where a service is best delivered by a trusted Partner, we coordinate it for you, so you still have one person to call.</p>'+
@@ -638,7 +641,7 @@ V.error = function(){
    page, ahead of the hero. They start as a transparent pixel with the real file in data-src; setMM() swaps the src
    the first time the menu opens. The desktop mega menu keeps display:none until it opens, so its copies stay lazy. */
 var PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-function menuImg(k, v){return '<img src="'+PIXEL+'" data-src="'+IMG+k+(v||'')+'.webp" alt="" loading="lazy" decoding="async">';}
+function menuImg(k, v){return '<img src="'+PIXEL+'" data-src="'+IMG+k+(v||'')+'.webp" alt=""'+dimsOf(k, v||'')+' loading="lazy" decoding="async">';}
 function loadMenuImgs(scope){ [].forEach.call(scope.querySelectorAll('img[data-src]'), function(i){ i.src=i.getAttribute('data-src'); i.removeAttribute('data-src'); }); }
 function buildChrome(){
   document.getElementById('megaIn').innerHTML =
@@ -650,7 +653,7 @@ function buildChrome(){
     '<li style="--i:0"><a href="#/"><span>Home</span><span class="ix">01</span></a></li>'+
     '<li style="--i:1"><a href="#/about"><span>About</span><span class="ix">02</span></a></li>'+
     '<li style="--i:2" class="mm-acc" id="mmAcc"><button aria-expanded="false" aria-controls="mmSub" id="mmDivBtn"><span>Our ecosystem</span><span class="plus" aria-hidden="true"></span></button><div class="mm-sub" id="mmSub"><div>'+
-      '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
+      '<a href="#/divisions"><span class="all"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"></span><span><b>All divisions</b><small>Five divisions, one table</small></span></a>'+
       D.divisions.map(function(d){return '<a href="#/divisions/'+d.key+'">'+menuImg(d.img,'-c')+'<span><b>'+esc(d.name)+'</b><small>'+(d.soon?'Coming soon':esc(d.status))+'</small></span></a>';}).join('')+'</div></div></li>'+
     '<li style="--i:3"><a href="#/" data-goto="network"><span>Our Network</span><span class="ix">04</span></a></li>'+
     '<li style="--i:4"><a href="#/journal"><span>Journal</span><span class="ix">05</span></a></li>'+
@@ -927,8 +930,6 @@ function enhance(){
   fx = {
     hh: app.querySelector('.hh'), dusk: app.querySelector('.hh .dusk img'), night: app.querySelector('.hh .night'), nightImg: app.querySelector('.hh .night img'), hc: app.querySelector('.hh-c'),
     pxs: app.querySelectorAll('.ph .px, .closing .px, .nf .px'),
-    story: app.querySelector('.story'), chapters: app.querySelectorAll('.chapter'), media: app.querySelectorAll('.story-media figure'), dots: app.querySelectorAll('.story-dots i'), num: document.getElementById('storyNum'), cur: 0,
-    words: app.querySelectorAll('#words>span'), wordsEl: document.getElementById('words')
   };
   if(fx.night){ fx.night.setAttribute('aria-hidden','true'); if(fx.nightImg && fx.nightImg.decode) fx.nightImg.decode().catch(function(){}); }
   tick(); greet(); onScroll(); bindHouses(); bindMap(); bindRail(); bindFilters(); bindForms(); bindFinder(); bindFaq(); bindShare(); bindMedia();
@@ -942,7 +943,7 @@ function count(el){
 }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
-/* scroll: header, hero dusk-to-night, parallax, chapters, lit words */
+/* scroll: header, back to top, action bar, hero dusk-to-night, parallax */
 var lastY = 0, ticking = false, ftr = document.getElementById('ftr');
 function onScroll(){
   ticking = false;
@@ -966,23 +967,6 @@ function onScroll(){
     }
   }
   [].forEach.call(fx.pxs, function(px){ var s=px.parentNode.parentNode, rr=s.getBoundingClientRect(); if(rr.bottom<0||rr.top>H) return; px.style.transform='translate3d(0,'+((rr.top)*-0.16).toFixed(1)+'px,0)'; });
-  if(fx.story && fx.chapters.length){
-    var sr = fx.story.getBoundingClientRect(), n = fx.chapters.length, q = clamp(-sr.top/Math.max(1,sr.height-H),0,0.9999);
-    if(window.innerWidth > 1024){
-      var c = Math.floor(q*n);
-      if(c !== fx.cur){
-        fx.chapters[fx.cur].classList.remove('on'); fx.chapters[c].classList.add('on');
-        [].forEach.call(fx.media, function(m,i){ m.classList.toggle('on', i<=c); });
-        if(fx.num) fx.num.textContent = pad2(c+1);
-        fx.cur = c;
-      }
-      [].forEach.call(fx.dots, function(d,i){ d.style.setProperty('--f', clamp(q*n-i,0,1).toFixed(3)); });
-    }
-  }
-  if(fx.wordsEl){
-    var wr = fx.wordsEl.getBoundingClientRect(), wp = clamp((H*0.85 - wr.top)/(H*0.6),0,1), wn = fx.words.length;
-    [].forEach.call(fx.words, function(s,i){ s.style.setProperty('--o', (0.18 + 0.82*clamp(wp*wn - i,0,1)).toFixed(3)); });
-  }
 }
 window.addEventListener('scroll', function(){ if(!ticking){ ticking=true; requestAnimationFrame(onScroll); } }, {passive:true});
 window.addEventListener('resize', function(){ if(!ticking){ ticking=true; requestAnimationFrame(onScroll); } });
@@ -1632,7 +1616,7 @@ function finderResult(per, goals){
   if(P) Object.keys(P.w).forEach(function(k){ sc[k]+=P.w[k]; });
   goals.forEach(function(g){ var w=F.goals[g]; Object.keys(w).forEach(function(k){ sc[k]+=w[k]; }); });
   var ranked = D.divisions.filter(function(d){ return sc[d.key]>0; }).sort(function(a,b){ return sc[b.key]-sc[a.key] || D.divisions.indexOf(a)-D.divisions.indexOf(b); }).slice(0,3);
-  if(!ranked.length) return '<div class="fd-empty"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt=""><h3>Your table</h3><p>Choose who this is for, or what matters most, and we will show which houses would sit at your table.</p><p class="xs">A starting point, not advice. Your Relationship Manager confirms the right house in the first conversation.</p></div>';
+  if(!ranked.length) return '<div class="fd-empty"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175"><h3>Your table</h3><p>Choose who this is for, or what matters most, and we will show which houses would sit at your table.</p><p class="xs">A starting point, not advice. Your Relationship Manager confirms the right house in the first conversation.</p></div>';
   var top = ranked[0], q = 'about='+top.key+(goals.length?'&goals='+goals.join(','):'');
   var cta = top.soon ? '<a class="btn gold" href="#/divisions/real-estate"><span>Register interest</span>'+AR+'</a>' : '<a class="btn gold" href="#/contact?'+q+'"><span>Start the conversation</span>'+AR+'</a>';
   return '<div class="fd-top"><span class="eyebrow">Your table</span><span class="fd-count">'+ranked.length+' of 5 houses</span></div>'+
@@ -1776,7 +1760,7 @@ function hl(t, q){
 function palDraw(){
   var q = palIn.value; palItems = palSearch(q); palSel = 0;
   palList.innerHTML = (q.trim()?'':'<li class="pal-grp" role="presentation">Suggested</li>')+palItems.map(function(x,i){
-    return '<li role="option" id="po-'+i+'" aria-selected="'+(i===0)+'" data-i="'+i+'">'+(x.img?'<img src="'+IMG+x.img+(x.v==null?'-c':x.v)+'.webp" alt="" loading="lazy">':(function(g){ return '<span class="pal-ic'+(g?'':' pal-rule')+'" aria-hidden="true">'+(g||'')+'</span>'; })({Question:'?',Enquire:'\u2192',Tool:'\u2726'}[x.k]))+
+    return '<li role="option" id="po-'+i+'" aria-selected="'+(i===0)+'" data-i="'+i+'">'+(x.img?'<img src="'+IMG+x.img+(x.v==null?'-c':x.v)+'.webp" alt="" width="900" height="1125" loading="lazy" decoding="async">':(function(g){ return '<span class="pal-ic'+(g?'':' pal-rule')+'" aria-hidden="true">'+(g||'')+'</span>'; })({Question:'?',Enquire:'\u2192',Tool:'\u2726'}[x.k]))+
       '<span class="pal-t"><b>'+hl(x.t,q)+'</b><small>'+esc(x.s.length>96?x.s.slice(0,94)+'\u2026':x.s)+'</small></span><span class="pal-k">'+x.k+'</span></li>';
   }).join('');
   palEmpty.hidden = palItems.length>0;

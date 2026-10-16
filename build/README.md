@@ -17,6 +17,9 @@ source tree is unchanged: `index.html`, `assets/js/app.js` and `assets/js/data.j
   `shared/analytics.js`, `assets/js/app.js`) minified in place with esbuild's transform API (target `es5` for the
   scripts, so nothing newer than the source syntax is emitted). The source tree stays readable; the paths and the
   `?v=5` query do not change, so the inline script and its CSP hash are untouched. The build log lists the sizes.
+  Since v6 the design tokens are also put at the top of `dist/assets/css/site.css` and the built pages link that one
+  stylesheet only (one render-blocking request instead of two); `dist/shared/tokens.css` is still published for the
+  sister sites, and the source `index.html` keeps both links for the unbuilt site.
 * One prerendered page per route, written twice so every static host serves the clean URL: `about.html` and
   `about/index.html`, `divisions/citizenship.html` and `divisions/citizenship/index.html`, and so on. The home page is
   `index.html`. Routes come from `window.IHG_APP.routes()` in app.js: the static pages, every division, every event,

@@ -65,6 +65,13 @@ fs.cpSync(path.join(ROOT, 'shared'), path.join(DIST, 'shared'), {recursive: true
    script and the CSP hash do not change. esbuild's transform API, with target es5 for the scripts so the output uses
    no syntax newer than the source. The prerender below runs the source files, not these. */
 const esbuild = require('esbuild');
+/* v6 (UX audit item 19): one render-blocking stylesheet instead of two. The design tokens are put at the top of
+   dist/assets/css/site.css before it is minified, and finish() drops the tokens link from every built page.
+   dist/shared/tokens.css itself is still published, minified, for the sister sites; the source index.html keeps
+   both links, so the unbuilt site (npm run serve) works as before. */
+const TOKENS_SRC = fs.readFileSync(path.join(ROOT, 'shared/tokens.css'), 'utf8');
+const siteCssDist = path.join(DIST, 'assets/css/site.css');
+fs.writeFileSync(siteCssDist, TOKENS_SRC + '\n' + fs.readFileSync(siteCssDist, 'utf8'));
 const MINIFY = [['assets/css/site.css', 'css'], ['shared/tokens.css', 'css'], ['assets/js/data.js', 'js'], ['shared/analytics.js', 'js'], ['assets/js/app.js', 'js']];
 const minified = [], minifyNotes = [];
 MINIFY.forEach(function(m){
@@ -131,7 +138,7 @@ function finish(page, opts){
   root.setAttribute('data-prerendered', opts.route || '');   /* the route this file was built for: the app re-renders when the address names another */
   if(PREVIEW) root.setAttribute('data-preview', '');
   root.removeAttribute('class');                                  /* the inline head script adds hist and js again */
-  Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics]'), function(el){ el.parentNode.removeChild(el); });
+  Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics], link[rel="stylesheet"][href^="shared/tokens.css"]'), function(el){ el.parentNode.removeChild(el); });   /* the tokens are inlined at the top of site.css (step 1b) */
   Array.prototype.forEach.call(doc.querySelectorAll('.clock'), function(el){ el.textContent = '--:--'; });
   const greet = doc.getElementById('greet'); if(greet) greet.textContent = '';
   Array.prototype.forEach.call(doc.querySelectorAll('input[type="hidden"]'), function(el){ if(TRACK.indexOf(el.name) > -1) el.value = ''; });
