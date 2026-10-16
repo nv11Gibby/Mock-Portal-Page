@@ -1389,3 +1389,57 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .ph .ph-ink .ink-n{font-size:clamp(150px,46vw,220px);right:-2vw}
   .nf .nf-ink .ink-map{width:170vw;right:-50vw}
 }
+
+/* === v6 journey === */
+/* Start a relationship (docs/RELATIONSHIP-JOURNEY.md): the chooser cards, the quiet path line, journey choice cards,
+   fields shown by condition, the summary line on the closing screen, the preview chip, and the path cards on the home
+   and division pages. Everything else reuses the v5 contact rules above (.cf-step, .cf-prog, .routes, .routing, .success). */
+.cf-prog[data-prog]{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+.jp-paths{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px}
+.jp-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;padding:22px 24px;border:1px solid var(--l-line-2);border-radius:2px;background:#fff;text-align:left;color:var(--l-text);transition:border-color var(--t2),box-shadow var(--t2)}
+.jp-card:hover,.jp-card:focus-visible{border-color:var(--gold-ink);box-shadow:inset 0 0 0 1px var(--gold-ink)}
+.jp-card .ix{font-size:12px;letter-spacing:.14em;color:var(--gold-ink)}
+.jp-card b{font-family:var(--head);font-weight:500;font-size:clamp(20px,1.8vw,24px);line-height:1.25;letter-spacing:-.01em}
+.jp-card .jp-text{font-size:14.5px;line-height:1.6;color:var(--l-body);max-width:40em}
+.jp-card .jp-cta{display:inline-flex;align-items:center;gap:10px;margin-top:8px;font-weight:500;font-size:14.5px;color:var(--gold-ink)}
+.jp-card:hover .ar,.jp-card:focus-visible .ar{transform:translateX(4px)}
+.jp-foot{margin:18px 0 0}
+.jp-line{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 16px;margin:0 0 22px;padding:8px 14px;background:#fff;border:1px solid var(--l-line);border-radius:2px;font-size:14px;color:var(--l-body)}
+.jp-line[hidden]{display:none}
+.jp-line b{font-weight:500;color:var(--l-text)}
+.jp-line .tlink{min-height:36px}
+.jf{grid-column:1/-1}
+.jf[hidden],.field[hidden],.jp-variant[hidden]{display:none}
+.jl{font-size:13.5px;font-weight:500;color:var(--l-text);margin-bottom:8px}
+.jl i{font-style:normal;font-weight:400;color:var(--l-muted)}
+.jp-hint{display:block;font-style:normal;font-size:13px;line-height:1.5;color:var(--l-muted);margin:-2px 0 10px}
+.field .jp-hint{margin:0}
+.routes.jc{grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr))}
+.routes.jc .rt{min-height:56px;padding:12px 16px;justify-content:center}
+.routes .rt em{font-style:normal;font-size:13px;line-height:1.5;color:var(--l-muted)}
+.routes .jp-other{grid-column:1/-1;margin-top:4px}
+.jp-offer{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;margin-top:12px;padding:12px 16px;border-left:2px solid var(--gold-ink);background:rgba(122,95,54,.07);font-size:14px;color:var(--l-body)}
+.jp-offer[hidden]{display:none}
+.jp-offer .tlink{min-height:36px;font-size:14px}
+.jp-sum{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:-8px 0 22px;padding:10px 16px;background:#fff;border:1px solid var(--l-line);border-radius:2px;font-size:14px;color:var(--l-body)}
+.jp-sum[hidden]{display:none}
+.jp-sum b{font-weight:500;color:var(--l-text)}
+.jp-sum i{font-style:normal;color:var(--l-muted)}
+.jp-sum .tlink{min-height:32px;font-size:14px;margin-left:auto}
+.jp-chip{display:inline-block;border:1px dashed var(--gold-ink);color:var(--gold-ink);padding:2px 10px;border-radius:2px;font-size:13px;line-height:1.7}
+.jp-preview{margin:0 0 22px}
+.success.preview>svg{display:none}
+.success .jp-preview{margin:0 0 18px}
+.jp-next{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 26px;margin-top:22px}
+.ftr-brand .tlink{margin-top:14px}
+/* path cards on the home page (three) and the division pages (one) */
+.paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;background:var(--l-line);border:1px solid var(--l-line)}
+.paths.one{grid-template-columns:1fr}
+.path-c{display:flex;flex-direction:column;gap:12px;padding:clamp(26px,3vw,40px);background:var(--paper);color:var(--l-text);transition:background var(--t3)}
+.path-c:hover,.path-c:focus-visible{background:#fff}
+.path-c .ix{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink)}
+.path-c b{font-family:var(--head);font-weight:500;font-size:clamp(22px,2vw,28px);line-height:1.2;letter-spacing:-.01em}
+.path-t{font-size:15px;line-height:1.65;color:var(--l-body);flex:1 1 auto}
+.path-c .btn{align-self:flex-start;margin-top:8px}
+@media (max-width:900px){ .paths{grid-template-columns:1fr} }
+@media (max-width:640px){ .jp-card{padding:18px} .jp-line{margin-bottom:18px} .jp-sum .tlink{margin-left:0} }

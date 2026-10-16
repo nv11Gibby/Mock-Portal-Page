@@ -15,8 +15,8 @@ A visitor can read every page without giving us anything. Personal information a
 
 | Form | Where | Fields the person types or chooses |
 |---|---|---|
-| `enquiry` | Home page and division pages (also filled in by the programme fit check on the Citizenship page) | who they are (private client, professional partner, institution), what it concerns (division), full name, email, phone (optional), country of residence, nationality, who the enquiry is for (myself, family, a client), when they would like to begin, budget band (optional), firm and profession (Partners Club only), buy or rent and area of interest (Real Estate only), message, consent |
-| `contact` | `/contact`, three steps | what it concerns, full name, email, phone (optional), country of residence, nationality, who the enquiry is for, preferred way to be reached, when they would like to begin, budget band (optional), firm and profession (Partners Club only), buy or rent and area of interest (Real Estate only), message, consent; and, when the person came from the house finder, the ambitions they chose there (`interests`) |
+| `enquiry` | Retired from the pages in v6 (the home and division pages now link to the journey); the hidden form and its fields stay for the sister sites | who they are (private client, professional partner, institution), what it concerns (division), full name, email, phone (optional), country of residence, nationality, who the enquiry is for (myself, family, a client), when they would like to begin, budget band (optional), firm and profession (Partners Club only), buy or rent and area of interest (Real Estate only), message, consent |
+| `contact` | `/contact`, the Start a relationship journey: a chooser, three paths and one closing screen (docs/RELATIONSHIP-JOURNEY.md) | the path (private client, professional partner, institution); Private Clients: what it concerns, who it is for, country of residence, nationality (optional, citizenship and Private Office only), when they would like to begin, budget band (optional, citizenship and Real Estate only), buy or rent and area (Real Estate only); Professional Partners: how they would like to work with Imperial, profession, firm, where they practise, what they or their client are considering (no client details are asked), timing; Institutions: what they would like to explore, organisation, which kind of organisation it is (`org_type`), their role (optional), country, a date that matters (optional); then on every path: full name, email, phone (optional), reply by (email, phone call or either), a message (optional), consent; and, from the house finder, the ambitions chosen there, or from the programme fit check, its five answers (`interests`, `quiz_answers`) |
 | `interest` | Real Estate division page | full name, email, country of residence, what they are interested in, anything else (optional), consent |
 | `guide` | Citizenship division page | full name, email, consent |
 
@@ -68,15 +68,20 @@ pages (not yet configured) leave the site.
 3. When `EMAIL_API_KEY` and `EMAIL_FROM` are set, a short plain text confirmation goes to the person through the
    Resend API: name, email address, the division that will reply, the office numbers. Off today.
 4. When the person chooses to verify the phone, the number goes to Twilio Verify (WhatsApp or SMS). Off today.
-5. Fallback: if the Netlify Forms post fails, the page posts the same data as JSON to
+5. Imperial OS (off today): when `IMPERIAL_OS_WEBHOOK_URL` and its secret are set, the function sends a signed copy
+   of each stored record (the fields above, the score, the Pipedrive ids, the consent record and the tracking fields)
+   and of each phone verification to the Group's internal platform, Imperial OS (docs/LEADS.md section 11). Which
+   system is the master, where Imperial OS stores the record and for how long are TO CONFIRM.
+6. Fallback: if the Netlify Forms post fails, the page posts the same data as JSON to
    `/.netlify/functions/lead` (`netlify/functions/lead.js`), which runs the same core. Then there is no Netlify Forms inbox copy. If both fail,
    the page shows the office numbers and the email and keeps the draft on the device.
-6. People: the lead is seen by the named owner in the relevant Imperial team (Citizenship, Private Office, Partners
+7. People: the lead is seen by the named owner in the relevant Imperial team (Citizenship, Private Office, Partners
    Club, Academy, Real Estate, or the Group team) and whoever else has access to that Pipedrive pipeline.
 
 Providers that may hold personal data, with where they store it to be confirmed: Netlify (hosting, forms, function
 logs), Pipedrive (CRM), Resend (email, when on), Twilio (verification, when on), Cloudflare (Turnstile, when on),
-Google (analytics, when on, cookie-free), Vimeo or Mux (video, when a clip exists).
+Google (analytics, when on, cookie-free), Vimeo or Mux (video, when a clip exists), Imperial OS (the Group's own
+platform, when the handoff is switched on; its hosting to be confirmed).
 
 ## 3. Open TO CONFIRM items in the notice
 
@@ -101,8 +106,9 @@ Each one renders as an amber placeholder on `/privacy` until it is filled in `da
 1. Whether the notice as written is sufficient under the laws that apply to each office, and which of those laws, if
    any, the notice should name. The notice names none today.
 2. The lawful basis for each form and whether the consent box wording is enough. The boxes read: "I agree to Imperial
-   Holdings Group using these details to respond to my enquiry, as described in the privacy notice" (enquiry and
-   contact), "...contacting me about Imperial Real Estate, as described in the privacy notice" (interest) and
+   Holdings Group using these details to reply to me, as described in the privacy notice." (the journey's closing
+   screen, wording v6; no marketing consent is asked or implied), "I agree to Imperial Holdings Group using these
+   details to respond to my enquiry, as described in the privacy notice" (the retired enquiry form), "...contacting me about Imperial Real Estate, as described in the privacy notice" (interest) and
    "...sending me the guide and contacting me about it, as described in the privacy notice" (guide). Every box links
    the notice beside it.
 3. Retention: one period for enquiries that do not become clients, and the rule for clients ("as long as the
@@ -115,8 +121,12 @@ Each one renders as an amber placeholder on `/privacy` until it is filled in `da
    your agreement", "we will tell you" after a breach that affects the person, no knowing collection from anyone
    under 18, and the promise of a prompt reply to a request for a copy or deletion.
 7. How a request for a copy, correction or deletion is fulfilled in practice: the Pipedrive person, lead or deal and
-   notes; the Netlify Forms inbox; the Netlify function logs; the Resend and Twilio logs; any backup. TO CONFIRM: the
-   internal process and who owns it.
+   notes; the Netlify Forms inbox; the Netlify function logs; the Resend and Twilio logs; Imperial OS, once the
+   handoff is on; any backup. TO CONFIRM: the internal process and who owns it.
+9. The consent record. The note on the person and the record carries `consent: yes`, the page it was given on and the
+   submission time; Imperial OS, when on, receives `consent {given, wording: "v6", notice_version, at, page}`.
+   `notice_version` stays empty until counsel approves a version of the notice (`legal.updated`). Whether that is
+   enough to evidence consent is for counsel.
 8. The terms of use, which are a placeholder with the two existing statements (information only, no guarantee of a
    government decision) and a jurisdiction to confirm.
 

@@ -79,7 +79,10 @@
     "activity": {
       "type": "call___scheduled",
       "typeNote": "The account has no plain call type. Its call types are call___scheduled, call_answered and call_no_answer (snapshot, 15 October 2026).",
-      "subject": "Website enquiry follow up"
+      "subject": "Website enquiry follow up",
+      "onNew": false,
+      "onNewNote": "v6 (docs/RELATIONSHIP-JOURNEY.md 5.5): true adds an activity on every new record as well, subject 'Reply to <first name>: first conversation', due the next working day, assigned to the owner, so the reply has a date in the owner's list. Off until the team asks for it. The returning-person activity above is unchanged.",
+      "onNewSubject": "Reply to {name}: first conversation"
     },
     "pipelines": {
       "introducer": {
@@ -102,6 +105,10 @@
         "note": "Client leads are converted into this pipeline by the team, not by the website."
       }
     }
+  },
+  "labels": {
+    "note": "Words the core prints in the note for enum values that have no label in shared/lead-schema.json. Change them here, not in the code.",
+    "orgType": {"government": "Government or public body", "mission": "Embassy, consulate or mission", "financial": "Bank or financial institution", "professional": "Law, advisory or professional services firm", "property": "Developer or property group", "media": "Media, events or hospitality", "other": "Other"}
   },
   "office": {
     "note": "Contact details written into the confirmation email. Same as D.contact in assets/js/data.js.",

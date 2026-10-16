@@ -20,10 +20,23 @@ const { verifyTurnstile } = require('./turnstile');
 const pipedrive = require('./pipedrive');
 const { sendConfirmation } = require('./email');
 const { newRef } = require('./http');
+const imperialOs = require('./imperial-os');
 
 const { schema, routing } = config;
 const PD = routing.pipedrive, F = PD.fields, O = PD.options;
 const FOR_WHOM = { myself: 'myself', family: 'my family', client: 'a client I am introducing' };
+/* v6: the Start a relationship paths by audience (shared/lead-schema.json journeys) */
+const JOURNEYS = (schema.journeys && typeof schema.journeys === 'object') ? schema.journeys : {};
+function journeyName(audience) { const j = JOURNEYS[audience]; return j && typeof j === 'object' && j.name ? j.name : ''; }
+/* the entry point: via from the query string of the page field ('' when absent or the page is not a URL) */
+function viaOf(page) { try { return new URL(String(page || '')).searchParams.get('via') || ''; } catch (err) { return ''; } }
+function orgTypeLabel(v) { const t = (routing.labels && routing.labels.orgType) || {}; return (v && Object.prototype.hasOwnProperty.call(t, v)) ? t[v] : (v || ''); }
+/* the next working day (Monday to Friday) after a date, as yyyy-mm-dd */
+function nextWorkingDay(ms) {
+  const d = new Date(ms); d.setUTCHours(12, 0, 0, 0);
+  do { d.setUTCDate(d.getUTCDate() + 1); } while (d.getUTCDay() === 0 || d.getUTCDay() === 6);
+  return d.toISOString().slice(0, 10);
+}
 
 function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function label(field, value) { const f = schema.fields[field]; return (f && f.labels && f.labels[value]) || value || ''; }
@@ -58,14 +71,18 @@ function buildTitle(band, data, form, divName) {
   return titlePrefix(band) + 'Website: ' + (data.name || data.email) + ' · ' + divName + suffix;
 }
 
-function serviceRequested(data, form, divName) {
+function serviceRequested(data, form, divName, audience) {
   const parts = [divName];
   if (data.lead_source === 'programme-fit') parts.push('Programme fit check');
   if (form === 'guide' || data.lead_source === 'guide') parts.push('Guide request');
   if (form === 'interest') parts.push('Register interest' + (data.interest ? ': ' + data.interest : ''));
   if (data.re_intent) parts.push('Property to ' + data.re_intent + (data.re_area ? ' in ' + data.re_area : ''));
   else if (data.re_area) parts.push('Area: ' + data.re_area);
-  if (data.firm || data.profession) parts.push('Partner: ' + [data.profession, data.firm].filter(Boolean).join(', '));
+  if (audience === 'institutions') {
+    /* v6: the Institutions path names the organisation, its kind and what it is exploring */
+    if (data.firm || data.org_type) parts.push('Organisation: ' + [data.firm, orgTypeLabel(data.org_type)].filter(Boolean).join(', '));
+    if (data.interests) parts.push('Exploring: ' + data.interests);
+  } else if (data.firm || data.profession) parts.push('Partner: ' + [data.profession, data.firm].filter(Boolean).join(', '));
   if (data.for_whom) parts.push('For ' + FOR_WHOM[data.for_whom]);
   return parts.join(' · ').slice(0, 255);
 }
@@ -81,7 +98,7 @@ function recordFields(div, divCfg, data, form, audience, score, now) {
   f[F.deal.urgency] = (data.timeline === '3m' || /urgent/i.test(data.msg || '')) ? O.urgency.urgent : O.urgency.standard;
   const camp = data.utm_campaign || data.campaign;
   if (camp) f[F.deal.campaignName] = camp.slice(0, 255);
-  f[F.deal.serviceRequested] = serviceRequested(data, form, divCfg.name);
+  f[F.deal.serviceRequested] = serviceRequested(data, form, divCfg.name, audience);
   if (div === 'partners-club' && data.for_whom === 'client') f[F.deal.requestType] = O.requestType.referral;
   if (data.timeline === '3m') f[F.deal.expectedCloseDate] = addDays(now, 90);
   else if (data.timeline === '3-12m') f[F.deal.expectedCloseDate] = addDays(now, 365);
@@ -93,11 +110,14 @@ function noteLines(o) {
   L.push(o.score.band.toUpperCase() + ' · Website enquiry (' + o.form + ' form) · Ref ' + o.ref);
   L.push('Site: ' + o.site + ' · Lead source: ' + o.leadSource);
   L.push('Audience: ' + o.audience + ' · Division: ' + o.divCfg.name + (d.routed_to ? ' · Routed to: ' + d.routed_to : ''));
+  /* v6: the path and the entry point of the Start a relationship journey (the contact form) */
+  if (o.form === 'contact' && journeyName(o.audience)) L.push('Journey: ' + journeyName(o.audience) + ' · Entry: ' + (viaOf(d.page) || 'not given'));
   if (d.for_whom) L.push('Enquiry for: ' + FOR_WHOM[d.for_whom]);
   if (d.nationality) L.push('Nationality: ' + d.nationality + (o.matched.nationality ? ' (set on the person)' : ' (no matching Pipedrive option, kept as text)'));
   if (d.country) L.push('Country of residence: ' + d.country + (o.matched.country ? ' (set on the person)' : ' (no matching Pipedrive option, kept as text)'));
   if (d.timeline || d.budget) L.push('Timeline: ' + (label('timeline', d.timeline) || 'not given') + ' · Budget: ' + (label('budget', d.budget) || 'not given'));
-  if (d.firm || d.profession) L.push('Firm: ' + (d.firm || '') + ' · Profession: ' + (d.profession || ''));
+  if (o.audience === 'institutions' && (d.firm || d.org_type || d.profession)) L.push('Organisation: ' + (d.firm || '') + ' · Type: ' + (orgTypeLabel(d.org_type) || 'not given') + ' · Role: ' + (d.profession || 'not given'));
+  else if (d.firm || d.profession) L.push('Firm: ' + (d.firm || '') + ' · Profession: ' + (d.profession || ''));
   if (d.re_intent || d.re_area) L.push('Property: ' + (d.re_intent || '') + ' · Area: ' + (d.re_area || ''));
   if (d.interest) L.push('Interest: ' + d.interest);
   if (d.interests) L.push('Interests: ' + d.interests);
@@ -215,8 +235,17 @@ async function syncPipedrive(o) {
   note[kind === 'lead' ? 'lead_id' : 'deal_id'] = id;
   await pd.addNote(note);
 
-  /* 4. activity for a returning person: one call to make, due today, with the owner */
+  /* 4. activity for a returning person: one call to make, due today, with the owner. v6: when the routing file sets
+     activity.onNew, a new record gets one too, "Reply to <first name>: first conversation", due the next working day. */
   let activity = false;
+  if (!existed && PD.activity.onNew === true) {
+    const first = String(d.name || '').trim().split(/\s+/)[0] || o.email;
+    const act = { subject: String(PD.activity.onNewSubject || 'Reply to {name}: first conversation').replace('{name}', first), type: PD.activity.type, due_date: nextWorkingDay(o.now), person_id: person.id,
+      note: 'New ' + o.form + ' form enquiry for ' + o.divCfg.name + ' (score ' + o.score.band + ', ref ' + o.ref + ')' };
+    act[kind === 'lead' ? 'lead_id' : 'deal_id'] = id;
+    if (owner) act.user_id = owner;
+    activity = !!(await pd.addActivity(act).then(() => true).catch((err) => { console.warn('activity failed', err && err.message); return false; }));
+  }
   if (existed) {
     const act = { subject: PD.activity.subject, type: PD.activity.type, due_date: dateOnly(o.now), person_id: person.id,
       note: 'Returning contact: new ' + o.form + ' form enquiry for ' + o.divCfg.name + ' (score ' + o.score.band + ', ref ' + o.ref + ')' + (reused ? ', added to the open ' + kind : '') };
@@ -283,8 +312,15 @@ async function processLead(input) {
 
   if (stored) {
     result.confirmation = await sendConfirmation({ email, name: data.name, form, divisionName: divCfg.name, leadSource }, ctx.fetch);
+    /* v6: a copy of the stored record to Imperial OS (off until its env is set); nothing here changes the result */
+    try {
+      result.imperialOs = await imperialOs.notify(imperialOs.buildRecord(result, data, ctx, { now, score, owner: divCfg.owner }), { fetch: ctx.fetch, retryDelayMs: ctx.imperialOsRetryMs });
+    } catch (err) {
+      result.imperialOs = { sent: false, error: err && err.message };
+    }
   } else {
     result.confirmation = { sent: false, skipped: 'lead not stored' };
+    result.imperialOs = { sent: false, skipped: 'lead not stored' };
   }
   return result;
 }
@@ -332,7 +368,14 @@ async function markVerified(o) {
     const note = { content: toHtml(['Phone verified: ' + o.phone + ' by ' + (o.channel === 'whatsapp' ? 'WhatsApp' : 'SMS') + ' code on ' + new Date(now).toISOString().replace('T', ' ').slice(0, 16) + ' UTC (website verification step).']), person_id: person.id };
     if (rec) note[rec.kind === 'lead' ? 'lead_id' : 'deal_id'] = rec.id;
     await pd.addNote(note);
-    return { ok: true, personId: person.id, kind: rec ? rec.kind : undefined, id: rec ? rec.id : undefined };
+    const out = { ok: true, personId: person.id, kind: rec ? rec.kind : undefined, id: rec ? rec.id : undefined };
+    /* v6: the verification event to Imperial OS (off until its env is set); a failure never changes the result */
+    try {
+      out.imperialOs = await imperialOs.notify(imperialOs.buildVerified({ site: config.site(), personId: person.id, kind: out.kind, id: out.id, email, phone: o.phone, channel: o.channel, now }), { fetch: o.fetch, retryDelayMs: o.imperialOsRetryMs });
+    } catch (err) {
+      out.imperialOs = { sent: false, error: err && err.message };
+    }
+    return out;
   } catch (err) {
     console.error('Pipedrive verification update failed', err && err.message);
     return { ok: false, reason: 'sync', error: err && err.message };
@@ -342,7 +385,8 @@ async function markVerified(o) {
 function summary(fn, r) {
   return [fn, r.ok ? 'ok' : 'rejected', 'form=' + (r.form || ''), 'division=' + (r.division || ''), 'kind=' + (r.kind || ''), 'id=' + (r.id || ''),
     'score=' + (r.score || ''), 'ref=' + (r.ref || ''), r.reason ? 'reason=' + r.reason : '', r.detail ? 'detail=' + r.detail : '', r.reused ? 'reused=1' : '', r.personExisted ? 'returning=1' : '', r.personUnchanged ? 'person=unchanged' : '',
-    r.confirmation ? 'email=' + (r.confirmation.sent ? 'sent' : (r.confirmation.skipped || r.confirmation.error || 'no')) : ''].filter(Boolean).join(' ');
+    r.confirmation ? 'email=' + (r.confirmation.sent ? 'sent' : (r.confirmation.skipped || r.confirmation.error || 'no')) : '',
+    r.imperialOs && r.imperialOs.skipped !== 'no env' && r.imperialOs.skipped !== 'lead not stored' ? 'os=' + (r.imperialOs.sent ? 'sent' : (r.imperialOs.skipped || r.imperialOs.error || 'no')) : ''].filter(Boolean).join(' ');
 }
 
-module.exports = { processLead, markVerified, summary, resolveDivision, resolveSite, buildTitle, noteLines, openRecords };
+module.exports = { processLead, markVerified, summary, resolveDivision, resolveSite, buildTitle, noteLines, openRecords, journeyName, nextWorkingDay };
