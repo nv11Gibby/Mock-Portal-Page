@@ -185,20 +185,20 @@ window.IHG = {
      production builds hold the photographs back (see photoAllowed in app.js). video: one highlights clip per event.
      TO CONFIRM: guest consent for every event below. */
   events: [
-    {slug:'grenada-51-dubai', title:'Grenada’s 51st Independence Day After Party', short:'Grenada 51st, Dubai', city:'Dubai', venue:'Agora Cocktail Bar & Social Club, The Dubai EDITION, Downtown Dubai', date:'19 February 2025', iso:'2025-02-19', cat:'Diplomatic', n:3, featured:true, consent:false,
+    {slug:'grenada-51-dubai', title:'Grenada’s 51st Independence Day After Party', short:'Grenada 51st, Dubai', city:'Dubai', venue:'Agora Cocktail Bar and Social Club, The Dubai EDITION, Downtown Dubai', date:'19 February 2025', iso:'2025-02-19', cat:'Diplomatic', n:3, featured:true, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/grenada-51-dubai/cover', captions:'assets/captions/grenada-51-dubai.vtt', title:'Highlights: Grenada 51st after party, Dubai', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'Imperial Citizenship sponsored the after party for Grenada’s 51st Independence Day, following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai.',
      body:['Imperial Citizenship sponsored the after party for Grenada’s 51st Independence Day in Dubai on 19 February 2025, held at Agora Cocktail Bar and Social Club at The Dubai EDITION, Downtown Dubai.','The evening followed the official celebrations at the Marriott Resort Palm Jumeirah, hosted by IMA Grenada and the Consulate General of Grenada in Dubai.'],
-     guests:['H.E. Ziya Rahaman, Consul General of Grenada to the UAE','Hon. Dennis Cornwall, Minister of Finance, Grenada','H.E. Justin Kareem Hawley, Ambassador of St Kitts and Nevis to the UAE','Mr Thomas Anthony, CEO, IMA Grenada','H.E. Murillo Fallas','H.E. James Harris','H.E. Andrew Tsepo Lebona','Mr Zaid Al Hindi, Founder and Group CEO, Imperial Holdings Group'],
-     src:'Press release, 19 February 2025 (Marketing Team SharePoint)'},
-    {slug:'lagos-diplomatic-soiree-2025', title:'The Lagos Diplomatic Soirée 2025', short:'Diplomatic Soirée, Lagos', city:'Lagos', venue:null, date:'2025', iso:'2025', cat:'Diplomatic', n:6, featured:true, consent:false,
+     guests:['H.E. Ziya Rahaman, Consul General of Grenada to the UAE','Hon. Dennis Cornwall, Minister of Finance, Grenada','H.E. Justin Kareem Hawley, Ambassador of St Kitts and Nevis to the UAE','Mr Thomas Anthony, CEO, IMA Grenada','H.E. Murillo Fallas, [[Title]]','H.E. James Harris, [[Title]]','H.E. Andrew Tsepo Lebona, [[Title]]','Mr Zaid Al Hindi, Founder and Group CEO, Imperial Holdings Group'],
+     src:'Press release, 19 February 2025'},
+    {slug:'lagos-diplomatic-soiree-2025', title:'The Lagos Diplomatic Soirée 2025', short:'Diplomatic Soirée, Lagos', city:'Lagos', venue:null, date:'2025', iso:'2025', cat:'Events', n:6, featured:true, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/lagos-diplomatic-soiree-2025/cover', captions:'assets/captions/lagos-diplomatic-soiree-2025.vtt', title:'Highlights: The Lagos Diplomatic Soir\u00e9e 2025', duration:'', tbc:'Highlights clip to be supplied'},
-     dek:'An evening in Lagos bringing together members of the diplomatic community, clients and friends of Imperial.',
-     body:['The Lagos Diplomatic Soirée brought together members of the diplomatic community, clients, partners and friends of Imperial for an evening in Lagos.'], tbc:['Exact date','Venue','Guests of honour']},
+     dek:'An evening in Lagos for Clients, partners and friends of Imperial.',
+     body:['An evening in Lagos for Clients, partners and friends of Imperial.'], tbc:['Description of the evening','Exact date','Venue','Guests of honour']},
     {slug:'gala-dinner-lagos', title:'Gala Dinner, Lagos', short:'Gala Dinner, Lagos', city:'Lagos', venue:null, date:null, iso:null, cat:'Private gathering', n:6, consent:false,
-     dek:'A gala dinner hosted by Imperial Citizenship in Lagos, with guests from across the Caribbean citizenship community.',
-     body:['Imperial Citizenship hosted a gala dinner in Lagos for clients, partners and guests from the Caribbean citizenship community.'], tbc:['Date','Venue','Speakers and guests of honour']},
-    {slug:'easter-polo-cup-2026', title:'Easter Polo Cup After Party', short:'Easter Polo Cup, Lagos', city:'Lagos', venue:'Lagos Polo Club, Ikoyi', date:'Easter 2026', iso:'2026', cat:'Partnership', n:3, consent:false,
+     dek:'A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.',
+     body:['A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.'], tbc:['Description of the evening','Date','Venue','Speakers and guests of honour']},
+    {slug:'easter-polo-cup-2026', title:'Easter Polo Cup After Party', short:'Easter Polo Cup, Lagos', city:'Lagos', venue:'Lagos Polo Club, Ikoyi', date:'Easter 2026', iso:'2026', cat:'Events', n:3, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/easter-polo-cup-2026/cover', captions:'assets/captions/easter-polo-cup-2026.vtt', title:'Highlights: Easter Polo Cup after party, Lagos', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'An after party hosted by Imperial Citizenship at Lagos Polo Club, Ikoyi, following the Easter Polo Cup.',
      body:['Imperial Citizenship hosted an after party following the Easter Polo Cup at Lagos Polo Club, Ikoyi.'], tbc:['Exact date']},
@@ -206,8 +206,8 @@ window.IHG = {
      dek:'Clients, partners and friends of Imperial at the Lagos office on Aromire Road, Ikoyi.',
      body:['Imperial welcomed Clients, partners and friends to an evening at the Lagos office on Aromire Road, Ikoyi.'], tbc:['Date','Occasion']},
     {slug:'delborough-dinner', title:'A Private Dinner at DANI, The Delborough', short:'Private dinner, Lagos', city:'Lagos', venue:'DANI, The Delborough Hotel', date:null, iso:null, cat:'Private gathering', n:5, consent:false,
-     dek:'A private dinner for clients and friends of Imperial at DANI, The Delborough Hotel, Lagos.',
-     body:['Imperial hosted a private dinner for clients and friends at DANI, The Delborough Hotel, Lagos.'], tbc:['Date','Occasion']}
+     dek:'A private dinner at DANI, The Delborough Hotel, Lagos.',
+     body:['A private dinner at DANI, The Delborough Hotel, Lagos.'], tbc:['Description of the evening','Date','Occasion']}
   ],
 
   /* Journal: selective and institutional. Company developments, insights, partnerships and selected events.
@@ -414,7 +414,7 @@ window.IHG = {
      dek:'For lawyers, bankers, advisers and family offices, an introduction should protect the relationship, not put it at risk.',
      body:[
       ['p','Professional advisers are often the first people a Client asks about living or investing abroad. The question is who to hand that conversation to without worrying about it.'],
-      ['h','Four steps'],['p','Introduce, with your Client\u2019s permission, through one simple form. A Relationship Manager meets your Client and explains their options plainly. You receive clear updates at every stage. Terms are honoured exactly as set out in your written agreement.'],
+      ['h','Four steps'],['p','Tell us about the introduction, with your Client\u2019s permission. A Relationship Manager meets your Client and explains their options plainly. We tell you where the introduction stands, at every stage. The terms of your written agreement are honoured exactly as set out.'],
       ['h','Shared standards'],['p','We never guarantee citizenship, visa, residency, investment or tax outcomes, and we claim no influence with any government. Every Client-facing document is approved by Imperial before use.'],
       ['q','Your reputation travels with ours.']
      ]},

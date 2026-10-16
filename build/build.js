@@ -220,7 +220,7 @@ const seen = {}, items = [];
 });
 write('journal/feed.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">\n<channel>\n' +
   '  <title>Imperial Holdings Group Journal</title>\n  <link>' + esc(abs('journal')) + '</link>\n' +
-  '  <description>Company developments, insights, partnerships and selected Imperial events in Dubai and Lagos.</description>\n' +
+  '  <description>Company developments, insights and selected Imperial events in Dubai and Lagos.</description>\n' +
   '  <language>en-GB</language>\n  <lastBuildDate>' + rfc822(t0) + '</lastBuildDate>\n' +
   '  <atom:link href="' + esc(abs('journal/feed.xml')) + '" rel="self" type="application/rss+xml"/>\n' +
   '  <image><url>' + esc(abs('assets/img/og.jpg')) + '</url><title>Imperial Holdings Group Journal</title><link>' + esc(abs('journal')) + '</link></image>\n' +

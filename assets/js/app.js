@@ -232,7 +232,7 @@ function pageHero(o){
 function closing(){
   return '<section class="closing">'+inkField({view:INK.cities, points:true, arc:true})+'<div class="closing-c wrap">'+
     '<img class="crown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175" data-r>'+
-    mask(['With you, from the','first question.'],'h2','d2')+
+    mask(['The first conversation','is for listening.'],'h2','d2')+
     '<p class="lead" data-r style="--d:.2s">Tell us where you are, and where you would like to be. A senior adviser will read what you write, set out what is possible in writing, and reply personally. Nothing is decided until you are ready.</p>'+
     '<div class="btns" data-r style="--d:.3s"><a class="btn gold" href="#/contact?via=close"><span>Start a relationship</span>'+AR+'</a><a class="btn line" href="#/about"><span>About the Group</span></a></div></div></section>';
 }
@@ -443,8 +443,8 @@ function registerForm(){
 V.insights = function(q){
   var pre = (q && q.cat) || 'All';
   var cats = ['All'].concat(D.insights.map(function(a){return a.cat;}).filter(function(v,i,s){return s.indexOf(v)===i;}));
-  return pageHero({ink:{view:INK.atlantic}, cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the house.'], lead:'Plain-spoken guidance on mobility, family planning and working with Imperial.'})+
-  '<section class="sec light"><div class="wrap">'+(D.insights.some(function(a){return a.draft;})?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> These articles are drafts and will be published once the copy has been approved.</div></div>':'')+
+  return pageHero({ink:{view:INK.atlantic}, cls:'short', crumb:[['Insights',null]], eyebrow:'Insights', title:['Notes from','the Group.'], lead:'Plain-spoken notes on mobility, families across borders and working with Imperial.'})+
+  '<section class="sec light"><div class="wrap">'+(D.insights.some(function(a){return a.draft;})?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> These articles will be published once their copy has been approved.</div></div>':'')+
    '<div class="filters" role="group" aria-label="Filter insights" data-r>'+cats.map(function(c){var n=c==='All'?D.insights.length:D.insights.filter(function(a){return a.cat===c;}).length, on=c===pre;return '<button class="'+(on?'on':'')+'" data-filter="'+esc(c)+'" aria-pressed="'+on+'">'+esc(c)+' <small>'+n+'</small></button>';}).join('')+'</div>'+
    '<h2 class="vh">Articles</h2><div class="icards four" id="icards">'+D.insights.map(function(a,i){var h=insightCard(a,i);return pre!=='All'&&a.cat!==pre?h.replace('class="icard"','class="icard hide"'):h;}).join('')+'</div><p class="vh" id="filterMsg" aria-live="polite"></p></div></section>'+closing();
 };
@@ -453,7 +453,7 @@ V.article = function(slug){
   var bodyH = a.body.map(function(b){return b[0]==='h'?'<h2 data-r>'+esc(b[1])+'</h2>':b[0]==='q'?'<blockquote data-r>'+esc(b[1])+'</blockquote>':'<p data-r>'+esc(b[1])+'</p>';}).join('');
   var ix = D.insights.indexOf(a), prev = D.insights[(ix-1+D.insights.length)%D.insights.length], next = D.insights[(ix+1)%D.insights.length];
   return pageHero({img:a.img, ink:{view:INK.atlantic}, crumb:[['Insights','#/insights'],[a.cat,null]], pre:(a.draft?'<div data-r style="margin-bottom:18px"><span class="sample">Draft, awaiting approval</span></div>':''), eyebrow:a.cat, title:splitTitle(a.title), lead:'About '+readMins(a)+' minute read'})+
-  '<section class="sec light"><div class="wrap"><article class="article" id="article">'+(a.draft?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> Final copy to be approved before publication. Author and publication date: '+tbc('to confirm')+'</div></div>':'')+'<p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
+  '<section class="sec light"><div class="wrap"><article class="article" id="article">'+(a.draft?'<div class="notice" data-r><span class="sample">Draft</span><div><b>Draft, awaiting approval.</b> Final copy to be approved before publication. Author and publication date: '+tbc('Author and date')+'</div></div>':'')+'<p class="article-dek" data-r>'+esc(a.dek)+'</p>'+shareBar(a)+bodyH+
   '<div class="art-end" data-r>'+shareBar(a)+'<a class="tlink" href="#/contact?via=article">Start a relationship'+AR+'</a></div>'+
   '<nav class="pn" aria-label="More articles" data-r><a href="#/insights/'+prev.slug+'"><small>'+BACK+' Previous</small><b>'+esc(prev.title)+'</b></a><a href="#/insights/'+next.slug+'"><small>Next '+AR+'</small><b>'+esc(next.title)+'</b></a></nav></article></div></section>'+
   relatedRow('article', a);
@@ -481,7 +481,7 @@ function journalRow(j,i){
 V.journal = function(){
   var evs = sortByIso(D.events), rows = sortByIso(D.journal), allOk = evs.every(function(e){return e.consent;});
   return pageHero({img:'events/lagos-diplomatic-soiree-2025/cover', ink:{view:INK.cities, points:true, arc:true, cls:'cities'}, cls:'short', crumb:[['Journal',null]], eyebrow:'Events and Journal', title:['Selected events.','Selected words.'], lead:'Company developments, insights and selected gatherings. Fewer entries, chosen with care.'})+
-  '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Where the','network meets.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic collaborations, private gatherings and partnerships, in Dubai and Lagos. '+(allOk ? 'One cover photograph for each, and a gallery inside.' : 'Galleries open as guests confirm they are happy to be featured.')+'</p></div>'+
+  '<section class="sec light" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Relationships,','in person.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos. '+(allOk ? 'One cover photograph for each, and a gallery inside.' : 'Galleries open as guests confirm they are happy to be featured.')+'</p></div>'+
    '<div class="evgrid">'+evs.map(eventCard).join('')+'</div>'+
    '<p class="xs" data-r style="margin-top:32px">'+(allOk ? 'Photographs of guests are published with their permission.' : 'Photographs of guests appear once they have confirmed they are happy to be featured.')+'</p></div></section>'+
   '<section class="sec light alt" id="entries"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Company developments and selected insights.</p></div></div>'+
@@ -491,13 +491,13 @@ V.event = function(slug){
   var list = sortByIso(D.events), e = null, ix = -1; list.forEach(function(x,i){ if(x.slug===slug){ e = x; ix = i; } }); if(!e) return null;
   var n = list.length, prev = list[(ix-1+n)%n], next = list[(ix+1)%n], ok = photoAllowed('events/'+e.slug+'/01'), cv = cityView(e.city);
   var facts = []; if(e.date) facts.push(['When', evWhen(e)]);
-  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue to confirm')+' ')+esc(e.city)], ['Kind', esc(e.cat)]);
+  facts.push(['Where', (e.venue ? esc(e.venue)+', ' : tbc('Venue')+', ')+esc(e.city)], ['Kind', esc(e.cat)]);
   if(ok) facts.push(['Photographs', e.n+', Imperial']);   /* counted only while the gallery is shown */
-  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), photoAlt('events/'+e.slug+'/'+pad2(i)) || (e.title+', photograph '+i+' of '+e.n))+'</figure>';
+  var gal = ''; if(ok) for(var i=1;i<=e.n;i++) gal += '<figure data-r style="--d:'+((i%2)*0.08).toFixed(2)+'s">'+img('events/'+e.slug+'/'+pad2(i), photoAlt('events/'+e.slug+'/'+pad2(i)) || ('A photograph from '+e.title))+'</figure>';
   var note = e.consent ? 'Photographs of guests are published with their permission.' : ok ? 'Preview build: photographs of guests are shown before their consent is recorded.' : 'Photographs will appear once guests have confirmed they are happy to be featured.';
   return pageHero({img:'events/'+e.slug+'/cover', ink:{view:cv, points:true, cls:'city'}, crumb:[['Journal','#/journal'],[e.short,null]], eyebrow:esc(e.cat)+' <i>·</i> '+esc(e.city)+(e.date?' <i>·</i> '+esc(e.date):''), title:splitTitle(e.title), lead:esc(e.dek)})+
   '<section class="sec light"><div class="wrap split"><div>'+e.body.map(function(p){return '<p class="lead" data-r>'+esc(p)+'</p>';}).join('')+
-    (e.guests?'<div data-r><div class="eyebrow" style="margin-top:34px">Among the guests</div><ul class="guests">'+e.guests.map(function(g){return '<li>'+esc(g)+'</li>';}).join('')+'</ul></div>':'')+
+    (e.guests?'<div data-r><div class="eyebrow" style="margin-top:34px">Among the guests</div><ul class="guests">'+e.guests.map(function(g){return '<li>'+legalText(g)+'</li>';}).join('')+'</ul></div>':'')+
     (e.tbc?'<p class="xs ev-tbc" data-r style="margin-top:24px">'+e.tbc.map(tbc).join('')+'</p>':'')+
     (e.src?'<p class="xs" data-r>Source: '+esc(e.src)+'</p>':'')+
     '<div class="ev-share" data-r>'+shareBar(e, 'event')+'</div></div>'+
@@ -791,7 +791,7 @@ function resolve0(r){
   if(p[0]==='journal' && p.length===1) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Company developments, insights and selected Imperial events in Dubai and Lagos.'};
   if(p[0]==='journal' && p[1]==='events' && p.length===3){ var ev=V.event(p[2]); if(ev){ var e0=null; D.events.forEach(function(x){ if(x.slug===p[2]) e0=x; }); return {html:ev, title:e0.title, nav:'journal', view:'event', desc:e0.dek}; } }
   if(p[0]==='journal' && p[1]==='events' && p.length===2) return {html:V.journal(), title:'Events and Journal', nav:'journal', view:'journal', desc:'Selected Imperial events in Dubai and Lagos.'};
-  if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken guidance on mobility, family planning and working with Imperial.'};
+  if(p[0]==='insights' && p.length===1) return {html:V.insights(r.q), title:'Insights', nav:'journal', view:'insights', desc:'Plain-spoken notes on mobility, families across borders and working with Imperial.'};
   if(p[0]==='insights' && p.length===2){ var a=V.article(p[1]); if(a){ var ai=null; D.insights.forEach(function(x){ if(x.slug===p[1]) ai=x; }); return {html:a, title:ai.title, nav:'journal', view:'article', desc:ai.dek}; } }
   if(p[0]==='contact' && p.length===1) return {html:V.contact(r.q), title:D.journeys.title, nav:'contact', view:'contact', desc:D.journeys.description};
   if(p[0]==='privacy' && p.length===1) return {html:V.privacy(), title:'Privacy', nav:null, view:'legal', solid:true, desc:'Privacy notice for the Imperial Holdings Group website: who we are, what we collect through our enquiry forms, how we use it and your rights.'};
