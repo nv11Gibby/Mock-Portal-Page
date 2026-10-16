@@ -160,9 +160,9 @@ window.IHG = {
     about: {type:'video', provider:'vimeo', id:'', poster:'people/zaid', captions:'assets/captions/about-founder.vtt', title:'Founder film', duration:'60 to 90 seconds', tbc:'Footage to be supplied'}
   },
 
-  /* Our Network: the three audiences the site is organised around, and one journey that shows how the houses work
-     together. The journey is an illustration in the conditional, labelled as such on the page (docs/CLAIMS-AUDIT.md C73:
-     no client story presented as real; Real Estate is not launched). No photographs: the home page's event photographs
+  /* Our Network: one journey that shows how the houses work together (v6 fix: the three audience cards are gone from
+     here; the home page shows the three paths once, from journeys.chooser, in its Start a relationship band). The journey is an illustration in the conditional, labelled as such on the
+     page (docs/CLAIMS-AUDIT.md C73: no client story presented as real; Real Estate is not launched). No photographs: the home page's event photographs
      live in home.strip (docs/PHOTOGRAPHY-PLAN.md 2.2). */
   network: {
     journeyLabel:'How the houses work together',
@@ -172,11 +172,6 @@ window.IHG = {
       ['Property','In time, the same family could look for a home in Dubai with Imperial Real Estate, once it launches.','real-estate'],
       ['Introduction','Their lawyer or banker might introduce another family through Imperial Partners Club, which is opening in stages.','partners-club'],
       ['Private Office','After the first service is complete, the relationship could continue through Imperial Private Office, once it is established.','private-office']
-    ],
-    audiences: [
-      {k:'clients', t:'Private Clients', s:'Individuals and families: a second residency or citizenship, a home in Dubai, or the continuing support of the Private Office.', cta:'Arrange a first conversation', href:'#/divisions', divs:['citizenship','real-estate','private-office']},
-      {k:'partners', t:'Professional Partners', s:'Lawyers, bankers, advisers and family offices who introduce Clients, and Partner teams who will train with Imperial Academy.', cta:'Discuss becoming a Partner', href:'#/divisions/partners-club', divs:['partners-club','academy']},
-      {k:'institutions', t:'Institutions and Strategic Relationships', s:'Governments, missions, institutions and organisations exploring a relationship with the Group.', cta:'Open a strategic conversation', href:'#/contact?about=group&audience=institutions', divs:[]}
     ]
   },
 

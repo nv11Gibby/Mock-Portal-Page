@@ -332,23 +332,26 @@ V.home = function(){
    houses()+'<div class="houses-foot" data-r><span>Hover, focus or tap a division to open it.</span><a class="tlink" href="#/divisions">All divisions'+AR+'</a></div></div></section>'+
 
   /* Our Network (v6): the journey is an illustration in the conditional and says so (docs/CLAIMS-AUDIT.md C73); no
-     photograph grid and no audience card images (docs/PHOTOGRAPHY-PLAN.md 2.2); the text and the links stay */
+     photograph grid (docs/PHOTOGRAPHY-PLAN.md 2.2). v6 fix: the three path cards show once on the home page, in the
+     Start a relationship band at the end (enquiryBlock), so this section keeps only the illustration. */
   '<section class="sec light net" id="network"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Our network')+mask(['One relationship.','Many doors.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Most relationships begin with a single question and grow from there. The steps below are an illustration of how one might unfold, each step taken with the others in view.</p></div>'+
    '<p class="journey-lbl" data-r><b>'+esc(N.journeyLabel)+'</b><span>'+esc(N.journeyNote)+'</span></p>'+
    '<ol class="journey" aria-label="'+esc(N.journeyLabel)+': '+esc(N.journeyNote).toLowerCase()+'">'+N.journey.map(function(j,i){var d=div(j[2]);return '<li data-r style="--d:'+(i*0.1).toFixed(2)+'s"><span class="ix">'+pad2(i+1)+'</span><h3 class="h3">'+esc(j[0])+'</h3><p>'+esc(j[1])+'</p><a class="tlink" href="#/divisions/'+j[2]+'">'+esc(d?d.name:'')+AR+'</a></li>';}).join('')+'</ol>'+
-   '<div class="aud" id="audiences">'+N.audiences.map(function(a,i){return '<article class="aud-c" data-r style="--d:'+(i*0.1).toFixed(2)+'s"><div class="aud-b"><span class="ix">'+pad2(i+1)+'</span><h3>'+esc(a.t)+'</h3><p>'+esc(a.s)+'</p><a class="btn'+(i===0?' gold':' line')+'" href="'+a.href+'"><span>'+esc(a.cta)+'</span>'+AR+'</a></div></article>';}).join('')+'</div></div></section>'+
+   '</div></section>'+
 
   /* the event strip (docs/PHOTOGRAPHY-PLAN.md 2.2), held while fewer than three of its four frames are cleared; the
      leadership block has left the home page (About carries the two portraits, section 5 of the plan) */
   eventStrip()+
 
+  /* v6 fix: on the home page the event cards and the Journal rows are always typographic, so the strip's four frames
+     are the only event photographs here */
   '<section class="sec light alt" id="events"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Selected events')+mask(['Relationships,','in person.'],'h2','d2')+'</div><div data-r style="--d:.15s"><p class="lead">Diplomatic occasions, private gatherings and the relationships behind them, in Dubai and Lagos.</p><a class="tlink" href="#/journal">All events and the Journal'+AR+'</a></div></div>'+
-   '<div class="evgrid two">'+ev.map(eventCard).join('')+'</div></div></section>'+
+   '<div class="evgrid two">'+ev.map(function(e,i){ return eventCard(e, i, true); }).join('')+'</div></div></section>'+
   /* one video block on the home page, only once a clip exists (first event or journal video with an id) */
   (hv ? '<section class="sec light home-vid" id="film"><div class="wrap"><div class="sec-head"><div>'+eyebrow('On film')+mask(['The evening,','in motion.'],'h2','d2')+'</div></div>'+videoBlock(hv,'')+'</div></section>' : '')+
 
   '<section class="sec light" id="journal"><div class="wrap"><div class="sec-head"><div>'+eyebrow('Journal')+mask(['Developments, insights','and selected events.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Fewer entries, chosen with care: company developments, insights and selected events.</p></div>'+
-   '<div class="jlist">'+rows.map(journalRow).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
+   '<div class="jlist">'+rows.map(function(j,i){ return journalRow(j, i, true); }).join('')+'</div><div class="btns" data-r style="margin-top:44px"><a class="btn line" href="#/journal"><span>Read the Journal</span>'+AR+'</a></div></div></section>'+
 
   /* v6 (UX audit item 22): the map lives on About only; the home page no longer repeats it */
 
@@ -474,12 +477,13 @@ function splitTitle(t){
 function evWhen(e){ return e.date ? esc(e.date) : ''; }
 /* v6: an event card or a journal row whose photograph is not cleared is typographic (a plate: the city's crop of the
    dotted map with its point, or the crown for an entry that is not an event); no borrowed photograph, no city view. */
-function eventCard(e,i){
-  var k = 'events/'+e.slug+'/cover', ok = photoAllowed(k);
+/* plain (the home page): the typographic card even where the photograph is cleared */
+function eventCard(e, i, plain){
+  var k = 'events/'+e.slug+'/cover', ok = plain!==true && photoAllowed(k);
   return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s">'+(ok ? '<figure>'+img(k, '')+'</figure>' : '<figure class="ev-plate">'+evPlate(e)+'</figure>')+'<div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Read the story')+AR+'</span></div></a>';
 }
-function journalRow(j,i){
-  var ok = !!(j.img && photoAllowed(j.img)), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null;
+function journalRow(j, i, plain){
+  var ok = plain!==true && !!(j.img && photoAllowed(j.img)), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null;
   var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
   var fig = ok ? '<figure>'+img(j.img, '', '', j.own?'':'-c')+'</figure>' : '<figure class="jplate" aria-hidden="true">'+(ev ? inkMap(cityView(ev.city), {points:true, fill:true}) : '<img class="jcrown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" loading="lazy" decoding="async">')+'</figure>';
   return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s">'+fig+'<div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
@@ -2050,7 +2054,7 @@ function palIndex(){
   add({k:'Page', t:'Home', s:'The parent of five specialist divisions, led from Dubai and Lagos', u:'/', kw:'start main'});
   add({k:'Page', t:'About the Group', s:'Our story, values and leadership', u:'/about', kw:'about history values leadership team story'});
   add({k:'Page', t:'Our ecosystem', s:'Five divisions, side by side', u:'/divisions', kw:'houses compare divisions ecosystem all'});
-  add({k:'Page', t:'Our network', s:'Private clients, professional partners, institutions and strategic relationships', u:'/', go:'network', kw:'network audiences clients partners institutions strategic journey'});
+  add({k:'Page', t:'Our network', s:'How the divisions work together, an illustration', u:'/', go:'network', kw:'network audiences clients partners institutions strategic journey'});
   add({k:'Page', t:'Journal', s:'Company developments, insights and selected Imperial events in Dubai and Lagos', u:'/journal', kw:'journal events gallery photos news articles insights'});
   add({k:'Page', t:'Insights', s:'Notes from the Group', u:'/insights', kw:'articles blog guidance insights'});
   add({k:'Page', t:'Start a relationship', s:'Three paths; one person reads your message and replies personally', u:'/contact?via=palette', kw:'contact enquiry enquire call email phone get in touch book speak message send'});
