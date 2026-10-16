@@ -223,10 +223,26 @@ What the v6 round changed for loading, measured on the built site:
 * No film grain layer, scroll progress bar or reading bar, magnetic buttons or cursor preview loop; the scroll
   handler no longer reads the document height on every frame.
 * One render-blocking stylesheet: the build puts `shared/tokens.css` at the top of `dist/assets/css/site.css`
-  (87,987 + 856 bytes in two files before, 80,432 bytes in one file after; 16.6 KB gzip).
+  (87,987 + 856 bytes in two files before, one file after; measure `dist/assets/css/site.css` after each build).
 * Photographs carry width and height; full-frame site photographs offer their existing 3:4 `-m` file to phones.
 
 Lighthouse has not been re-run for this round; the figures in section 6 predate it.
+
+### Calls made on the deferred items, after v6/home and v6/journey landed
+
+* Item 8, "Our Network" in the header: dropped from the header and the phone menu. It only scrolled to a section about
+  4,000 px down the home page, so from any other page it meant a route change and a long scroll, and the brief asks
+  for simple navigation. The section stays on the home page and is still reached from the footer and the search
+  palette; the sister-site header in `shared/chrome` already left it out.
+* Item 20, required fields: no change. The enquiry card is gone from the home and division pages, and `/contact`
+  already asks only what docs/RELATIONSHIP-JOURNEY.md decides: name, email and consent on every path, country and the
+  path's own choices (about, for whom, timeline; firm and profession for partners; firm and organisation type for
+  institutions); message, phone, nationality and budget are optional. Where that document keeps a field required
+  that the audit would have made optional (country, for whom, timeline), the document wins.
+* Item 22, home length: every section the Founder asked for stays (hero, Group intro, the five divisions, Our
+  Network with the path cards, events, the Journal, the closing band). Only the Global presence map left, as About
+  shows it in full, and home sections sit closer together: 11,770 to 9,696 px at 1440 px, 15,892 to 14,365 px at
+  390 px.
 
 ### To confirm on the host after deploy (UX audit item 33)
 
