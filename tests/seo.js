@@ -167,9 +167,9 @@ function startServer(){
       if(!new RegExp('<html[^>]*\\sdata-prerendered="' + route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').test(h)) problems.push('data-prerendered does not name the route');
       /* page hero: every file it references under 200 KB, and a mobile source on the division pages */
       const heroSeg = (/<div class="ph-bg">([\s\S]*?)<\/div><\/div>/.exec(h) || [])[1] || '';
-      if(route !== '/' && !heroFiles(h).length && !/^\/(privacy|terms)$/.test(route)) problems.push('no hero image');
+      if(route !== '/' && !heroFiles(h).length && !/<div class="ph-ink/.test(h) && !/^\/(privacy|terms)$/.test(route)) problems.push('no hero image or ink field');
       heroFileProblems(h, route).forEach(function(p){ problems.push(p); });
-      if(/^\/divisions/.test(route) && !/<source media="\(max-width:640px\)" srcset="[^"]+-m\.webp"/.test(heroSeg)) problems.push('no mobile hero source');
+      if(/^\/divisions/.test(route) && heroSeg && !/<source media="\(max-width:640px\)" srcset="[^"]+-m\.webp"/.test(heroSeg)) problems.push('no mobile hero source');
       if(titles[title]) problems.push('title also on ' + titles[title]); titles[title] = route;
       if(descs[desc]) problems.push('description also on ' + descs[desc]); descs[desc] = route;
       preloadProblems(h, route).forEach(function(p){ problems.push(p); });
@@ -219,7 +219,7 @@ function startServer(){
     ok(homePre.length === 2 && homePre.some(function(k){ return /max-width/.test(k); }) && homePre.some(function(k){ return /min-width/.test(k); }) && !preloadProblems(index, '/').length, 'home page preloads its own desktop and mobile hero: ' + homePre.join(', '));
     ['404.html', 'error.html'].forEach(function(f){
       const h = fs.readFileSync(path.join(DIR, f), 'utf8'), p = preloadProblems(h, f).concat(heroFileProblems(h, f));
-      ok(!p.length && actualPreloads(h).length === 1, f + ' preloads its own backdrop only', p.join('; ') || actualPreloads(h).join(', '));
+      ok(!p.length && actualPreloads(h).length === expectedPreloads(h).length, f + ' preloads its own backdrop only (none on the ink field)', p.join('; ') || actualPreloads(h).join(', '));
     });
     /* the 200 KB rule over every hero file any page references (home figures, page heroes, backdrops, mobile sources) */
     const big = Object.keys(oversize);

@@ -1367,3 +1367,25 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .hh-c .eyebrow{flex-wrap:wrap;row-gap:8px}
 @media (min-width:641px){ .hh-c .d1{font-size:clamp(56px,6.2vw,108px);max-width:none} }
 @media (max-width:640px){ .strip .frames{gap:10px} .ink-n{font-size:clamp(120px,36vw,180px)} }
+/* v6 photography across the site (docs/PHOTOGRAPHY-PLAN.md sections 4 to 6): where no cleared photograph exists, the
+   page hero, the closing band, the 404 and error backdrops, the division tiles, the insight cards and the video posters
+   take the ink field; the division accent is its numeral and its own crop of the dotted map */
+.ph .ph-ink .ink-map{right:-3%;top:calc(var(--hdrH) + 8px);width:min(64vw,1060px);height:auto}
+.ph.short .ph-ink .ink-map{width:min(54vw,880px)}
+.ph .ph-ink.cities .ink-map,.ph .ph-ink.city .ink-map{width:min(52vw,820px)}
+.ph .ph-ink .ink-n{top:auto;right:3vw;bottom:-.16em;font-size:clamp(200px,28vw,440px);-webkit-text-stroke-color:rgba(196,165,116,.22)}
+.ph.ph-ink-on::after{background:linear-gradient(180deg,rgba(14,13,11,.55) 0,rgba(14,13,11,0) 38%,rgba(14,13,11,.78) 100%)}
+.div-ink .ink-map,.vid-ink .ink-map,.ic-ink .ink-map{inset:0;width:100%;height:100%}
+.rail-img .ink-n,.mega-prev .ink-n{font-size:clamp(120px,11vw,190px)}
+.rail-img .div-ink::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,0) 40%,rgba(10,9,8,.5))}
+.rail>a:hover .rail-img .ink-n{-webkit-text-stroke-color:rgba(196,165,116,.4)}
+.ic-ink{background:var(--ink-3)}
+.ic-cat{position:absolute;left:20px;bottom:18px;z-index:2;font-family:var(--head);font-size:clamp(24px,2vw,30px);line-height:1.1;color:var(--text)}
+.ic-ink .ph-ink{background:var(--ink-3)}
+.nf .nf-ink .ink-map{right:-6%;top:14%;width:min(96vw,1400px);height:auto;opacity:.85}
+.mm-sub .mm-no{font-family:var(--head);font-size:20px;color:var(--gold-l)}
+@media (max-width:640px){
+  .ph .ph-ink .ink-map,.ph.short .ph-ink .ink-map,.ph .ph-ink.cities .ink-map,.ph .ph-ink.city .ink-map{width:150vw;right:-36vw;top:calc(var(--hdrH) + 4px)}
+  .ph .ph-ink .ink-n{font-size:clamp(150px,46vw,220px);right:-2vw}
+  .nf .nf-ink .ink-map{width:170vw;right:-50vw}
+}
