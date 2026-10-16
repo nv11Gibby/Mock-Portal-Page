@@ -132,10 +132,6 @@ function finish(page, opts){
   if(PREVIEW) root.setAttribute('data-preview', '');
   root.removeAttribute('class');                                  /* the inline head script adds hist and js again */
   Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics]'), function(el){ el.parentNode.removeChild(el); });
-  body.classList.remove('unveil');                                /* veiled stays on the home page: the veil shows from first paint */
-  if(!doc.getElementById('veil') && page.snapshot.veil){           /* the app removed the veil on a deep link: put the markup back */
-    const hdr = doc.getElementById('hdr'); hdr.insertAdjacentHTML('beforebegin', page.snapshot.veil + '\n\n');
-  }
   Array.prototype.forEach.call(doc.querySelectorAll('.clock'), function(el){ el.textContent = '--:--'; });
   const greet = doc.getElementById('greet'); if(greet) greet.textContent = '';
   Array.prototype.forEach.call(doc.querySelectorAll('input[type="hidden"]'), function(el){ if(TRACK.indexOf(el.name) > -1) el.value = ''; });
@@ -183,7 +179,7 @@ if(nf.errors.length) problems.push('404: ' + nf.errors.join(' | '));
 write('404.html', finish(nf, {notFound: true, name: '404.html', route: '/404'}));
 nf.close();
 
-/* error.html (brief section 8): rendered on a path the app does not know (so the intro veil stays off), then switched
+/* error.html (brief section 8): rendered on a path the app does not know, then switched
    to the error view through the app's own showError(). Same treatment as 404.html: noindex, no canonical. */
 const er = render('/error');
 er.window.IHG_APP.showError();

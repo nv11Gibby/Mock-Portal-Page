@@ -49,16 +49,12 @@ function createRenderer(opts){
     const w = dom.window;
     stub(w);
     if(opts.preview) w.document.documentElement.setAttribute('data-preview', '');
-    /* What the app removes from the page (the intro veil on deep links) is put back before serialising, so every
-       prerendered page carries the same markup as index.html and the browser's copy of the app finds what it expects. */
-    const veil = w.document.getElementById('veil');
-    const snapshot = {veil: veil ? veil.outerHTML : null};
     scripts.forEach(function(s){
       try{ w.eval(s.src); }
       catch(e){ errors.push(s.name + ': ' + ((e && e.stack) || e)); }
     });
     return {
-      dom: dom, window: w, document: w.document, errors: errors, snapshot: snapshot,
+      dom: dom, window: w, document: w.document, errors: errors,
       serialize: function(){ return dom.serialize(); },
       close: function(){ try{ w.close(); }catch(e){} }
     };

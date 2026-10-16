@@ -51,7 +51,7 @@ visible at once. Nothing is fetched over the network and no browser is needed, s
 
 Before serialising, the build removes what belongs to a browser session: the `base` element the inline head script
 adds, the GA4 script element, the clock values, the first-touch tracking values in hidden form fields (the browser
-fills them from the real visit). It puts the intro veil markup back where the app removed it, rewrites relative asset
+fills them from the real visit). It rewrites relative asset
 URLs to root-relative ones, sets `data-prerendered` on `html` (its value is the route the file was built for, `/404`
 and `/error` for the two error pages) and, with `BUILD_PREVIEW=1`, `data-preview`.
 
@@ -69,8 +69,9 @@ marks every reveal element visible straight away. Nothing fades out and back in,
 the prerendered one. An old `#/about` link is different: the server sends the home page (a hash never reaches it), the
 head script rewrites the address to `/about`, and because the attribute says `/`, the app renders the About page in
 full. A query string that changes the view (`about`, `audience`, `goals`, `faq`, `cat`) also gets a full render;
-campaign parameters (`utm_*`, `gclid`, `fbclid`) do not. Later navigations animate as before. On deep links the app
-removes the intro veil as it always did; on the home page the veil shows from first paint on a first visit.
+campaign parameters (`utm_*`, `gclid`, `fbclid`) do not. Later navigations animate as before. There is no intro veil (removed
+in v6, docs/UX-AUDIT.md item 1): every page, the home page included, paints its hero from the first byte, with or
+without JavaScript.
 
 ## Switches
 

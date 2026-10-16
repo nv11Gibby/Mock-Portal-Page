@@ -221,7 +221,7 @@ li{max-width:46em}
 .wordmark img{height:18px;width:auto}
 /* The crown (assets/logos/Imperial-Crown-Gold.svg, 320 by 175) is sized by one dimension; its box is reserved before
    the file arrives so the text beside or below it does not shift once the page paints ahead of the scripts. */
-.wordmark img,.iv-in img,.closing .crown,.nf .crown{aspect-ratio:320/175}
+.wordmark img,.closing .crown,.nf .crown{aspect-ratio:320/175}
 .badge{display:inline-flex;align-items:center;gap:8px;height:28px;padding:0 12px;border:1px solid var(--line-2);border-radius:40px;font-size:12px;letter-spacing:.06em;color:var(--soft);background:rgba(14,13,11,.35)}
 .badge.gold{border-color:rgba(196,165,116,.6);color:var(--gold-l)}
 .badge.soon::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 2.4s var(--e-out) infinite}
@@ -769,27 +769,13 @@ li{max-width:46em}
 @media (max-width:640px){ .form-card{padding:22px 18px} .routing-card{padding:16px} }
 
 /* ==============================================================
-   v3 additions: grain, intro veil, search, finder, FAQ, comparison,
+   v3 additions: grain, search, finder, FAQ, comparison,
    sharing, forms, back-to-top and the mobile action bar
    ===================================================================== */
 kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 6px;border:1px solid var(--line-2);border-radius:4px;color:var(--dim);background:rgba(241,236,227,.04);line-height:1.4}
 
 /* film grain: one fixed layer, no repaint on scroll */
 .grain{position:fixed;inset:0;z-index:150;pointer-events:none;opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-
-/* intro veil: first visit per session, home only */
-.intro-veil{position:fixed;inset:0;z-index:400;background:var(--ink-2);display:none;align-items:center;justify-content:center;cursor:pointer}
-.veiled .intro-veil,.unveil .intro-veil{display:flex}
-.unveil .intro-veil{clip-path:inset(0 0 100% 0);transition:clip-path 1s var(--e-io)}
-.iv-in{display:flex;flex-direction:column;align-items:center;gap:22px}
-.iv-in img{width:58px;height:auto;opacity:0;transform:translateY(14px);animation:ivUp .9s var(--e-out) .1s forwards}
-.iv-word{font-family:var(--head);font-size:13px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);opacity:0;animation:ivUp .9s var(--e-out) .35s forwards;padding-left:.42em}
-.iv-bar{width:120px;height:1px;background:var(--line-2);overflow:hidden}
-.iv-bar i{display:block;height:100%;background:var(--gold);transform:scaleX(0);transform-origin:left;animation:ivBar 1.2s var(--e-io) .2s forwards}
-.unveil .iv-in{opacity:0;transform:translateY(-20px);transition:opacity .5s,transform .8s var(--e-out)}
-@keyframes ivUp{to{opacity:1;transform:none}}
-@keyframes ivBar{to{transform:scaleX(1)}}
-.veiled .hh .d1 .mask>span,.veiled .hh [data-r]{transition-delay:1.6s!important}
 
 /* header search */
 .srch-btn{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 6px 0 14px;margin-left:6px;color:var(--soft);border-left:1px solid var(--line);transition:color var(--t2)}
@@ -999,9 +985,6 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
   .pal-k,.pal-foot{display:none}
   .pal-body [role=option]{grid-template-columns:40px minmax(0,1fr)}
   .pal-body [role=option] img,.pal-ic{width:40px;height:40px}
-}
-@media (prefers-reduced-motion:reduce){
-  .intro-veil{display:none!important}
 }
 @media print{
   .hdr,.ftr,.grain,.totop,.mcta,.sprog,.closing,.pal,.share,.pn{display:none!important}

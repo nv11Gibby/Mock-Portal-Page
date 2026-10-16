@@ -1850,18 +1850,8 @@ document.addEventListener('keydown', function(e){
 });
 (function(){ var k=document.getElementById('kbdHint'); if(!k) return; k.textContent=KBD; var b=k.closest('button'); if(b) b.setAttribute('aria-label', 'Search the site, '+KBD); })();
 
-/* ---------- back to top, intro veil ---------- */
+/* ---------- back to top ---------- */
 document.getElementById('totop').addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduced?'auto':'smooth'}); var m=document.getElementById('main'); m.focus({preventScroll:true}); });
-(function(){
-  var v = document.getElementById('veil'), seen = false;
-  if(!v){ body.classList.remove('veiled'); return; }
-  try{ seen = sessionStorage.getItem('ihg-intro')==='1'; sessionStorage.setItem('ihg-intro','1'); }catch(e){ seen = true; }
-  if(reduced || seen || location.pathname.length>1 && HIST){ v.parentNode.removeChild(v); body.classList.remove('veiled'); return; }
-  body.classList.add('veiled');
-  var done = function(){ body.classList.add('unveil'); body.classList.remove('veiled'); setTimeout(function(){ if(v.parentNode) v.parentNode.removeChild(v); body.classList.remove('unveil'); }, 1100); };
-  var t = setTimeout(done, 1500);
-  v.addEventListener('click', function(){ clearTimeout(t); done(); });
-})();
 
 /* ---------- boot ---------- */
 buildChrome();
