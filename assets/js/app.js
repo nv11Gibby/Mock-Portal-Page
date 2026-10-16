@@ -443,6 +443,8 @@ V.realEstate = function(d){
     '<div id="register" data-r style="--d:.15s">'+registerForm()+'</div></div></section>';
   return h + others(d);
 };
+/* the preview build names the commit it was built from (build/build.js writes <meta name="ihg-build">) */
+function buildStamp(){ var m = PREVIEW && document.querySelector('meta[name="ihg-build"]'); if(!m) return ''; var c = (m.getAttribute('content') || '').split(' | '); return '<p class="xs muted" id="build-stamp" style="text-align:center;margin-top:16px">Preview build '+esc(c[0])+', '+esc((c[2] || '').slice(0, 16).replace('T', ' '))+' UTC</p>'; }
 /* the preview build's chip, at the top of every form (a preview sends nothing: showSuccess, finish) */
 function previewChip(){ return PREVIEW ? '<div class="jp-preview" data-preview-chip><span class="jp-chip">'+esc(D.journeys.states.preview.chip)+'</span></div>' : ''; }
 function registerForm(){
@@ -785,7 +787,7 @@ function buildChrome(){
     '<div><h2 class="fh">Websites</h2><ul>'+D.sites.map(function(s){return '<li>'+siteLink(s,'', siteText(s, false))+'</li>';}).join('')+'</ul></div>'+
     '</div><div class="ftr-mid"><p>This website is for information only and is not an offer or advice. Advice on regulated matters such as tax, legal or investment is provided only by appropriately qualified specialists. Imperial does not guarantee government decisions or outcomes. '+tbc('Legal entity, licence number and registered address')+'</p>'+
     '<details class="credits"><summary>Photography: our own photographs of Imperial events and leadership, with interim photographs under the Unsplash licence</summary><ul>'+credits+'</ul></details></div>'+
-    '<div class="ftr-bot"><span>\u00a9 '+new Date().getFullYear()+' Imperial Holdings Group.</span><span><a href="#/privacy">Privacy</a> &nbsp;\u00b7&nbsp; <a href="#/terms">Terms</a></span></div></div>';
+    '<div class="ftr-bot"><span>\u00a9 '+new Date().getFullYear()+' Imperial Holdings Group.</span><span><a href="#/privacy">Privacy</a> &nbsp;\u00b7&nbsp; <a href="#/terms">Terms</a></span></div>'+buildStamp()+'</div>';
 }
 
 /* ---------- router (one short cross-fade between views) ---------- */

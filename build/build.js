@@ -145,7 +145,6 @@ function finish(page, opts){
   root.setAttribute('data-prerendered', opts.route || '');   /* the route this file was built for: the app re-renders when the address names another */
   if(PREVIEW) root.setAttribute('data-preview', '');
   if(!doc.querySelector('meta[name="ihg-build"]')){ const m = doc.createElement('meta'); m.setAttribute('name', 'ihg-build'); m.setAttribute('content', BUILD.commit + ' | ' + BUILD.mode + ' | ' + BUILD.built); doc.head.appendChild(m); }
-  if(PREVIEW && !doc.getElementById('build-stamp')){ const f = doc.querySelector('footer') || body; const b = doc.createElement('p'); b.id = 'build-stamp'; b.className = 'xs muted'; b.setAttribute('style', 'text-align:center;padding:12px 16px;margin:0'); b.textContent = 'Preview build ' + BUILD.commit + ', ' + BUILD.built.slice(0, 16).replace('T', ' ') + ' UTC'; f.appendChild(b); }
   root.removeAttribute('class');                                  /* the inline head script adds hist and js again */
   Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics], link[rel="stylesheet"][href^="shared/tokens.css"]'), function(el){ el.parentNode.removeChild(el); });   /* the tokens are inlined at the top of site.css (step 1b) */
   Array.prototype.forEach.call(doc.querySelectorAll('.clock'), function(el){ el.textContent = '--:--'; });
