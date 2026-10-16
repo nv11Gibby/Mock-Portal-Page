@@ -12,7 +12,7 @@ html{-webkit-text-size-adjust:100%;scroll-padding-top:var(--hdrH);background:var
 body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
 img,svg{max-width:100%;display:block}
 /* width and height attributes reserve the box (aspect ratio) without fixing the height; rules below size each image */
-img[width][height]{height:auto}
+:where(img[width][height]){height:auto}
 a{color:inherit;text-decoration:none}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0;padding:0}
