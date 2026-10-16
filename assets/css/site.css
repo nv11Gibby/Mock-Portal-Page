@@ -63,8 +63,10 @@ li{max-width:46em}
 .light .btn.line::before{background:var(--l-text)}
 .light .btn.line:hover,.light .btn.line:focus-visible{color:var(--paper)}
 .btn .lbl{transition:opacity var(--t2)}
-.btn .spin{position:absolute;width:18px;height:18px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;opacity:0;animation:spin .8s linear infinite}
+.btn .spin{position:absolute;width:18px;height:18px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;opacity:0}
 .btn.loading .lbl{opacity:0}.btn.loading .spin{opacity:1}
+/* the spinner turns only while the button is busy, never at idle behind opacity 0 (UX audit item 26) */
+.btn.loading .spin,.btn[aria-busy=true] .spin{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btns{display:flex;flex-wrap:wrap;gap:12px}
 .tlink{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:500;font-size:15px;color:var(--gold-l);background-image:linear-gradient(currentColor,currentColor);background-size:0 1px;background-position:0 calc(50% + 13px);background-repeat:no-repeat;transition:background-size var(--t3) var(--e-out)}
@@ -87,6 +89,10 @@ li{max-width:46em}
 .hdr-in{position:relative;display:flex;align-items:center;gap:32px;height:var(--hdrH);max-width:calc(var(--max) + 2 * var(--pad));margin:0 auto;padding:0 var(--pad)}
 .brand{display:flex;align-items:center;min-height:44px;flex:none}
 .brand img{height:15px;width:auto}
+/* phones (UX audit item 5): a tighter row, and under 420 px the crown mark (picture source in index.html) instead of
+   the 221 px wordmark, so the WhatsApp button and the menu button keep their full 44 px */
+@media (max-width:480px){ .hdr-in{gap:12px} }
+@media (max-width:420px){ .brand img{height:26px;aspect-ratio:320/175} }
 .nav{display:flex;align-items:center;gap:6px;margin-left:auto}
 .nav a,.mega-btn{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;font-size:14.5px;color:var(--soft);transition:color var(--t2)}
 .nav a::after,.mega-btn::after{content:"";position:absolute;left:14px;right:14px;bottom:8px;height:1px;background:var(--gold);transform:scaleX(0);transform-origin:right;transition:transform var(--t3) var(--e-out)}
@@ -191,7 +197,9 @@ li{max-width:46em}
 .ph-bg{position:absolute;inset:0;overflow:hidden}
 .ph-bg .px{position:absolute;inset:-8% 0;will-change:transform}
 .ph-bg img{width:100%;height:100%;object-fit:cover}
-.ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,.7) 0,rgba(14,13,11,.25) 40%,rgba(14,13,11,.92) 100%);pointer-events:none}
+/* v6 (UX audit item 4): the scrim is at least .85 at the top and stays near .62 through the band where the breadcrumb,
+   eyebrow and headline sit, so small text clears 4.5:1 and the headline 3:1 over any part of the photograph */
+.ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,13,11,.85) 0,rgba(14,13,11,.64) 14%,rgba(14,13,11,.62) 62%,rgba(14,13,11,.94) 100%);pointer-events:none}
 .ph-c{position:relative;z-index:2}
 .ph .d1{max-width:12em}
 .ph .lead{margin-top:26px}
@@ -201,6 +209,11 @@ li{max-width:46em}
 .crumb a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;color:var(--soft)}
 .crumb a:hover{color:var(--gold-l)}
 .crumb i{font-style:normal;color:var(--dim)}
+/* over a photograph the breadcrumb and the eyebrow use the full text colour, not the soft one */
+.ph .crumb,.ph .crumb a,.ph .eyebrow{color:var(--text)}
+/* the home hero's eyebrow sits on a solid ink band (.88), so it reads at 4.5:1 or better over any photograph the hero
+   is given, without darkening the photograph itself */
+.hh .eyebrow{display:inline-flex;color:var(--text);background:rgba(14,13,11,.88);padding:7px 14px 7px 12px;border-radius:2px}
 .ph-logo{height:22px;width:auto;margin-bottom:26px}
 .wordmark{color:#B5915A;display:inline-flex;align-items:center;gap:12px;font-family:var(--head);font-weight:500;font-size:15px;letter-spacing:.24em;text-transform:uppercase}
 .wordmark img{height:18px;width:auto}
@@ -230,8 +243,8 @@ li{max-width:46em}
 .house>a{position:absolute;inset:0;display:block}
 .house figure{position:absolute;inset:0;margin:0}
 .house img{width:100%;height:100%;object-fit:cover;filter:brightness(.8)}
-.house figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,.2),rgba(10,9,8,.15) 40%,rgba(10,9,8,.9))}
-.house .n{position:absolute;z-index:2;left:18px;top:18px;padding:3px 7px 3px 8px;border-radius:2px;background:rgba(10,9,8,.72);font-size:12px;letter-spacing:.14em;color:var(--gold-l)}
+.house figure::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,9,8,.72) 0,rgba(10,9,8,.15) 22%,rgba(10,9,8,.15) 45%,rgba(10,9,8,.9) 100%)}
+.house .n{position:absolute;z-index:2;left:24px;top:24px;font-size:12px;letter-spacing:.14em;color:var(--gold-l)}
 .house .vl{position:absolute;z-index:2;left:22px;bottom:26px;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--head);font-size:20px;letter-spacing:.01em;white-space:nowrap;transition:opacity .2s ease}
 .house.on .vl{opacity:0}
 .house .hc{position:absolute;z-index:2;left:32px;right:32px;bottom:32px;max-width:460px;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s ease,transform .3s var(--e-out),visibility 0s .25s}
@@ -878,7 +891,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .cmp{width:100%;min-width:980px;table-layout:fixed;border-collapse:collapse;font-size:14.5px;color:var(--l-body)}
 .cmp th,.cmp td{text-align:left;vertical-align:top;padding:20px 20px;border-bottom:1px solid var(--l-line);border-left:1px solid var(--l-line)}
 .cmp thead th{padding-top:26px;background:var(--paper)}
-.cmp thead th a{display:flex;align-items:center;gap:8px;font-family:var(--head);font-weight:500;font-size:19px;color:var(--l-text);margin-bottom:10px}
+.cmp thead th a{display:flex;align-items:center;gap:8px;min-height:44px;font-family:var(--head);font-weight:500;font-size:19px;color:var(--l-text);margin-bottom:4px}
 .cmp thead th a:hover{color:var(--gold-ink)}
 .cmp thead th a .ar{width:14px;height:14px;color:var(--gold-ink)}
 .cmp tbody th{position:sticky;left:0;z-index:1;background:var(--paper-2);border-left:0;font-size:12px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink);width:130px}
@@ -989,7 +1002,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .journey .ix{display:block;font-size:12px;letter-spacing:.16em;color:var(--l-muted);margin-bottom:40px}
 .journey h3{margin-bottom:10px;color:var(--l-text)}
 .journey p{color:var(--l-body);font-size:15px;margin-bottom:16px}
-.journey .tlink{font-size:14px;min-height:36px}
+.journey .tlink{font-size:14px;min-height:44px}
 .journey li::after{content:"";position:absolute;right:-9px;top:50%;width:16px;height:16px;border-top:1px solid var(--l-line-2);border-right:1px solid var(--l-line-2);transform:translateY(-50%) rotate(45deg);background:var(--paper);z-index:1}
 .journey li:last-child::after{display:none}
 .net-photos{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:clamp(220px,28vw,440px) clamp(220px,28vw,440px);gap:10px}
@@ -1055,7 +1068,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .enq .form-card{background:#fff}
 .enq .fgrid{gap:16px 18px}
 .wm-addr{font-size:14px;color:var(--soft);margin:6px 0 4px;max-width:22em}
-.ftr .off a{color:var(--soft);display:inline;min-height:0}
+.ftr .off a{color:var(--soft);display:inline-flex;align-items:center;min-height:44px}
 @media (max-width:1024px){
   .journey{grid-template-columns:repeat(2,minmax(0,1fr))}
   .journey li:nth-child(2)::after{display:none}
@@ -1113,7 +1126,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .book-tbc{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--l-body)}
 .book-tbc b{font-weight:500}
 /* WhatsApp: header button (mobile only) with a small sheet for both offices, and a button under each office on Contact */
-.wa-btn{display:none;align-items:center;justify-content:center;width:44px;height:44px;color:var(--soft);border-radius:50%;transition:color var(--t2)}
+.wa-btn{display:none;flex:none;align-items:center;justify-content:center;width:44px;min-width:44px;height:44px;color:var(--soft);border-radius:50%;transition:color var(--t2)}
 .wa-btn svg{width:22px;height:22px}
 .wa-btn:hover,.wa-btn[aria-expanded=true]{color:var(--gold-l)}
 .wa-pop{position:absolute;right:calc(var(--pad) - 6px);top:calc(var(--hdrH) - 8px);z-index:101;min-width:256px;padding:8px;background:var(--ink-3);border:1px solid var(--line-2);border-radius:4px;box-shadow:0 18px 50px rgba(0,0,0,.4)}
@@ -1176,7 +1189,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .vid figcaption i{font-style:normal;margin:0 8px;opacity:.6}
 .sec:not(.light) .vid figcaption{color:var(--soft)}
 .sec:not(.light) .vid figcaption b{color:var(--text)}
-.vid-cc{text-decoration:underline;text-underline-offset:3px}
+.vid-cc{display:inline-flex;align-items:center;min-height:44px;padding:0 4px;text-decoration:underline;text-underline-offset:3px}
 .vid-cc:hover{color:var(--gold-ink)}
 .gal-vid{margin-bottom:10px}
 .home-vid .vid,.founder-film .vid{margin:0}
