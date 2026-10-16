@@ -489,8 +489,8 @@ a[aria-disabled=true]{cursor:help}
 .cf-step{display:none}
 .cf-step.on{display:block;animation:stepIn var(--t4) var(--e-out) both}
 .cf-step.on.back{animation-name:stepBack}
-@keyframes stepIn{from{opacity:0;transform:translateX(28px)}}
-@keyframes stepBack{from{opacity:0;transform:translateX(-28px)}}
+@keyframes stepIn{from{opacity:0}}
+@keyframes stepBack{from{opacity:0}}
 .cf-step h2{font-family:var(--head);font-size:clamp(26px,2.6vw,36px);letter-spacing:-.02em;margin-bottom:8px}
 .cf-step>p{color:var(--l-muted);margin-bottom:26px}
 .routes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -1351,3 +1351,9 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .path-c .btn{align-self:flex-start;margin-top:8px}
 @media (max-width:900px){ .paths{grid-template-columns:1fr} }
 @media (max-width:640px){ .jp-card{padding:18px} .jp-line{margin-bottom:18px} .jp-sum .tlink{margin-left:0} }
+
+/* v6/ux: grid items may shrink below their content's widest line, so the path cards, the Our Network cards and
+   the two-column splits (division overview, event details) fit a 320 to 390 px phone; their button labels wrap
+   on the smallest screens */
+.split>*,.aud>*,.paths>*{min-width:0}
+@media (max-width:400px){ .paths .btn,.aud .btn,.glance .btn{white-space:normal;text-align:left;padding-top:10px;padding-bottom:10px} .glance dd{min-width:0;overflow-wrap:anywhere} }
