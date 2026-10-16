@@ -172,23 +172,27 @@ function logoImg(d, colour, cls){
   if(d.logo) return '<img class="'+(cls||'')+'" src="'+LOGO+d.logo+'-Horizontal-Gold.svg" alt="'+esc(d.name)+'">';
   return '<span class="wordmark '+(cls||'')+'" role="img" aria-label="'+esc(d.name)+'"><img src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" width="320" height="175">'+esc(d.name)+'</span>';
 }
+/* Placeholder links (the four division websites not yet built, UX audit item 34): they keep href="#" and the "Link to
+   confirm" toast, and also say so before the click: aria-disabled="true" and a visible "To confirm" mark. They are a
+   launch blocker in docs/LAUNCH-NOTES.md. */
+var TBC_MARK = '<span class="tbc-mark">To confirm</span>';
 function extLink(d, cls, label){
   if(!d.cta) return '';
   var l = label || d.cta.label;
   if(d.cta.real) return '<a class="'+cls+'" href="'+d.cta.href+'" target="_blank" rel="noopener"><span>'+esc(l)+'</span>'+NE+'</a>';
-  return '<a class="'+cls+'" href="#" data-tbc="'+esc(d.cta.tbc)+'"><span>'+esc(l)+'</span>'+NE+'</a>';
+  return '<a class="'+cls+'" href="#" data-tbc="'+esc(d.cta.tbc)+'" aria-disabled="true"><span>'+esc(l)+'</span>'+TBC_MARK+'</a>';
 }
 function siteLink(s, cls, inner){
   if(s.home) return '<a class="'+(cls||'')+'" href="'+s.href+'">'+inner+'</a>';
   if(s.real) return '<a class="'+(cls||'')+'" href="'+s.href+'" target="_blank" rel="noopener">'+inner+'</a>';
-  return '<a class="'+(cls||'')+'" href="#" data-tbc="'+esc(s.tbc)+'">'+inner+'</a>';
+  return '<a class="'+(cls||'')+'" href="#" data-tbc="'+esc(s.tbc)+'" aria-disabled="true">'+inner+(/to confirm/i.test(inner) ? '' : TBC_MARK)+'</a>';
 }
 /* The short text for a site in the ecosystem lists (mega menu, footer): this site by name, a live site by its domain
    (with the external arrow where asked), the rest by name with a TBC mark. */
 function siteText(s, arrow){
   if(s.home) return esc(s.name);
   if(s.real) return esc(s.label)+(arrow?NE:'');
-  return esc(s.name.replace('Imperial ',''))+' <small>TBC</small>';
+  return esc(s.name.replace('Imperial ',''));   /* siteLink adds the To confirm mark */
 }
 function eyebrow(t){return '<div class="eyebrow" data-r>'+t+'</div>';}
 function mask(lines, tag, cls, base){
@@ -1234,9 +1238,18 @@ var DRAFT_SKIP = {'form-name':1, company_url:1, consent:1, 'cf-turnstile-respons
    turn a programme-fit lead back into a plain website lead */
 var DRAFT_HIDDEN = {lead_source:1, quiz_answers:1};
 function draftKey(kind){ return 'ihg-draft-'+kind; }
-function readDraft(kind){ var d = store.get(draftKey(kind)); if(!d && kind==='contact') d = store.get('ihg-contact-draft'); return d; }
+/* v6 (UX audit item 31): a draft lasts 7 days on the device. saveDraft stamps it (_t, no form field has that name);
+   readDraft deletes and ignores an older one. A draft saved before v6 has no stamp: the clock starts when it is read. */
+var DRAFT_MAX_AGE = 7 * 24 * 3600 * 1000;
+function readDraft(kind){
+  var k = draftKey(kind), d = store.get(k); if(!d && kind==='contact'){ k = 'ihg-contact-draft'; d = store.get(k); }
+  if(!d || typeof d !== 'object') return d;
+  if(!d._t){ d._t = Date.now(); store.set(k, d); }
+  else if(Date.now() - d._t > DRAFT_MAX_AGE){ store.del(k); return null; }
+  return d;
+}
 function draftFields(form){ return [].filter.call(form.elements, function(f){ return f.name && !DRAFT_SKIP[f.name] && (f.type!=='hidden' || DRAFT_HIDDEN[f.name]) && f.type!=='submit' && f.type!=='button' && f.type!=='checkbox'; }); }
-function saveDraft(form, kind){ var o = {}; draftFields(form).forEach(function(f){ if(f.type==='radio'){ if(f.checked) o[f.name] = f.value; return; } o[f.name] = f.value; }); store.set(draftKey(kind), o); }
+function saveDraft(form, kind){ var o = {_t: Date.now()}; draftFields(form).forEach(function(f){ if(f.type==='radio'){ if(f.checked) o[f.name] = f.value; return; } o[f.name] = f.value; }); store.set(draftKey(kind), o); }
 function restoreDraft(form, dr){ draftFields(form).forEach(function(f){ if(dr[f.name]==null) return; if(f.type==='radio'){ if(f.value===dr[f.name] && !form.querySelector('input[name="'+f.name+'"]:checked')) f.checked = true; return; } f.value = dr[f.name]; }); }
 function draftNote(form){
   if(form.querySelector('.draft')) return;

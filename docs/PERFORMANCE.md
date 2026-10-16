@@ -138,7 +138,7 @@ the document loaded at 0.2 s, which Lighthouse turns into an LCP 0.3 to 0.6 s hi
 run; every other run paints at 0.12 to 0.25 s. Nothing in the page accounts for the gap (no request, no script and no
 timer runs then), it moves between pages, and the medians are not affected, so it is reported and not chased. The intro veil costs the home page its Speed Index (3.2 s
 against 1.4 to 1.7 s elsewhere: the screenshots change only when the veil lifts) and about one point; that is the
-approved design.
+approved design. (v6: the intro veil has since been removed; see section 10.)
 
 ## 7. What is fine
 
@@ -162,7 +162,7 @@ approved design.
    stylesheet (one round trip plus 17 KB, 600 to 900 ms of the estimate), which only critical CSS inlining would remove,
    not done for the reason in section 1.
 2. **Speed Index on the home page** (3.2 s) is the intro veil; a shorter veil would raise the score by about a point.
-   Design, not touched.
+   Design, not touched. (v6: the veil is gone, section 10; Lighthouse to be re-run.)
 3. **Event covers have no mobile crop**: `02.webp` (186 KB) serves `/journal` and the Easter Polo Cup page at every
    width. A crop as for the division photographs would halve it on phones.
 4. **Test server and Lighthouse console**: `tests/serve.js` sends `Cache-Control: no-store`, so a page that fetches the
@@ -211,3 +211,32 @@ http.createServer(function(req, res){
   });
 }).listen(PORT, '127.0.0.1');
 ```
+
+## 10. v6 interaction refinement (docs/UX-AUDIT.md)
+
+What the v6 round changed for loading, measured on the built site:
+
+* No intro veil: the home page paints its hero from the first byte, with JavaScript on or off (the prerendered
+  `body.veiled` and the veil markup are gone from every page).
+* No reveal system: no block waits at opacity 0 for an IntersectionObserver, so the largest contentful paint is not
+  held back by a 1.4 s headline slide.
+* No film grain layer, scroll progress bar or reading bar, magnetic buttons or cursor preview loop; the scroll
+  handler no longer reads the document height on every frame.
+* One render-blocking stylesheet: the build puts `shared/tokens.css` at the top of `dist/assets/css/site.css`
+  (87,987 + 856 bytes in two files before, 80,432 bytes in one file after; 16.6 KB gzip).
+* Photographs carry width and height; full-frame site photographs offer their existing 3:4 `-m` file to phones.
+
+Lighthouse has not been re-run for this round; the figures in section 6 predate it.
+
+### To confirm on the host after deploy (UX audit item 33)
+
+The audit's local server could not show these; they depend on the host honouring `dist/_redirects` and `dist/_headers`.
+Nothing in `netlify.toml` was changed.
+
+| Check | How | Expected |
+|---|---|---|
+| 404 status | `curl -sI https://<host>/no-such-page` | `HTTP/2 404`, body of `404.html` (no catch-all rewrite in `_redirects`) |
+| HTML caching | `curl -sI https://<host>/about` | `cache-control: public, max-age=0, must-revalidate` (not `no-store`), so the back/forward cache can keep the page |
+| Compression | `curl -sI -H 'Accept-Encoding: br, gzip' https://<host>/assets/css/site.css?v=5` | `content-encoding: br` or `gzip` on HTML, CSS, JavaScript, JSON and SVG |
+
+The same list is in docs/LAUNCH-NOTES.md.
