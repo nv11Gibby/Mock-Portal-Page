@@ -251,6 +251,9 @@ a[aria-disabled=true]{cursor:help}
 .house .n{position:absolute;z-index:2;left:24px;top:24px;font-size:12px;letter-spacing:.14em;color:var(--gold-l)}
 .house .vl{position:absolute;z-index:2;left:22px;bottom:26px;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--head);font-size:20px;letter-spacing:.01em;white-space:nowrap;transition:opacity .2s ease}
 .house.on .vl{opacity:0}
+/* the status beside the name while a card is closed (the open card shows it as a chip) */
+.house .vs{position:absolute;z-index:2;left:52px;bottom:28px;writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l);white-space:nowrap;transition:opacity .2s ease}
+.house.on .vs{opacity:0}
 .house .hc{position:absolute;z-index:2;left:32px;right:32px;bottom:32px;max-width:460px;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .25s ease,transform .3s var(--e-out),visibility 0s .25s}
 .house.on .hc{opacity:1;visibility:visible;transform:none;transition-delay:.1s,.1s,0s}
 .house .hc .badge{margin-bottom:18px}
@@ -576,7 +579,7 @@ a[aria-disabled=true]{cursor:help}
   .burger{display:block}
   .houses{display:grid;grid-template-columns:1fr 1fr;height:auto;min-height:0;gap:14px}
   .house{flex:none;aspect-ratio:4/5;min-height:0}
-  .house .vl{display:none}
+  .house .vl,.house .vs{display:none}
   .house .hc{opacity:1;visibility:visible;transform:none;left:22px;right:22px;bottom:22px}
   .house img{filter:saturate(.85) brightness(.66)}
   .house .hc .tlink{pointer-events:none}
@@ -1008,6 +1011,10 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .jrow h3{font-family:var(--head);font-weight:600;font-size:clamp(22px,1.9vw,28px);line-height:1.15;margin-bottom:8px;max-width:22em}
 .jrow p{color:var(--l-body);font-size:15px;margin-bottom:6px;max-width:40em}
 .jrow:hover h3{color:var(--gold-ink)}
+/* Home page: event cards and journal rows are typographic (no figure) */
+.ev.plain{padding-top:22px;border-top:1px solid var(--l-line)}
+.ev.plain:hover h3{color:var(--gold-ink)}
+.jrow.plain{grid-template-columns:minmax(0,1fr)}
 .gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .gallery figure{margin:0;overflow:hidden;border-radius:2px;background:var(--stone);aspect-ratio:4/5}
 .gallery figure:nth-child(3n+1){grid-column:1/-1;aspect-ratio:16/9}

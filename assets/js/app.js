@@ -266,7 +266,7 @@ function houses(){
   return '<div class="houses" id="houses">'+D.divisions.map(function(d,i){
     var c = H[d.key] || {headline:d.name, line:d.line}, cta = d.soon ? 'Register interest' : 'Discover '+esc(d.short);
     return '<article class="house'+(i===0?' on':'')+'" data-r style="--d:'+(i*0.07).toFixed(2)+'s"><a href="#/divisions/'+d.key+'">'+
-      inkField({n:pad2(i+1)})+'<span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+
+      inkField({n:pad2(i+1)})+'<span class="n" aria-hidden="true">'+pad2(i+1)+'</span><span class="vl">'+esc(d.short)+'</span>'+(d.status?'<span class="vs" aria-hidden="true">'+esc(d.status)+'</span>':'')+
       '<div class="hc">'+statusChip(d)+
       '<span class="mark'+(d.logo?'':' crown')+'"><img src="'+LOGO+(d.logo ? d.logo+'-Horizontal-Gold.svg' : 'Imperial-Crown-Gold.svg')+'" alt="" loading="lazy" decoding="async"></span>'+
       '<span class="nm'+(d.logo?' vh':'')+'">'+esc(d.name)+'</span><h3>'+esc(c.headline)+'</h3><p>'+esc(c.line)+'</p><span class="tlink">'+cta+AR+'</span></div></a></article>';
@@ -487,13 +487,15 @@ function evWhen(e){ return e.date ? esc(e.date) : ''; }
 /* plain (the home page): the typographic card even where the photograph is cleared */
 function eventCard(e, i, plain){
   var k = 'events/'+e.slug+'/cover', ok = plain!==true && photoAllowed(k);
-  return '<a class="ev" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s">'+(ok ? '<figure>'+img(k, '')+'</figure>' : '<figure class="ev-plate">'+evPlate(e)+'</figure>')+'<div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Read the story')+AR+'</span></div></a>';
+  /* plain (the home page): typographic, no figure at all; the photographs live in the strip above */
+  return '<a class="ev'+(plain===true?' plain':'')+'" href="#/journal/events/'+e.slug+'" data-r style="--d:'+(i%3*0.1).toFixed(2)+'s">'+(plain===true ? '' : ok ? '<figure>'+img(k, '')+'</figure>' : '<figure class="ev-plate">'+evPlate(e)+'</figure>')+'<div class="ev-b"><div class="meta">'+esc(e.cat)+' <i aria-hidden="true">·</i> '+esc(e.city)+(e.date?' <i aria-hidden="true">·</i> '+evWhen(e):'')+(e.video && e.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'')+'</div><h3>'+esc(e.title)+'</h3><p>'+esc(e.dek)+'</p><span class="tlink">'+(ok ? e.n+' photographs' : 'Read the story')+AR+'</span></div></a>';
 }
 function journalRow(j, i, plain){
   var ok = plain!==true && !!(j.img && photoAllowed(j.img)), ev = j.to.indexOf('/journal/events/')===0 ? eventBySlug(j.to.split('/')[3]) : null;
   var meta = esc(j.kind)+(j.date?' <i aria-hidden="true">·</i> '+esc(j.date):'')+(j.video && j.video.id?' <i aria-hidden="true">·</i> <span class="vmark">'+PLAY+'Video</span>':'');
   var fig = ok ? '<figure>'+img(j.img, '', '', j.own?'':'-c')+'</figure>' : '<figure class="jplate" aria-hidden="true">'+(ev ? inkMap(cityView(ev.city), {points:true, fill:true}) : '<img class="jcrown" src="'+LOGO+'Imperial-Crown-Gold.svg" alt="" loading="lazy" decoding="async">')+'</figure>';
-  return '<a class="jrow" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s">'+fig+'<div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
+  if(plain===true) fig = '';
+  return '<a class="jrow'+(plain===true?' plain':'')+'" href="#'+j.to+'" data-r style="--d:'+(i%3*0.08).toFixed(2)+'s">'+fig+'<div class="jb"><div class="meta">'+meta+'</div><h3>'+esc(j.title)+'</h3><p>'+esc(j.dek)+'</p><span class="tlink">Read on'+AR+'</span></div></a>';
 }
 function journalTitle(){ return publishedInsights().length ? ['Developments, insights','and selected events.'] : ['Company developments','and selected events.']; }
 V.journal = function(){
