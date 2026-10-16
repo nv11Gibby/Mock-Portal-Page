@@ -39,7 +39,7 @@ One strip, after the Our Network block and before the Selected events cards, tit
 
 | Slot | Frame | What it shows | What it says | Alternate |
 | --- | --- | --- | --- | --- |
-| 1, the room | `events/gala-dinner-lagos/01` | A speaker at the lectern at the gala dinner, Lagos | The Group addresses a room: substance, not spectacle. | `events/gala-dinner-lagos/05` (guests in conversation in the ballroom) |
+| 1, the room | `events/gala-dinner-lagos/01` | A speaker at the lectern at the gala dinner, Lagos | The Group addresses a room: substance, not spectacle. | `events/gala-dinner-lagos/04` (guests in conversation in the ballroom; the old 04, at the sponsor backdrop, is removed: it shows visa prices) |
 | 2, Dubai | `events/grenada-51-dubai/03` | A guest arriving through the bar entrance at the Dubai EDITION, Grenada's 51st Independence Day after party, 19 February 2025 | The Dubai event, and the one event with a documented source (the press release). | `events/grenada-51-dubai/02` (a guest at the flag wall) |
 | 3, relationships | `events/delborough-dinner/04` | Guests greeting one another at DANI, The Delborough Hotel, Lagos | Relationship-led, without a handshake framing. | `events/delborough-dinner/05` (a guest talking with guests at their table) |
 | 4, the office | `events/lagos-office-event/05` | Two guests seated in the lounge at the Lagos office, 8 Aromire Road, Ikoyi | The office itself as evidence that it exists and is used. | `events/lagos-office-event/06` (one guest on the sofa) |

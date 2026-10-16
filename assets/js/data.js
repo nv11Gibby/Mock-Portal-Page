@@ -75,9 +75,10 @@ window.IHG = {
     {key:'events/gala-dinner-lagos/01', own:true, consent:false, event:'gala-dinner-lagos', what:'A speaker at the lectern at the gala dinner, Lagos'},
     {key:'events/gala-dinner-lagos/02', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests at the photo wall at the gala dinner'},
     {key:'events/gala-dinner-lagos/03', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests with a glass of champagne at the photo wall'},
-    {key:'events/gala-dinner-lagos/04', own:true, consent:false, event:'gala-dinner-lagos', what:'Two guests in front of the sponsor backdrop at the gala dinner'},
-    {key:'events/gala-dinner-lagos/05', own:true, consent:false, event:'gala-dinner-lagos', what:'Guests in conversation in the ballroom at the gala dinner'},
-    {key:'events/gala-dinner-lagos/06', own:true, consent:false, event:'gala-dinner-lagos', what:'A guest at his table at the gala dinner'},
+    /* v6 fix: the old frame 04 (two guests at the sponsor backdrop) is removed with its file, because the backdrop shows
+       visa prices; the old 05 and 06 are now 04 and 05, so the gallery stays numbered without a gap. */
+    {key:'events/gala-dinner-lagos/04', own:true, consent:false, event:'gala-dinner-lagos', what:'Guests in conversation in the ballroom at the gala dinner'},
+    {key:'events/gala-dinner-lagos/05', own:true, consent:false, event:'gala-dinner-lagos', what:'A guest at his table at the gala dinner'},
     {key:'events/easter-polo-cup-2026/01', own:true, consent:false, event:'easter-polo-cup-2026', what:'Two polo players on horseback at Lagos Polo Club'},
     {key:'events/easter-polo-cup-2026/03', own:true, consent:false, event:'easter-polo-cup-2026', what:'Guests in conversation on the terrace at the after party'},
     {key:'events/grenada-51-dubai/01', own:true, consent:false, event:'grenada-51-dubai', what:'Two guests with a glass raised at the Grenada 51st after party, Dubai'},
@@ -138,7 +139,7 @@ window.IHG = {
     },
     strip: {eyebrow:'From our events', title:['Four evenings,','two cities.'], lead:'Four frames from four gatherings, in Dubai and Lagos.', min:3,
       slots: [
-        {event:'gala-dinner-lagos', photo:'events/gala-dinner-lagos/01', alt:'events/gala-dinner-lagos/05', caption:'A speaker at the lectern at the gala dinner'},
+        {event:'gala-dinner-lagos', photo:'events/gala-dinner-lagos/01', alt:'events/gala-dinner-lagos/04', caption:'A speaker at the lectern at the gala dinner'},
         {event:'grenada-51-dubai', photo:'events/grenada-51-dubai/03', alt:'events/grenada-51-dubai/02', caption:'An arrival at The Dubai EDITION'},
         {event:'delborough-dinner', photo:'events/delborough-dinner/04', alt:'events/delborough-dinner/05', caption:'Guests greeting one another at DANI, The Delborough'},
         {event:'lagos-office-event', photo:'events/lagos-office-event/05', alt:'events/lagos-office-event/06', caption:'The lounge at the Lagos office, Aromire Road'}
@@ -195,7 +196,7 @@ window.IHG = {
      video:{type:'video', provider:'vimeo', id:'', poster:'events/lagos-diplomatic-soiree-2025/cover', captions:'assets/captions/lagos-diplomatic-soiree-2025.vtt', title:'Highlights: The Lagos Diplomatic Soir\u00e9e 2025', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'An evening in Lagos for Clients, partners and friends of Imperial.',
      body:['An evening in Lagos for Clients, partners and friends of Imperial.'], tbc:['Description of the evening','Exact date','Venue','Guests of honour']},
-    {slug:'gala-dinner-lagos', title:'Gala Dinner, Lagos', short:'Gala Dinner, Lagos', city:'Lagos', venue:null, date:null, iso:null, cat:'Private gathering', n:6, consent:false,
+    {slug:'gala-dinner-lagos', title:'Gala Dinner, Lagos', short:'Gala Dinner, Lagos', city:'Lagos', venue:null, date:null, iso:null, cat:'Private gathering', n:5, consent:false,
      dek:'A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.',
      body:['A gala dinner in Lagos for Clients, partners and guests of Imperial Citizenship.'], tbc:['Description of the evening','Date','Venue','Speakers and guests of honour']},
     {slug:'easter-polo-cup-2026', title:'Easter Polo Cup After Party', short:'Easter Polo Cup, Lagos', city:'Lagos', venue:'Lagos Polo Club, Ikoyi', date:'Easter 2026', iso:'2026', cat:'Events', n:3, consent:false,
