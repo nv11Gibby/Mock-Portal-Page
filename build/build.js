@@ -26,6 +26,13 @@ const PREVIEW = process.env.BUILD_PREVIEW === '1';
 const HERO_LIMIT = 200 * 1024;
 const TRACK = ['source', 'medium', 'campaign', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid', 'ttclid', 'landing', 'referrer', 'page'];
 const t0 = Date.now();
+/* Build stamp: the commit this dist was built from, so a reviewer can tell exactly which version a link serves
+   (dist/version.json and <meta name="ihg-build"> on every page). */
+const BUILD = (function(){
+  let commit = 'unknown', dirty = false;
+  try { const cp = require('child_process'); commit = cp.execSync('git rev-parse --short HEAD', {cwd: ROOT}).toString().trim(); dirty = cp.execSync('git status --porcelain --untracked-files=no', {cwd: ROOT}).toString().trim() !== ''; } catch(e) {}
+  return {commit: commit + (dirty ? '+local' : ''), built: new Date().toISOString(), mode: (LAUNCH ? 'launch' : 'pre-launch') + (PREVIEW ? ', preview' : ', production')};
+})();
 
 function readData(){
   const src = fs.readFileSync(path.join(ROOT, 'assets/js/data.js'), 'utf8');
@@ -137,6 +144,8 @@ function finish(page, opts){
   const doc = page.document, root = doc.documentElement, body = doc.body;
   root.setAttribute('data-prerendered', opts.route || '');   /* the route this file was built for: the app re-renders when the address names another */
   if(PREVIEW) root.setAttribute('data-preview', '');
+  if(!doc.querySelector('meta[name="ihg-build"]')){ const m = doc.createElement('meta'); m.setAttribute('name', 'ihg-build'); m.setAttribute('content', BUILD.commit + ' | ' + BUILD.mode + ' | ' + BUILD.built); doc.head.appendChild(m); }
+  if(PREVIEW && !doc.getElementById('build-stamp')){ const f = doc.querySelector('footer') || body; const b = doc.createElement('p'); b.id = 'build-stamp'; b.className = 'xs muted'; b.setAttribute('style', 'text-align:center;padding:12px 16px;margin:0'); b.textContent = 'Preview build ' + BUILD.commit + ', ' + BUILD.built.slice(0, 16).replace('T', ' ') + ' UTC'; f.appendChild(b); }
   root.removeAttribute('class');                                  /* the inline head script adds hist and js again */
   Array.prototype.forEach.call(doc.querySelectorAll('base, script[data-ihg-analytics], link[rel="stylesheet"][href^="shared/tokens.css"]'), function(el){ el.parentNode.removeChild(el); });   /* the tokens are inlined at the top of site.css (step 1b) */
   Array.prototype.forEach.call(doc.querySelectorAll('.clock'), function(el){ el.textContent = '--:--'; });
@@ -279,10 +288,11 @@ preloadLog.forEach(function(p){
 const big = {};
 oversize.forEach(function(h){ (big[h.href] = big[h.href] || {size: h.size, pages: []}).pages.push(h.page); });
 
+fs.writeFileSync(path.join(DIST, 'version.json'), JSON.stringify(BUILD, null, 1) + '\n');
 /* 7. Report. */
 const titles = {};
 pages.forEach(function(p){ if(titles[p.title]) problems.push('duplicate title: ' + p.title + ' (' + titles[p.title] + ', ' + p.route + ')'); titles[p.title] = p.route; });
-console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : ''));
+console.log('build: ' + pages.length + ' pages + 404.html and error.html in ' + (Date.now() - t0) + ' ms, ' + (LAUNCH ? 'LAUNCH (indexable)' : 'pre-launch (noindex)') + (PREVIEW ? ', preview' : '') + ', build ' + BUILD.commit);
 console.log('site: ' + SITE + ' | ga4: ' + (ga4 ? 'on' : 'off') + ' | turnstile: ' + (turnstile ? 'on' : 'off') + ' | search console: ' + (CFG.searchConsole ? 'on' : 'off') + ' | inline script hashes: ' + hashes.length + ' | frame-src: ' + fill.frame + (fill.media ? ' | media-src:' + fill.media : ''));
 console.log('minified: ' + minified.join(', ') + (minifyNotes.length ? ' | esbuild warnings: ' + minifyNotes.join('; ') : ''));
 console.log('hero preloads: ' + Object.keys(heroes).map(function(h){ return h + ' ' + (heroes[h] < 0 ? 'missing' : Math.round(heroes[h] / 1024) + ' KB'); }).join(', '));
