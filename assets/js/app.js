@@ -1686,14 +1686,23 @@ function bindFaq(){
 function compare(){
   var ds = D.divisions, site = {};
   D.sites.forEach(function(s){ site[s.name]=s; });
-  function row(h, f){ return '<tr><th scope="row">'+h+'</th>'+ds.map(function(d){ return '<td>'+f(d)+'</td>'; }).join('')+'</tr>'; }
+  var rows = [
+    ['For', function(d){ return esc(d.who[0]); }],
+    ['Covers', function(d){ return '<ul>'+d.bullets.map(function(b){ return '<li>'+esc(b)+'</li>'; }).join('')+'</ul>'; }],
+    ['How it starts', function(d){ return d.how ? esc(d.how[0][0])+': '+esc(d.how[0][1]) : 'Register interest ahead of launch.'; }],
+    ['Online', function(d){ var s=site[d.name]; return s && !s.soon ? (s.real ? '<a class="ul" href="'+s.href+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>' : tbc('Link to confirm')) : '<span class="muted">At launch</span>'; }]
+  ];
+  function badge(d){ return '<span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span>'; }
+  function row(r){ return '<tr><th scope="row">'+r[0]+'</th>'+ds.map(function(d){ return '<td>'+r[1](d)+'</td>'; }).join('')+'</tr>'; }
+  /* phones get the same data as one card per house (item 9); the table stays from 761 px */
+  var cards = '<ul class="cmp-cards" data-r aria-label="The five Imperial houses compared">'+ds.map(function(d){
+    return '<li class="cmp-card"><h3><a href="#/divisions/'+d.key+'">'+esc(d.short)+AR+'</a></h3>'+badge(d)+
+      '<dl>'+rows.map(function(r){ return '<dt>'+r[0]+'</dt><dd>'+r[1](d)+'</dd>'; }).join('')+'</dl></li>';
+  }).join('')+'</ul>';
   return '<section class="sec light"><div class="wrap"><div class="sec-head"><div>'+eyebrow('At a glance')+mask(['Five houses,','side by side.'],'h2','d2')+'</div><p class="lead" data-r style="--d:.15s">Who each house is for and what it covers. Whichever you start with, the same Relationship Manager brings in the others.</p></div>'+
-    '<div class="cmp-wrap" data-r tabindex="0" role="region" aria-label="Divisions compared, scrolls sideways"><table class="cmp"><caption class="vh">The five Imperial houses compared</caption><thead><tr><td></td>'+ds.map(function(d){ return '<th scope="col"><a href="#/divisions/'+d.key+'">'+esc(d.short)+AR+'</a><span class="badge'+(d.statusTone==='gold'?' gold':d.soon?' soon':'')+'">'+esc(d.status)+'</span></th>'; }).join('')+'</tr></thead><tbody>'+
-    row('For', function(d){ return esc(d.who[0]); })+
-    row('Covers', function(d){ return '<ul>'+d.bullets.map(function(b){ return '<li>'+esc(b)+'</li>'; }).join('')+'</ul>'; })+
-    row('How it starts', function(d){ return d.how ? esc(d.how[0][0])+': '+esc(d.how[0][1]) : 'Register interest ahead of launch.'; })+
-    row('Online', function(d){ var s=site[d.name]; return s && !s.soon ? (s.real ? '<a class="ul" href="'+s.href+'" target="_blank" rel="noopener">'+esc(s.label)+'</a>' : tbc('Link to confirm')) : '<span class="muted">At launch</span>'; })+
-    '</tbody></table></div><p class="xs cmp-hint" aria-hidden="true">Swipe sideways to compare</p></div></section>';
+    '<div class="cmp-wrap" data-r tabindex="0" role="region" aria-label="Divisions compared, scrolls sideways"><table class="cmp"><caption class="vh">The five Imperial houses compared</caption><thead><tr><td></td>'+ds.map(function(d){ return '<th scope="col"><a href="#/divisions/'+d.key+'">'+esc(d.short)+AR+'</a>'+badge(d)+'</th>'; }).join('')+'</tr></thead><tbody>'+
+    rows.map(row).join('')+
+    '</tbody></table></div><p class="xs cmp-hint" aria-hidden="true">Swipe sideways to compare</p>'+cards+'</div></section>';
 }
 
 /* ---------- article sharing ---------- */
