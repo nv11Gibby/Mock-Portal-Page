@@ -167,6 +167,15 @@ The v5 shot list stands (one shoot per city, the rooms, the portraits, the dusk 
 5. Start the consent log for the four home page frames and their alternates first (gala `01`/`05`, Grenada `03`/`02`, Delborough `04`/`05`, office `05`/`06`), then per event.
 6. Book the two city shoots to the amended shot list.
 
+**Done (v6 build, branch v6/home).** Items 1 to 4, on the site:
+
+* Hero: candidate 1 exported from `dubai.webp` with the section 2.1 crop and grade (`hero.webp` 1920 x 1080, 17 KB; `hero-m.webp` 900 x 1125, 9 KB), `og.jpg` regenerated from it, the `hero` registry entry credited to Anoof C on Unsplash (the footer credit list carries it). `D.hero.style` switches to `map`, the ink field with the dotted world, the two offices and one arc drawn inline. The night layer, the crossfade and `hero-lights` are gone; the "Final hero photo" marker stays until the shoot.
+* Home: the figures band and the leadership section are gone; the five division cards are typographic on the ink field; Our Network has no photographs; the event strip (section 2.2) sits after Our Network, gated per frame and held below three cleared frames, so it shows on a preview build only today; Selected events cards and Journal rows are typographic until their cover is cleared; the closing band carries the signature on the ink map.
+* Removed: the 33 files in section 6 (and `real-estate-c.webp`, no longer referenced) with their registry keys; `EVENT_SAFE` retired. Division heroes, the divisions index, About, Insights, the Journal and event heroes, the closing band, 404 and error take the ink field when no cleared photograph exists; each division has its numeral and its own crop of the map. The ecosystem menu shows the five divisions without thumbnails.
+* Kept: `dubai.webp` (source of the hero), `real-estate.webp` and its `-m` crop on the Real Estate page only with the candidate 2 grade, the two portraits on About only.
+* Registry: the gala `03` caption, polo `02` set to `consent:false`, no clothing descriptions in captions (the Soirée frames, and the same rule applied to gala `06`, Grenada `02` and Delborough `05`); Grenada 51st covers re-cut from `03`; event counts updated (Grenada 3, polo 3, office 6, Delborough 5).
+* Not done here: the per-event gallery curation in section 4, item 7 (galleries still show frames `01` to `n` once cleared), the Soirée re-exports (section 9), `consentRef` and `consentDate` (no frame is cleared yet), the Dubai map card photograph (the map cards were already typographic), and the shared chrome kit for the sister sites (`shared/chrome/header.html` still names the removed division crops; its README describes the no-photograph variant).
+
 ## 12. To confirm
 
 * Founder: the hero choice (candidate 1, or the alternative with no photograph), and whether a credited licensed photograph is acceptable on the home page in the interim.

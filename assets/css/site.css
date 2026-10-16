@@ -1364,7 +1364,7 @@ kbd,.kb{font-family:var(--sans);font-size:11px;letter-spacing:.04em;padding:2px 
 .home-close .lead{margin-bottom:0}
 @media (max-width:1024px){ .strip .frames{grid-template-columns:repeat(2,minmax(0,1fr))} .house .ph-ink::after{background:linear-gradient(180deg,rgba(10,9,8,0) 30%,rgba(10,9,8,.6))} .house .ink-n{opacity:1}
   .house>a{position:relative;inset:auto;flex:1 1 auto;display:flex;flex-direction:column;justify-content:flex-end} }
-.hh-c .eyebrow{flex-wrap:wrap;row-gap:8px}
+.hh-c .eyebrow,.ph-c .eyebrow{flex-wrap:wrap;row-gap:8px}
 @media (min-width:641px){ .hh-c .d1{font-size:clamp(56px,6.2vw,108px);max-width:none} }
 @media (max-width:640px){ .strip .frames{gap:10px} .ink-n{font-size:clamp(120px,36vw,180px)} }
 /* v6 photography across the site (docs/PHOTOGRAPHY-PLAN.md sections 4 to 6): where no cleared photograph exists, the
