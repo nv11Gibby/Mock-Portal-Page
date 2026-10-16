@@ -668,10 +668,10 @@ function buildChrome(){
     '<div class="ftr-bot"><span>\u00a9 '+new Date().getFullYear()+' Imperial Holdings Group.</span><span><a href="#/privacy">Privacy</a> &nbsp;\u00b7&nbsp; <a href="#/terms">Terms</a></span></div></div>';
 }
 
-/* ---------- router (view transitions with a shared division image) ---------- */
+/* ---------- router (one short cross-fade between views) ---------- */
 /* data-prerendered carries the route the served file was built for (build/build.js), so the app can tell whether the
    markup on screen is the page the address now names. */
-var first = true, lastPath = null, pendingSrc = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered'), PRE = root.getAttribute('data-prerendered') || '';
+var first = true, lastPath = null, curView = null, pendingScroll = null, curQ = {}, prerendered = root.hasAttribute('data-prerendered'), PRE = root.getAttribute('data-prerendered') || '';
 if(HIST && 'scrollRestoration' in history) history.scrollRestoration = 'manual';
 function parse(){
   /* /about/, /about/index.html and the about.html copy the build writes all resolve to /about */
@@ -847,26 +847,22 @@ function route(y){
   closeMenus(true); closePal(true);
   if(first){ first=false; render(); if(typeof y==='number') window.scrollTo(0,y); setTimeout(afterLand, 60); return; }
   if(path===lastPath){ render(); window.scrollTo(0, landY(y)); afterLand(); return; }
-  var src = pendingSrc; pendingSrc = null;
+  /* v6 (UX audit item 15): one 0.25 s cross-fade of the whole view (the browser's default view transition), no shared
+     division image; without view transitions the new view fades in over 0.25 s; with reduced motion, neither */
   if(reduced){ render(); window.scrollTo(0,landY(y)); focusMain(); afterLand(); return; }
   if(document.startViewTransition){
-    if(src) src.style.viewTransitionName = 'dv-img';
     try{
-      var vt = document.startViewTransition(function(){
-        if(src) src.style.viewTransitionName = '';
-        render(); window.scrollTo(0,landY(y));
-        var dst = src && app.querySelector('.ph-bg img');
-        if(dst){ dst.style.viewTransitionName = 'dv-img'; }
-      });
-      var clear = function(){ var d = app.querySelector('.ph-bg img'); if(d) d.style.viewTransitionName=''; focusMain(); afterLand(); };
-      vt.finished.then(clear, clear);
+      var vt = document.startViewTransition(function(){ render(); window.scrollTo(0,landY(y)); focusMain(); });
+      var done = function(){ afterLand(); };
+      vt.finished.then(done, done);
       if(vt.ready) vt.ready.catch(function(){});
       if(vt.updateCallbackDone) vt.updateCallbackDone.catch(function(){});
-    }catch(e){ render(); window.scrollTo(0,landY(y)); afterLand(); }
+    }catch(e){ render(); window.scrollTo(0,landY(y)); focusMain(); afterLand(); }
     return;
   }
-  app.classList.remove('enter'); app.classList.add('out');
-  setTimeout(function(){ render(); window.scrollTo(0,landY(y)); app.classList.remove('out'); void app.offsetWidth; app.classList.add('enter'); focusMain(); afterLand(); }, 300);
+  render(); window.scrollTo(0,landY(y));
+  app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter');
+  focusMain(); afterLand();
 }
 /* history-mode navigation with per-entry scroll memory */
 function go(url, scrollTo){
@@ -901,7 +897,13 @@ function setMeta(out){
   [].forEach.call(H.querySelectorAll('script[data-ld]'), function(s){ s.parentNode.removeChild(s); });
   (out.ld||[]).forEach(function(o){ var s=document.createElement('script'); s.type='application/ld+json'; s.setAttribute('data-ld',''); s.textContent=JSON.stringify(o).replace(/</g,'\\u003c'); H.appendChild(s); });
 }
-function focusMain(){ var m=document.getElementById('main'); if(document.activeElement===body || !document.activeElement || !document.contains(document.activeElement)) m.focus({preventScroll:true}); }
+/* v6 (UX audit item 16): after a client-side route change, focus always moves to the new view's heading (made focusable
+   with tabindex -1), or to main when a view has none, without scrolling; the skip link still focuses main */
+function focusMain(){
+  var h = app.querySelector('h1'), t = h || document.getElementById('main');
+  if(h && !h.hasAttribute('tabindex')) h.setAttribute('tabindex', '-1');
+  try{ t.focus({preventScroll:true}); }catch(e){ t.focus(); }
+}
 
 /* ---------- motion system ---------- */
 var io = null, fx = {};
@@ -941,16 +943,16 @@ function count(el){
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 
 /* scroll: header, hero dusk-to-night, parallax, chapters, lit words */
-var lastY = 0, ticking = false, totopRing = document.getElementById('totopRing'), ftr = document.getElementById('ftr');
+var lastY = 0, ticking = false, ftr = document.getElementById('ftr');
 function onScroll(){
   ticking = false;
-  var y = window.pageYOffset || 0, H = window.innerHeight, docH = root.scrollHeight;
+  var y = window.pageYOffset || 0, H = window.innerHeight;
   body.classList.toggle('scrolled', y > 40);
-  if(y > 520 && y > lastY + 4 && !body.classList.contains('mega-open')) body.classList.add('hdr-hide');
-  else if(y < lastY - 4 || y < 520) body.classList.remove('hdr-hide');
+  /* v6 (UX audit item 7): the header always stays on screens up to 1024 px (the menu button lives there); wider, it
+     steps aside only after 1,200 px of reading and comes back on any upward movement */
+  if(window.innerWidth > 1024 && y > 1200 && y > lastY + 4 && !body.classList.contains('mega-open')) body.classList.add('hdr-hide');
+  else if(y < lastY || y < 1200 || window.innerWidth <= 1024) body.classList.remove('hdr-hide');
   lastY = y;
-  var tp = clamp(y/Math.max(1,docH-H),0,1);
-  if(totopRing) totopRing.style.strokeDashoffset = (138.2*(1-tp)).toFixed(1);
   body.classList.toggle('show-top', y > H*1.4);
   var ft = ftr.getBoundingClientRect().top;
   body.classList.toggle('show-mcta', y > H*0.8 && ft > H - 40);
@@ -1068,21 +1070,16 @@ function bindFilters(){
 }
 
 /* ---------- menus ---------- */
-var megaBtn = document.getElementById('megaBtn'), mega = document.getElementById('mega'), megaT = null, megaAt = 0;
+/* v6 (UX audit item 6): the menu opens on click, Enter or ArrowDown only, never on hover, and fades in 0.2 s */
+var megaBtn = document.getElementById('megaBtn'), mega = document.getElementById('mega'), megaT = null;
 function megaSel(i){
   [].forEach.call(mega.querySelectorAll('.mega-item'), function(a){ a.classList.toggle('on', +a.getAttribute('data-i')===i); });
   [].forEach.call(mega.querySelectorAll('.mega-prev figure'), function(f){ f.classList.toggle('on', +f.getAttribute('data-i')===i); });
 }
-function openMega(){ clearTimeout(megaT); if(!body.classList.contains('mega-open')) megaAt=Date.now(); mega.hidden=false; void mega.offsetWidth; body.classList.add('mega-open'); megaBtn.setAttribute('aria-expanded','true'); }
-function closeMega(instant){ clearTimeout(megaT); if(!body.classList.contains('mega-open')) return; body.classList.remove('mega-open'); megaBtn.setAttribute('aria-expanded','false'); if(instant) mega.hidden=true; else megaT=setTimeout(function(){ if(!body.classList.contains('mega-open')) mega.hidden=true; }, 900); }
-megaBtn.addEventListener('click', function(){ if(body.classList.contains('mega-open') && Date.now()-megaAt>450) closeMega(); else openMega(); });
+function openMega(){ clearTimeout(megaT); mega.hidden=false; void mega.offsetWidth; body.classList.add('mega-open'); megaBtn.setAttribute('aria-expanded','true'); }
+function closeMega(instant){ clearTimeout(megaT); if(!body.classList.contains('mega-open')) return; body.classList.remove('mega-open'); megaBtn.setAttribute('aria-expanded','false'); if(instant) mega.hidden=true; else megaT=setTimeout(function(){ if(!body.classList.contains('mega-open')) mega.hidden=true; }, 200); }
+megaBtn.addEventListener('click', function(){ if(body.classList.contains('mega-open')) closeMega(); else openMega(); });
 megaBtn.addEventListener('keydown', function(e){ if(e.key==='ArrowDown'){ e.preventDefault(); openMega(); setTimeout(function(){ var f=mega.querySelector('.mega-item'); if(f) f.focus(); }, 60); } });
-if(finePointer){
-  [megaBtn, mega].forEach(function(el){
-    el.addEventListener('mouseenter', function(){ clearTimeout(megaT); openMega(); });
-    el.addEventListener('mouseleave', function(){ megaT=setTimeout(function(){ closeMega(); }, 260); });
-  });
-}
 mega.addEventListener('mouseover', function(e){ var a=e.target.closest('.mega-item'); if(a) megaSel(+a.getAttribute('data-i')); });
 mega.addEventListener('focusin', function(e){ var a=e.target.closest('.mega-item'); if(a) megaSel(+a.getAttribute('data-i')); });
 mega.addEventListener('keydown', function(e){
@@ -1135,8 +1132,6 @@ document.addEventListener('click', function(e){
   if(sc){ var el=document.getElementById(sc.getAttribute('data-scroll')); if(el){ e.preventDefault(); window.scrollTo({top: el.getBoundingClientRect().top + window.pageYOffset - (/^(divisions|ecosystem)$/.test(sc.getAttribute('data-scroll'))?0:90), behavior: reduced?'auto':'smooth'}); } return; }
   var pb = t.closest('[data-palette]');
   if(pb){ e.preventDefault(); if(body.classList.contains('mm-open')) setMM(false, true); openPal(); return; }
-  var dv = t.closest('a[data-dv]');
-  if(dv){ pendingSrc = dv.querySelector('img'); if(pendingSrc && !pendingSrc.getBoundingClientRect().width) pendingSrc=null; }
   if(body.classList.contains('mega-open') && !t.closest('#megaBtn') && !t.closest('#mega')) closeMega();
   var a = t.closest('a[href]');
   if(a && !e.defaultPrevented && e.button===0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && !a.target && !a.hasAttribute('download')){

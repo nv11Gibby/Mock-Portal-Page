@@ -69,7 +69,7 @@ marks every reveal element visible straight away. Nothing fades out and back in,
 the prerendered one. An old `#/about` link is different: the server sends the home page (a hash never reaches it), the
 head script rewrites the address to `/about`, and because the attribute says `/`, the app renders the About page in
 full. A query string that changes the view (`about`, `audience`, `goals`, `faq`, `cat`) also gets a full render;
-campaign parameters (`utm_*`, `gclid`, `fbclid`) do not. Later navigations animate as before. There is no intro veil (removed
+campaign parameters (`utm_*`, `gclid`, `fbclid`) do not. Later navigations cross-fade in 0.25 s. There is no intro veil (removed
 in v6, docs/UX-AUDIT.md item 1): every page, the home page included, paints its hero from the first byte, with or
 without JavaScript.
 
