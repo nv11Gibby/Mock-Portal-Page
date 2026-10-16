@@ -290,9 +290,9 @@ function homeClosing(){
 function mapBlock(){
   var M = D.map, hq = M.places[0];
   function arc(a,b){var mx=(a.x+b.x)/2, my=Math.min(a.y,b.y)-Math.abs(b.x-a.x)*0.22; return 'M'+a.x+' '+a.y+'Q'+mx.toFixed(0)+' '+my.toFixed(0)+' '+b.x+' '+b.y;}
-  var arcs = M.regions.map(function(r,i){return '<path class="arc" data-k="'+r.k+'" style="--d:'+(i*0.22).toFixed(2)+'s" d="'+arc(hq,r)+'"/>';}).join('')+'<path class="arc" data-k="lagos" style="--d:.9s" d="'+arc(hq,M.places[1])+'"/>';
+  var arcs = M.regions.map(function(r,i){return '<path class="arc" data-k="'+r.k+'" d="'+arc(hq,r)+'"/>';}).join('')+'<path class="arc" data-k="lagos" d="'+arc(hq,M.places[1])+'"/>';
   var regs = M.regions.map(function(r){return '<g class="reg" data-k="'+r.k+'"><circle cx="'+r.x+'" cy="'+r.y+'" r="64"/></g>';}).join('');
-  var pins = M.places.map(function(p){return '<g class="pin" data-k="'+p.k+'"><circle class="r" cx="'+p.x+'" cy="'+p.y+'" r="7"/><circle class="c" cx="'+p.x+'" cy="'+p.y+'" r="6"/></g>';}).join('');
+  var pins = M.places.map(function(p){return '<g class="pin" data-k="'+p.k+'"><circle class="c" cx="'+p.x+'" cy="'+p.y+'" r="6"/></g>';}).join('');
   var lbls = M.places.map(function(p){return '<span class="wmap-lbl" aria-hidden="true" style="left:'+(p.x/M.w*100).toFixed(2)+'%;top:'+(p.y/M.h*100).toFixed(2)+'%">'+p.name+'</span>';}).join('');
   var tabs = [['dubai','Dubai','Headquarters'],['lagos','Lagos','Regional hub'],['world','20+ countries','Worldwide']];
   var cards = M.places.map(function(p){return '<div id="wm-'+p.k+'" role="tabpanel" aria-labelledby="wmt-'+p.k+'" class="'+(p.k==='dubai'?'on':'')+'"><span class="role">'+p.role+'</span><h3>'+p.name+'</h3><span class="clock" data-tz="'+p.tz+'" data-fmt="local">--:--</span><p>'+p.text+'</p><p class="wm-addr">'+esc(p.addr)+'</p><a class="tlink" href="tel:'+p.tel.replace(/\s/g,'')+'">'+esc(p.tel)+'</a></div>';}).join('')+
@@ -317,8 +317,8 @@ V.home = function(){
     '<div class="hh-c wrap">'+eyebrow(esc(HH.eyebrow).replace(/ · /g,' <i>·</i> '))+mask(HH.title.map(esc),'h1','d1',.15)+
     '<p class="lead" data-r style="--d:.55s">'+esc(HH.lead)+'</p>'+
     '<div class="btns hh-btns" data-r style="--d:.7s"><a class="btn gold" href="'+esc(HH.primary.href)+'"><span>'+esc(HH.primary.label)+'</span>'+AR+'</a><a class="btn line" href="'+esc(HH.secondary.href)+'"><span>'+esc(HH.secondary.label)+'</span>'+AR+'</a></div>'+
-    '<div class="hh-row" data-r style="--d:.8s"><p class="hh-time" aria-live="off"><i aria-hidden="true"></i><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred">'+tbc(HH.tbc)+'</p></div></div>'+
-    '<span class="cue" aria-hidden="true">Scroll</span></div></section>'+
+    '<div class="hh-row" data-r style="--d:.8s"><p class="hh-time" aria-live="off"><span>In Dubai it is <b class="clock" data-tz="Asia/Dubai" data-fmt="bare">--:--</b>. <span id="greet"></span></span></p><p class="hh-cred">'+tbc(HH.tbc)+'</p></div></div>'+
+    '</div></section>'+
 
   /* v6: the Group intro carries the approved copy (D.home.intro); the figures band is gone (docs/CLAIMS-AUDIT.md C06 to C11) */
   '<section class="sec"><div class="wrap"><div class="intro"><div>'+eyebrow(esc(H.intro.eyebrow))+mask(H.intro.title.map(esc),'h2','d2')+'</div>'+
@@ -1015,7 +1015,7 @@ function enhance(){
   /* v6 (UX audit item 3): every block is visible on landing, so nothing waits for the observer. The observer is kept
      only for lazy one-off work in view: the map arcs, the steps line, the ring and the figures. */
   [].forEach.call(app.querySelectorAll('[data-r]:not(.anim)'), function(e){ e.classList.add('in'); });
-  var els = app.querySelectorAll('.steps, .wmap, .ring.anim, [data-count]');
+  var els = app.querySelectorAll('.steps, .ring.anim, [data-count]');
   /* prerendered: the markup already on screen carries .in, so the first client render keeps everything as it is */
   if(reduced || prerendered || !('IntersectionObserver' in window)){
     [].forEach.call(els, function(e){ e.classList.add('in'); });
@@ -1094,7 +1094,6 @@ function bindHouses(){
 /* where-we-work map */
 function bindMap(){
   [].forEach.call(app.querySelectorAll('.wmap'), function(w){
-    [].forEach.call(w.querySelectorAll('.arc'), function(a){ try{ a.style.setProperty('--l', Math.ceil(a.getTotalLength())); }catch(e){} });
     var tabs = [].slice.call(w.querySelectorAll('[role=tab]'));
     function select(k, region, focus){
       tabs.forEach(function(t){ var on=t.getAttribute('data-wm')===k; t.setAttribute('aria-selected', on); t.tabIndex = on?0:-1; if(on && focus) t.focus(); });
@@ -1342,8 +1341,7 @@ function draftNote(form){
   grid.parentNode.insertBefore(dn, grid);
 }
 function successHTML(title, msg, inner, chip){
-  var burst = ''; for(var i=0;i<8;i++){ var a=i*45*Math.PI/180; burst += '<line x1="'+(50+Math.cos(a)*58).toFixed(1)+'" y1="'+(50+Math.sin(a)*58).toFixed(1)+'" x2="'+(50+Math.cos(a)*66).toFixed(1)+'" y2="'+(50+Math.sin(a)*66).toFixed(1)+'"/>'; }
-  return '<div class="success'+(chip?' preview':'')+'" role="status" tabindex="-1">'+(chip?'<div class="jp-preview"><span class="jp-chip">'+esc(chip)+'</span></div>':'')+'<svg viewBox="0 0 100 100" aria-hidden="true"><circle class="ring1" cx="50" cy="50" r="48" transform="rotate(-90 50 50)"/><path class="tick" d="M32 51l12 12 24-26"/><g class="burst">'+burst+'</g></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>'+esc(D.journeys.states.received.next.journal.label)+'</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>'+esc(D.journeys.states.received.next.again.label)+'</span></button></div></div>';
+  return '<div class="success'+(chip?' preview':'')+'" role="status" tabindex="-1">'+(chip?'<div class="jp-preview"><span class="jp-chip">'+esc(chip)+'</span></div>':'')+'<svg viewBox="0 0 100 100" aria-hidden="true"><path class="tick" d="M32 51l12 12 24-26"/></svg><h3>'+title+'</h3><p>'+msg+'</p>'+(inner||'')+'<div class="btns" style="margin-top:28px;justify-content:center"><a class="btn sm" href="#/journal"><span>'+esc(D.journeys.states.received.next.journal.label)+'</span>'+AR+'</a><button class="btn line sm" type="button" data-reset><span>'+esc(D.journeys.states.received.next.again.label)+'</span></button></div></div>';
 }
 /* The received state of the journey (docs/RELATIONSHIP-JOURNEY.md section 5). The wording follows which route
    confirmed it: the function answers ok with a reference only after Pipedrive took the record (via lead), so the page

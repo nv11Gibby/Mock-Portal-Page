@@ -30,7 +30,7 @@ Ordering follows the copy inventory: shared strings first (all pages), then each
 | C0009 | hero | small | For professional partners | edit | Five specialist divisions, one standard | the secondary action now opens the divisions index, so the small line says what is there |
 | C0010 | hero | p.hh-time | In Dubai it is --:--. | keep |  |  |
 | C0011 | hero | p.hh-cred | To confirm: Final hero photo | keep |  |  |
-| C0012 | hero | span.cue | Scroll | keep |  |  |
+| C0012 | hero | span.cue | Scroll | delete |  | UX audit item 23: the decorative scroll cue is removed (v6/ux) |
 | C0013 | the Group | eyebrow | The Group | keep |  |  |
 | C0014 | the Group | h2.d2 | A house for a life across borders. | edit | One institution. Five specialist divisions. | hero-final Group intro headline, verbatim |
 | C0015 | the Group | lead paragraph | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. We help families and their advisers decide where they live, what they own and what they leave behind. | edit | Imperial Holdings Group is the parent of five specialist divisions, led from Dubai and Lagos. Imperial Citizenship, the flagship, advises families and founders on second residency and citizenship by investment. Four further divisions, two of them in preparation, extend that relationship. Families, and the professionals who advise them, are served by one group, through one named person. | hero-final Group intro, verbatim |
