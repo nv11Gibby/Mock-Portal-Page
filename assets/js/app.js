@@ -2041,7 +2041,7 @@ function palIndex(){
   add({k:'Page', t:'Offices', s:'Telephone, addresses and local time, Dubai and Lagos', u:'/contact?via=palette', kw:'offices office telephone phone address addresses local time dubai lagos'});
   add({k:'Tool', t:'Find the right division', s:'Answer two questions to see which divisions fit', u:'/divisions', go:'finder-sec', kw:'finder quiz match recommend which help'});
   add({k:'Page', t:'Where we work', s:'Dubai headquarters, Lagos office, Caribbean, Europe and the Gulf', u:'/about', go:'where', kw:'offices dubai lagos map locations countries address where we work'});
-  add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo coo founder zaid hekma people'});
+  add({k:'Page', t:'Leadership', s:'Zaid Al Hindi, Hekma Iskandarani', u:'/about', go:'leadership', kw:'leadership ceo founder zaid hekma people'});
   D.events.forEach(function(e){ add({k:'Event', t:e.title, s:e.dek, u:'/journal/events/'+e.slug, img:safePhoto('events/'+e.slug+'/cover-p'), v:'', kw:e.city+' '+e.cat+' event gallery'}); });
   add({k:'Page', t:'Privacy notice', s:'How information is handled', u:'/privacy', kw:'privacy data gdpr'});
   add({k:'Page', t:'Terms of use', s:'About this website', u:'/terms', kw:'terms legal'});

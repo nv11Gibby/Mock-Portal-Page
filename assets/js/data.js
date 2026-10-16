@@ -100,7 +100,7 @@ window.IHG = {
     {key:'real-estate', own:false, consent:true, id:'dYLzGcPqrtE', by:'Nejc Sokli\u010d', src:'Unsplash', what:'Palm Jumeirah and the Dubai coast from above'},
     {key:'dubai', own:false, consent:true, id:'7Zt3XXXp3II', by:'Anoof C', src:'Unsplash', what:'Dubai skyline at sunset'},
     {key:'people/zaid', own:true, consent:true, what:'Zaid Al Hindi, Founder and Group Chief Executive Officer'},
-    {key:'people/hekma', own:true, consent:true, what:'Hekma Iskandarani, Group Chief Operating Officer'}
+    {key:'people/hekma', own:true, consent:true, what:'Hekma Iskandarani'}
   ],
 
   /* Home hero (v6, docs/BRAND-BRIEF.md section 3, docs/PHOTOGRAPHY-PLAN.md 2.1). style is 'photo' (the default: the
@@ -190,7 +190,7 @@ window.IHG = {
      video:{type:'video', provider:'vimeo', id:'', poster:'events/grenada-51-dubai/cover', captions:'assets/captions/grenada-51-dubai.vtt', title:'Highlights: Grenada 51st after party, Dubai', duration:'', tbc:'Highlights clip to be supplied'},
      dek:'Imperial Citizenship sponsored the after party for Grenada’s 51st Independence Day, following the official celebrations hosted by IMA Grenada and the Consulate General of Grenada in Dubai.',
      body:['Imperial Citizenship sponsored the after party for Grenada’s 51st Independence Day in Dubai on 19 February 2025, held at Agora Cocktail Bar and Social Club at The Dubai EDITION, Downtown Dubai.','The evening followed the official celebrations at the Marriott Resort Palm Jumeirah, hosted by IMA Grenada and the Consulate General of Grenada in Dubai.'],
-     guests:['H.E. Ziya Rahaman, Consul General of Grenada to the UAE','Hon. Dennis Cornwall, Minister of Finance, Grenada','H.E. Justin Kareem Hawley, Ambassador of St Kitts and Nevis to the UAE','Mr Thomas Anthony, CEO, IMA Grenada','H.E. Murillo Fallas, [[Title]]','H.E. James Harris, [[Title]]','H.E. Andrew Tsepo Lebona, [[Title]]','Mr Zaid Al Hindi, Founder and Group CEO, Imperial Holdings Group'],
+     guests:['H.E. Ziya Rahaman, Consul General of Grenada to the UAE','Hon. Dennis Cornwall, Minister of Finance, Grenada','H.E. Justin Kareem Hawley, Ambassador of St Kitts and Nevis to the UAE','Mr Thomas Anthony, CEO, IMA Grenada','[[Further guests named once their roles are confirmed]]','Mr Zaid Al Hindi, Founder and Group CEO, Imperial Holdings Group'],
      src:'Press release, 19 February 2025'},
     {slug:'lagos-diplomatic-soiree-2025', title:'The Lagos Diplomatic Soirée 2025', short:'Diplomatic Soirée, Lagos', city:'Lagos', venue:null, date:'2025', iso:'2025', cat:'Events', n:6, featured:true, consent:false,
      video:{type:'video', provider:'vimeo', id:'', poster:'events/lagos-diplomatic-soiree-2025/cover', captions:'assets/captions/lagos-diplomatic-soiree-2025.vtt', title:'Highlights: The Lagos Diplomatic Soir\u00e9e 2025', duration:'', tbc:'Highlights clip to be supplied'},
@@ -267,7 +267,7 @@ window.IHG = {
 
   leadership: [
     {name:'Zaid Al Hindi', initials:'ZA', role:'Founder and Group Chief Executive Officer', area:'Imperial Holdings Group', img:'zaid'},
-    {name:'Hekma Iskandarani', initials:'HI', role:'Group Chief Operating Officer', roleTbc:true, area:'Imperial Holdings Group', img:'hekma'},
+    {name:'Hekma Iskandarani', initials:'HI', role:'Title', roleTbc:true, area:'Imperial Holdings Group', img:'hekma'},
     {role:'Divisional leadership', area:'Citizenship, Private Office, Partners Club, Academy and Real Estate'}
   ],
 

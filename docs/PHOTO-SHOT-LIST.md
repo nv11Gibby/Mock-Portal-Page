@@ -20,7 +20,7 @@ has, the item says TO CONFIRM and the shoot adapts on the day.
 Only the two Group leaders already on the site, photographed in each city or in one sitting:
 
 * Zaid Al Hindi, Founder and Group Chief Executive Officer (TO CONFIRM: the spelling of the surname, Al Hindi or Alhindi, with the Founder).
-* Hekma Iskandarani, Group Chief Operating Officer.
+* Hekma Iskandarani (title to be confirmed by the Founder; claim C28).
 
 Other team members appear only in the "team at work" frames and only with their written consent (a short release signed on
 the day). No one else is named. Divisional leadership is introduced on each division's own site and is not photographed here.
